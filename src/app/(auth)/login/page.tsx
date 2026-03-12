@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+// Reads ?error= from the callback and injects it into the parent via callback
+function CallbackError({ onError }: { onError: (msg: string) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err) onError(`Auth error: ${err}`);
+  }, [searchParams, onError]);
+  return null;
+}
+
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const [showEmail, setShowEmail] = useState(false);
@@ -16,12 +25,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState<"google" | "apple" | "email" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
-
-  // Show errors surfaced from the OAuth callback route
-  useEffect(() => {
-    const err = searchParams.get("error");
-    if (err) setError(`Auth error: ${err}`);
-  }, [searchParams]);
 
   async function handleGoogle() {
     setLoading("google");
@@ -89,6 +92,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col">
+      <Suspense fallback={null}>
+        <CallbackError onError={setError} />
+      </Suspense>
+
       {/* Top spacer */}
       <div className="flex-1" />
 
