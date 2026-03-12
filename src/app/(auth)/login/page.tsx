@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Image from "next/image";
 
 function CallbackError({ onError }: { onError: (msg: string) => void }) {
   const searchParams = useSearchParams();
@@ -70,17 +71,17 @@ export default function LoginPage() {
 
   if (emailSent) {
     return (
-      <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col items-center justify-center px-8 text-center">
-        <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950 flex items-center justify-center mb-6">
+      <div className="min-h-dvh flex flex-col items-center justify-center px-8 text-center" style={{ backgroundColor: "#3D32CF" }}>
+        <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="#3D32CF"/>
+            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="white"/>
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-[#1E1878] dark:text-white mb-2">Check your inbox</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-          We sent a confirmation link to <strong className="text-[#1E1878] dark:text-white">{email}</strong>
+        <h2 className="text-xl font-bold text-white mb-2">Check your inbox</h2>
+        <p className="text-sm text-white/60 mb-6">
+          We sent a confirmation link to <strong className="text-white">{email}</strong>
         </p>
-        <button onClick={() => { setEmailSent(false); setShowEmail(false); }} className="text-sm font-semibold text-[#3D32CF]">
+        <button onClick={() => { setEmailSent(false); setShowEmail(false); }} className="text-sm font-semibold text-white underline">
           Back to sign in
         </button>
       </div>
@@ -88,31 +89,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col">
+    <div className="min-h-dvh flex flex-col" style={{ backgroundColor: "#3D32CF" }}>
       <Suspense fallback={null}>
         <CallbackError onError={setError} />
       </Suspense>
 
-      <div className="flex-1" />
-
-      {/* Wordmark */}
-      <div className="flex flex-col items-center px-8">
-        <h1 className="text-[42px] font-black tracking-tight leading-none select-none">
-          <span style={{ color: "#3D32CF" }}>Sky</span>
-          <span style={{ color: "#1E1878" }} className="dark:text-white">Link</span>
-        </h1>
-        <p className="mt-2 text-sm text-slate-400 dark:text-slate-500 tracking-wide">
-          Network at 36,000 feet
-        </p>
+      {/* Logo — fills upper portion */}
+      <div className="flex-1 flex items-center justify-center px-6 pt-16">
+        <Image
+          src="/icons/logo.png"
+          alt="SkyLink"
+          width={360}
+          height={180}
+          priority
+          className="w-full max-w-[320px] select-none"
+        />
       </div>
-
-      <div className="flex-[2]" />
 
       {/* Auth section */}
       <div className="px-6 pb-10 flex flex-col gap-3" style={{ paddingBottom: "max(40px, env(safe-area-inset-bottom))" }}>
 
         {error && (
-          <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/50 rounded-xl px-4 py-3 text-center">
+          <p className="text-xs text-red-300 bg-white/10 rounded-xl px-4 py-3 text-center">
             {error}
           </p>
         )}
@@ -123,7 +121,7 @@ export default function LoginPage() {
             <button
               onClick={handleGoogle}
               disabled={loading !== null}
-              className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white border border-[#E2E8F0] rounded-2xl py-[15px] text-sm font-semibold text-[#1E1878] shadow-sm active:scale-[0.98] transition-all disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-3 bg-white rounded-2xl py-[15px] text-sm font-semibold text-[#1E1878] shadow-sm active:scale-[0.98] transition-all disabled:opacity-60"
             >
               {loading === "google" ? <Spinner dark /> : <GoogleLogo />}
               Continue with Google
@@ -144,7 +142,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-center pt-2">
               <button
                 onClick={() => setShowEmail(true)}
-                className="text-sm text-slate-400 dark:text-slate-500 hover:text-[#3D32CF] transition-colors"
+                className="text-sm text-white/60 hover:text-white transition-colors"
               >
                 Sign up with email
               </button>
@@ -152,11 +150,11 @@ export default function LoginPage() {
           </>
         ) : (
           <form onSubmit={handleEmailSubmit} className="flex flex-col gap-3">
-            <div className="flex bg-[#F5F7FA] dark:bg-white/10 rounded-full p-1">
+            <div className="flex bg-white/10 rounded-full p-1">
               {(["Sign in", "Sign up"] as const).map((label, i) => (
                 <button key={label} type="button" onClick={() => setIsSignUp(i === 1)}
                   className={`flex-1 text-sm font-semibold py-2 rounded-full transition-all ${
-                    isSignUp === (i === 1) ? "bg-white dark:bg-white/20 text-[#1E1878] dark:text-white shadow-sm" : "text-slate-400"
+                    isSignUp === (i === 1) ? "bg-white text-[#1E1878] shadow-sm" : "text-white/60"
                   }`}
                 >
                   {label}
@@ -165,27 +163,26 @@ export default function LoginPage() {
             </div>
             <input type="email" required placeholder="Email" value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#F5F7FA] dark:bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-[#1E1878] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#3D32CF] transition"
+              className="w-full bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/50 transition"
             />
             <input type="password" required placeholder="Password" value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#F5F7FA] dark:bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-[#1E1878] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#3D32CF] transition"
+              className="w-full bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/50 transition"
             />
             <button type="submit" disabled={loading !== null}
-              className="w-full rounded-2xl py-[15px] text-sm font-semibold text-white active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-              style={{ background: "linear-gradient(135deg, #3D32CF, #1E1878)" }}
+              className="w-full rounded-2xl py-[15px] text-sm font-semibold text-[#3D32CF] bg-white active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading === "email" ? <Spinner /> : (isSignUp ? "Create account" : "Sign in")}
+              {loading === "email" ? <Spinner dark /> : (isSignUp ? "Create account" : "Sign in")}
             </button>
             <button type="button" onClick={() => { setShowEmail(false); setError(null); }}
-              className="text-sm text-slate-400 dark:text-slate-500 text-center pt-1"
+              className="text-sm text-white/60 text-center pt-1"
             >
               ← Back
             </button>
           </form>
         )}
 
-        <p className="text-center text-[11px] text-slate-300 dark:text-slate-600 mt-1 px-4">
+        <p className="text-center text-[11px] text-white/30 mt-1 px-4">
           By continuing you agree to our{" "}
           <span className="underline">Terms of Service</span> and{" "}
           <span className="underline">Privacy Policy</span>
