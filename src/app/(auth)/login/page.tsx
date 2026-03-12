@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const [showEmail, setShowEmail] = useState(false);
@@ -15,6 +16,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState<"google" | "apple" | "email" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+
+  // Show errors surfaced from the OAuth callback route
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err) setError(`Auth error: ${err}`);
+  }, [searchParams]);
 
   async function handleGoogle() {
     setLoading("google");
