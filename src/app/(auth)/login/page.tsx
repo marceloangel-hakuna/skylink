@@ -89,20 +89,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col" style={{ backgroundColor: "#3D32CF" }}>
+    <div className="min-h-dvh flex flex-col relative overflow-hidden" style={{ backgroundColor: "#3D32CF" }}>
       <Suspense fallback={null}>
         <CallbackError onError={setError} />
       </Suspense>
 
-      {/* Logo — fills upper portion */}
-      <div className="flex-1 flex items-center justify-center px-6 pt-16">
+      {/* Paper plane animation — behind logo */}
+      <div className="plane-container" aria-hidden="true">
+        <svg className="paper-plane" width="44" height="44" viewBox="0 0 44 44" fill="none">
+          <path d="M2 22L42 22L28 6L2 22Z" fill="white" fillOpacity="0.95"/>
+          <path d="M2 22L42 22L28 38L2 22Z" fill="white" fillOpacity="0.55"/>
+          <line x1="28" y1="22" x2="14" y2="22" stroke="white" strokeWidth="1" strokeOpacity="0.4"/>
+        </svg>
+      </div>
+
+      {/* Logo — higher z-index so plane passes behind */}
+      <div className="flex-1 flex items-center justify-center px-6 pt-16 relative" style={{ zIndex: 2 }}>
         <Image
-          src="/icons/logo.png"
+          src="/icons/logo-transparent.png"
           alt="SkyLink"
           width={360}
-          height={180}
+          height={200}
           priority
-          className="w-full max-w-[320px] select-none"
+          className="w-full max-w-[340px] select-none"
         />
       </div>
 
