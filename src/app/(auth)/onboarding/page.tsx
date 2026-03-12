@@ -4,217 +4,227 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const STEPS = ["Welcome", "Your Role", "Travel Style", "Done"];
-
-const INDUSTRIES = [
-  "Technology", "Finance", "Consulting", "Healthcare", "Legal",
-  "Media", "Real Estate", "Education", "Government", "Other",
+const INTERESTS = [
+  { id: "ai_ml",       label: "AI / ML",      icon: "🤖" },
+  { id: "fintech",     label: "Fintech",       icon: "💳" },
+  { id: "climate",     label: "Climate Tech",  icon: "🌱" },
+  { id: "saas",        label: "SaaS",          icon: "☁️" },
+  { id: "web3",        label: "Web3",          icon: "⛓️" },
+  { id: "design",      label: "Design",        icon: "🎨" },
+  { id: "vc",          label: "VC",            icon: "💼" },
+  { id: "product",     label: "Product",       icon: "📦" },
+  { id: "devtools",    label: "DevTools",      icon: "🛠️" },
+  { id: "biotech",     label: "Biotech",       icon: "🧬" },
 ];
 
-const TRAVEL_GOALS = [
-  { id: "networking",  label: "Professional networking" },
-  { id: "deals",      label: "Close deals" },
-  { id: "learning",   label: "Share knowledge" },
-  { id: "social",     label: "Social connections" },
-  { id: "mentoring",  label: "Mentoring" },
-];
+const MAX_INTERESTS = 5;
 
 export default function OnboardingPage() {
   const router = useRouter();
   const supabase = createClient();
 
   const [step, setStep] = useState(0);
-  const [fullName, setFullName] = useState("");
-  const [title, setTitle] = useState("");
-  const [company, setCompany] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [goals, setGoals] = useState<string[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [flightNumber, setFlightNumber] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function toggleGoal(id: string) {
-    setGoals((prev) =>
-      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
-    );
+  function toggleInterest(id: string) {
+    setInterests((prev) => {
+      if (prev.includes(id)) return prev.filter((i) => i !== id);
+      if (prev.length >= MAX_INTERESTS) return prev;
+      return [...prev, id];
+    });
   }
 
   async function finish() {
     setSaving(true);
+    setError(null);
+
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from("profiles").upsert({
-        id: user.id,
-        full_name: fullName,
-        title,
-        company,
-        industry,
-        onboarding_complete: true,
-        updated_at: new Date().toISOString(),
+    if (!user) { router.push("/login"); return; }
+
+    // Upsert profile with interests + onboarding flag
+    const { error: profileError } = await supabase.from("profiles").upsert({
+      id: user.id,
+      full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+      avatar_url: user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
+      email: user.email,
+      interests,
+      onboarding_complete: true,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (profileError) {
+      setError(profileError.message);
+      setSaving(false);
+      return;
+    }
+
+    // Save flight if provided
+    if (flightNumber.trim()) {
+      await supabase.from("flights").insert({
+        user_id: user.id,
+        flight_number: flightNumber.trim().toUpperCase(),
       });
     }
+
     router.push("/home");
   }
 
-  const progress = ((step + 1) / STEPS.length) * 100;
+  // ── Step 0: Interests ──────────────────────────────────────
+  if (step === 0) {
+    return (
+      <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col px-6 pt-14 pb-10">
+        {/* Progress */}
+        <div className="flex gap-2 mb-10">
+          <div className="h-1 flex-1 rounded-full bg-[#2B88D8]" />
+          <div className="h-1 flex-1 rounded-full bg-slate-200 dark:bg-white/10" />
+        </div>
 
+        <p className="text-xs font-semibold text-[#2B88D8] uppercase tracking-widest mb-3">
+          Step 1 of 2
+        </p>
+        <h2 className="text-2xl font-black text-[#0A1E3D] dark:text-white mb-1">
+          What moves you?
+        </h2>
+        <p className="text-sm text-slate-400 mb-8">
+          Pick up to {MAX_INTERESTS} topics you&apos;re passionate about.{" "}
+          <span className="text-[#2B88D8] font-semibold">
+            {interests.length}/{MAX_INTERESTS} selected
+          </span>
+        </p>
+
+        <div className="grid grid-cols-2 gap-3 flex-1">
+          {INTERESTS.map(({ id, label, icon }) => {
+            const selected = interests.includes(id);
+            const maxed = interests.length >= MAX_INTERESTS && !selected;
+            return (
+              <button
+                key={id}
+                onClick={() => toggleInterest(id)}
+                disabled={maxed}
+                className={`flex items-center gap-3 px-4 py-4 rounded-2xl border-2 text-left transition-all active:scale-[0.97] ${
+                  selected
+                    ? "border-[#2B88D8] bg-blue-50 dark:bg-blue-950/40"
+                    : maxed
+                    ? "border-slate-100 dark:border-white/5 opacity-40"
+                    : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5"
+                }`}
+              >
+                <span className="text-2xl leading-none">{icon}</span>
+                <span className={`text-sm font-semibold ${
+                  selected ? "text-[#2B88D8]" : "text-[#0A1E3D] dark:text-white"
+                }`}>
+                  {label}
+                </span>
+                {selected && (
+                  <span className="ml-auto w-5 h-5 rounded-full bg-[#2B88D8] flex items-center justify-center flex-shrink-0">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="pt-8">
+          <button
+            onClick={() => setStep(1)}
+            disabled={interests.length === 0}
+            className="w-full py-4 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg, #2B88D8, #0A1E3D)" }}
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Step 1: Flight number ──────────────────────────────────
   return (
-    <div className="flex flex-col min-h-dvh px-6 pt-12 pb-10">
-      {/* Progress bar */}
-      <div className="w-full h-1 bg-surface-border rounded-full mb-8">
-        <div
-          className="h-1 bg-sky-500 rounded-full transition-all duration-500"
-          style={{ width: `${progress}%` }}
+    <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col px-6 pt-14 pb-10">
+      {/* Progress */}
+      <div className="flex gap-2 mb-10">
+        <div className="h-1 flex-1 rounded-full bg-[#2B88D8]" />
+        <div className="h-1 flex-1 rounded-full bg-[#2B88D8]" />
+      </div>
+
+      <p className="text-xs font-semibold text-[#2B88D8] uppercase tracking-widest mb-3">
+        Step 2 of 2
+      </p>
+      <h2 className="text-2xl font-black text-[#0A1E3D] dark:text-white mb-1">
+        What&apos;s your flight?
+      </h2>
+      <p className="text-sm text-slate-400 mb-8">
+        We&apos;ll find professionals on your flight to connect with.
+      </p>
+
+      {/* Flight input */}
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"/>
+          </svg>
+        </div>
+        <input
+          type="text"
+          placeholder="e.g. AA 247, UA 890"
+          value={flightNumber}
+          onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
+          className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-white/10 rounded-2xl text-sm font-mono font-semibold text-[#0A1E3D] dark:text-white placeholder:text-slate-300 placeholder:font-sans placeholder:font-normal border-0 focus:outline-none focus:ring-2 focus:ring-[#2B88D8] transition tracking-widest"
+          maxLength={8}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
         />
       </div>
 
-      <p className="text-xs font-semibold text-sky-600 uppercase tracking-widest mb-2">
-        Step {step + 1} of {STEPS.length}
-      </p>
-
-      {/* Step 0: Welcome */}
-      {step === 0 && (
-        <div className="flex-1 flex flex-col animate-fade-in">
-          <h2 className="text-2xl font-black text-navy-900 mb-2">
-            Welcome aboard! ✈️
-          </h2>
-          <p className="text-slate-500 text-sm mb-8">
-            Let&apos;s set up your SkyLink profile so fellow travelers know who you are.
-          </p>
-          <div className="flex flex-col gap-3">
-            <div>
-              <label className="text-xs font-medium text-slate-600 mb-1.5 block">Full name</label>
-              <input
-                type="text"
-                placeholder="Jane Smith"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="input-field"
-              />
-            </div>
-          </div>
-          <div className="mt-auto">
-            <button
-              onClick={() => setStep(1)}
-              disabled={!fullName.trim()}
-              className="btn-primary w-full"
-            >
-              Continue
-            </button>
-          </div>
-        </div>
+      {error && (
+        <p className="mt-3 text-xs text-red-500 bg-red-50 dark:bg-red-950/40 rounded-xl px-4 py-2">
+          {error}
+        </p>
       )}
 
-      {/* Step 1: Role */}
-      {step === 1 && (
-        <div className="flex-1 flex flex-col animate-fade-in">
-          <h2 className="text-2xl font-black text-navy-900 mb-2">Your role</h2>
-          <p className="text-slate-500 text-sm mb-6">Tell us about your professional background.</p>
-          <div className="flex flex-col gap-3">
-            <div>
-              <label className="text-xs font-medium text-slate-600 mb-1.5 block">Job title</label>
-              <input
-                type="text"
-                placeholder="VP of Product"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-600 mb-1.5 block">Company</label>
-              <input
-                type="text"
-                placeholder="Acme Corp"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-600 mb-1.5 block">Industry</label>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                {INDUSTRIES.map((ind) => (
-                  <button
-                    key={ind}
-                    onClick={() => setIndustry(ind)}
-                    className={`text-sm py-2.5 px-3 rounded-xl border font-medium transition-all ${
-                      industry === ind
-                        ? "border-sky-500 bg-sky-50 text-sky-700"
-                        : "border-surface-border bg-surface-card text-slate-600"
-                    }`}
-                  >
-                    {ind}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="mt-auto flex gap-3 pt-6">
-            <button onClick={() => setStep(0)} className="btn-secondary flex-1">Back</button>
-            <button onClick={() => setStep(2)} className="btn-primary flex-1">Continue</button>
-          </div>
-        </div>
-      )}
+      <div className="mt-auto flex flex-col gap-3 pt-8">
+        <button
+          onClick={finish}
+          disabled={saving}
+          className="w-full py-4 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+          style={{ background: "linear-gradient(135deg, #2B88D8, #0A1E3D)" }}
+        >
+          {saving ? (
+            <>
+              <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity="0.25"/>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+              </svg>
+              Setting up your profile…
+            </>
+          ) : (
+            "Let's fly →"
+          )}
+        </button>
 
-      {/* Step 2: Travel style */}
-      {step === 2 && (
-        <div className="flex-1 flex flex-col animate-fade-in">
-          <h2 className="text-2xl font-black text-navy-900 mb-2">Travel goals</h2>
-          <p className="text-slate-500 text-sm mb-6">What do you want from in-flight networking?</p>
-          <div className="flex flex-col gap-2">
-            {TRAVEL_GOALS.map(({ id, label }) => {
-              const selected = goals.includes(id);
-              return (
-                <button
-                  key={id}
-                  onClick={() => toggleGoal(id)}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border text-left transition-all ${
-                    selected
-                      ? "border-sky-500 bg-sky-50"
-                      : "border-surface-border bg-surface-card"
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                    selected ? "border-sky-500 bg-sky-500" : "border-slate-300"
-                  }`}>
-                    {selected && (
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </div>
-                  <span className={`text-sm font-medium ${selected ? "text-sky-700" : "text-slate-700"}`}>
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-auto flex gap-3 pt-6">
-            <button onClick={() => setStep(1)} className="btn-secondary flex-1">Back</button>
-            <button onClick={() => setStep(3)} disabled={goals.length === 0} className="btn-primary flex-1">Continue</button>
-          </div>
-        </div>
-      )}
+        <button
+          onClick={finish}
+          disabled={saving}
+          className="text-sm text-slate-400 dark:text-slate-500 text-center py-2"
+        >
+          Skip for now
+        </button>
 
-      {/* Step 3: Done */}
-      {step === 3 && (
-        <div className="flex-1 flex flex-col items-center justify-center text-center animate-fade-in">
-          <div className="w-20 h-20 rounded-full gradient-card flex items-center justify-center mb-6 shadow-card">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
-              <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            </svg>
-          </div>
-          <h2 className="text-2xl font-black text-navy-900 mb-2">You&apos;re all set!</h2>
-          <p className="text-slate-500 text-sm max-w-[260px]">
-            Your profile is ready. Start connecting with professionals on your next flight.
-          </p>
-          <div className="mt-10 w-full">
-            <button onClick={finish} disabled={saving} className="btn-primary w-full">
-              {saving ? "Setting up…" : "Launch SkyLink"}
-            </button>
-          </div>
-        </div>
-      )}
+        <button
+          onClick={() => setStep(0)}
+          disabled={saving}
+          className="text-sm text-slate-400 dark:text-slate-500 text-center py-1"
+        >
+          ← Back
+        </button>
+      </div>
     </div>
   );
 }

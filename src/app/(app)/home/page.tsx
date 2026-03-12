@@ -1,10 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import PageHeader from "@/components/layout/PageHeader";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function HomePage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  // Check onboarding status
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_complete")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.onboarding_complete) {
+      redirect("/onboarding");
+    }
+  }
 
   const meta = user?.user_metadata ?? {};
   const firstName =

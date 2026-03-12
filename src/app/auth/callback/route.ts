@@ -40,11 +40,28 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
-  const destination = error
-    ? `${base}/login?error=${encodeURIComponent(error.message)}`
-    : `${base}${next}`;
+  let destination: string;
+  if (error) {
+    destination = `${base}/login?error=${encodeURIComponent(error.message)}`;
+  } else if (next !== "/home") {
+    // Explicit `next` param — honour it
+    destination = `${base}${next}`;
+  } else {
+    // Check whether this user has completed onboarding
+    const userId = data.session?.user?.id;
+    let onboardingComplete = false;
+    if (userId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_complete")
+        .eq("id", userId)
+        .single();
+      onboardingComplete = profile?.onboarding_complete ?? false;
+    }
+    destination = onboardingComplete ? `${base}/home` : `${base}/onboarding`;
+  }
 
   const response = NextResponse.redirect(destination);
 
