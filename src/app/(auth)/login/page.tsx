@@ -4,12 +4,11 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-// Reads ?error= from the callback and injects it into the parent via callback
 function CallbackError({ onError }: { onError: (msg: string) => void }) {
   const searchParams = useSearchParams();
   useEffect(() => {
     const err = searchParams.get("error");
-    if (err) onError(`Auth error: ${err}`);
+    if (err) onError(err);
   }, [searchParams, onError]);
   return null;
 }
@@ -22,7 +21,7 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState<"google" | "apple" | "email" | null>(null);
+  const [loading, setLoading] = useState<"google" | "linkedin" | "email" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
 
@@ -36,12 +35,15 @@ export default function LoginPage() {
     if (error) { setError(error.message); setLoading(null); }
   }
 
-  async function handleApple() {
-    setLoading("apple");
+  async function handleLinkedIn() {
+    setLoading("linkedin");
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: { redirectTo: `${location.origin}/auth/callback` },
+      provider: "linkedin_oidc",
+      options: {
+        redirectTo: `${location.origin}/auth/callback`,
+        scopes: "openid profile email",
+      },
     });
     if (error) { setError(error.message); setLoading(null); }
   }
@@ -50,7 +52,6 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading("email");
     setError(null);
-
     if (isSignUp) {
       const { error } = await supabase.auth.signUp({
         email,
@@ -67,7 +68,6 @@ export default function LoginPage() {
     setLoading(null);
   }
 
-  // ── Email sent confirmation ────────────────────────────
   if (emailSent) {
     return (
       <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col items-center justify-center px-8 text-center">
@@ -80,10 +80,7 @@ export default function LoginPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
           We sent a confirmation link to <strong className="text-[#0A1E3D] dark:text-white">{email}</strong>
         </p>
-        <button
-          onClick={() => { setEmailSent(false); setShowEmail(false); }}
-          className="text-sm font-semibold text-[#2B88D8]"
-        >
+        <button onClick={() => { setEmailSent(false); setShowEmail(false); }} className="text-sm font-semibold text-[#2B88D8]">
           Back to sign in
         </button>
       </div>
@@ -96,11 +93,10 @@ export default function LoginPage() {
         <CallbackError onError={setError} />
       </Suspense>
 
-      {/* Top spacer */}
       <div className="flex-1" />
 
-      {/* Wordmark + subtitle */}
-      <div className="flex flex-col items-center px-8 pt-safe">
+      {/* Wordmark */}
+      <div className="flex flex-col items-center px-8">
         <h1 className="text-[42px] font-black tracking-tight leading-none select-none">
           <span style={{ color: "#2B88D8" }}>Sky</span>
           <span style={{ color: "#0A1E3D" }} className="dark:text-white">Link</span>
@@ -113,7 +109,7 @@ export default function LoginPage() {
       <div className="flex-[2]" />
 
       {/* Auth section */}
-      <div className="px-6 pb-10 pb-safe flex flex-col gap-3">
+      <div className="px-6 pb-10 flex flex-col gap-3" style={{ paddingBottom: "max(40px, env(safe-area-inset-bottom))" }}>
 
         {error && (
           <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/50 rounded-xl px-4 py-3 text-center">
@@ -123,32 +119,25 @@ export default function LoginPage() {
 
         {!showEmail ? (
           <>
-            {/* Google button */}
+            {/* Google */}
             <button
               onClick={handleGoogle}
               disabled={loading !== null}
               className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white border border-[#E2E8F0] rounded-2xl py-[15px] text-sm font-semibold text-[#0A1E3D] shadow-sm active:scale-[0.98] transition-all disabled:opacity-60"
             >
-              {loading === "google" ? (
-                <Spinner dark />
-              ) : (
-                <GoogleLogo />
-              )}
+              {loading === "google" ? <Spinner dark /> : <GoogleLogo />}
               Continue with Google
             </button>
 
-            {/* Apple button */}
+            {/* LinkedIn */}
             <button
-              onClick={handleApple}
+              onClick={handleLinkedIn}
               disabled={loading !== null}
-              className="w-full flex items-center justify-center gap-3 bg-[#0A0A0B] dark:bg-white dark:text-[#0A0A0B] rounded-2xl py-[15px] text-sm font-semibold text-white active:scale-[0.98] transition-all disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-3 rounded-2xl py-[15px] text-sm font-semibold text-white active:scale-[0.98] transition-all disabled:opacity-60"
+              style={{ backgroundColor: "#0A66C2" }}
             >
-              {loading === "apple" ? (
-                <Spinner />
-              ) : (
-                <AppleLogo className="dark:fill-[#0A0A0B]" />
-              )}
-              Continue with Apple
+              {loading === "linkedin" ? <Spinner /> : <LinkedInLogo />}
+              Continue with LinkedIn
             </button>
 
             {/* Email link */}
@@ -162,54 +151,33 @@ export default function LoginPage() {
             </div>
           </>
         ) : (
-          /* Email form */
           <form onSubmit={handleEmailSubmit} className="flex flex-col gap-3">
             <div className="flex bg-[#F5F7FA] dark:bg-white/10 rounded-full p-1">
               {(["Sign in", "Sign up"] as const).map((label, i) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => setIsSignUp(i === 1)}
+                <button key={label} type="button" onClick={() => setIsSignUp(i === 1)}
                   className={`flex-1 text-sm font-semibold py-2 rounded-full transition-all ${
-                    isSignUp === (i === 1)
-                      ? "bg-white dark:bg-white/20 text-[#0A1E3D] dark:text-white shadow-sm"
-                      : "text-slate-400"
+                    isSignUp === (i === 1) ? "bg-white dark:bg-white/20 text-[#0A1E3D] dark:text-white shadow-sm" : "text-slate-400"
                   }`}
                 >
                   {label}
                 </button>
               ))}
             </div>
-
-            <input
-              type="email"
-              required
-              placeholder="Email"
-              value={email}
+            <input type="email" required placeholder="Email" value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-[#F5F7FA] dark:bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-[#0A1E3D] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2B88D8] transition"
             />
-            <input
-              type="password"
-              required
-              placeholder="Password"
-              value={password}
+            <input type="password" required placeholder="Password" value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-[#F5F7FA] dark:bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-[#0A1E3D] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2B88D8] transition"
             />
-
-            <button
-              type="submit"
-              disabled={loading !== null}
+            <button type="submit" disabled={loading !== null}
               className="w-full rounded-2xl py-[15px] text-sm font-semibold text-white active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
               style={{ background: "linear-gradient(135deg, #2B88D8, #0A1E3D)" }}
             >
               {loading === "email" ? <Spinner /> : (isSignUp ? "Create account" : "Sign in")}
             </button>
-
-            <button
-              type="button"
-              onClick={() => { setShowEmail(false); setError(null); }}
+            <button type="button" onClick={() => { setShowEmail(false); setError(null); }}
               className="text-sm text-slate-400 dark:text-slate-500 text-center pt-1"
             >
               ← Back
@@ -217,7 +185,6 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* Terms */}
         <p className="text-center text-[11px] text-slate-300 dark:text-slate-600 mt-1 px-4">
           By continuing you agree to our{" "}
           <span className="underline">Terms of Service</span> and{" "}
@@ -228,16 +195,11 @@ export default function LoginPage() {
   );
 }
 
-// ── Sub-components ────────────────────────────────────────
-
 function Spinner({ dark }: { dark?: boolean }) {
   return (
-    <svg
-      className="animate-spin"
-      width="18" height="18" viewBox="0 0 24 24" fill="none"
-    >
-      <circle cx="12" cy="12" r="10" stroke={dark ? "#0A1E3D" : "white"} strokeWidth="3" strokeOpacity="0.25" />
-      <path d="M12 2a10 10 0 0 1 10 10" stroke={dark ? "#0A1E3D" : "white"} strokeWidth="3" strokeLinecap="round" />
+    <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke={dark ? "#0A1E3D" : "white"} strokeWidth="3" strokeOpacity="0.25"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke={dark ? "#0A1E3D" : "white"} strokeWidth="3" strokeLinecap="round"/>
     </svg>
   );
 }
@@ -253,13 +215,10 @@ function GoogleLogo() {
   );
 }
 
-function AppleLogo({ className }: { className?: string }) {
+function LinkedInLogo() {
   return (
-    <svg width="17" height="20" viewBox="0 0 814 1000" className={className}>
-      <path
-        fill="white"
-        d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.8-155.5-127.4C46 790.7 0 663.4 0 541.8c0-207.4 135.4-317 269-317 79.4 0 146 52.3 196.1 52.3 47.8 0 122.6-55.5 210.6-55.5zm-130.5-209.4c31.7-37.6 54.3-89.7 54.3-141.8 0-7.1-.6-14.3-1.9-20.1-51.5 2-112.3 34.3-148.8 75.8-28.5 32.4-55.1 84.5-55.1 137.3 0 7.7 1.3 15.4 1.9 17.9 3.2.6 8.4 1.3 13.6 1.3 46.5 0 102.5-30.4 136-70.4z"
-      />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
     </svg>
   );
 }
