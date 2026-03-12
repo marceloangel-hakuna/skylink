@@ -4,13 +4,15 @@
 
 /* ── CSS custom properties ─────────────────────────────── */
 :root {
-  --background: #F5F7FA;
-  --foreground: #0D2248;
+  --background: #F5F4FF;
+  --foreground: #1E1878;
 
-  --color-brand: #0A63CA;
-  --color-brand-dark: #0A2463;
-  --color-brand-light: #3e9ef8;
-  --color-accent: #00B4D8;
+  --color-brand: #3D32CF;
+  --color-brand-dark: #2A22A0;
+  --color-brand-light: #5A51D8;
+  --color-accent-pink: #EE4080;
+  --color-accent-gold: #F0A829;
+  --color-accent-teal: #2EC9A0;
 
   --radius-card: 1rem;
   --radius-pill: 9999px;
@@ -27,7 +29,6 @@
 
 html {
   height: 100%;
-  /* Prevent font-size bump on orientation change (iOS) */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -71,21 +72,21 @@ body {
 /* ── Utility components ─────────────────────────────────── */
 @layer components {
   .btn-primary {
-    @apply bg-sky-600 text-white font-semibold rounded-full
+    @apply bg-brand text-white font-semibold rounded-full
            px-6 py-3 text-sm active:scale-95 transition-all
-           hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed
+           hover:bg-brand-light disabled:opacity-50 disabled:cursor-not-allowed
            shadow-sm;
   }
 
   .btn-secondary {
-    @apply bg-surface-muted text-sky-700 font-semibold rounded-full
+    @apply bg-surface-muted text-brand font-semibold rounded-full
            px-6 py-3 text-sm border border-surface-border
-           active:scale-95 transition-all hover:bg-sky-50
+           active:scale-95 transition-all hover:bg-brand-50
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
-    @apply text-sky-600 font-semibold text-sm active:opacity-70
+    @apply text-brand font-semibold text-sm active:opacity-70
            transition-opacity;
   }
 
@@ -96,7 +97,7 @@ body {
   .input-field {
     @apply w-full bg-surface-muted border border-surface-border rounded-xl
            px-4 py-3 text-sm text-foreground placeholder:text-slate-400
-           focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent
+           focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent
            transition;
   }
 
@@ -105,7 +106,7 @@ body {
   }
 
   .badge-primary {
-    @apply badge bg-sky-100 text-sky-700;
+    @apply badge bg-brand-100 text-brand-700;
   }
 
   .badge-accent {
@@ -117,7 +118,7 @@ body {
   }
 
   .avatar {
-    @apply rounded-full object-cover bg-sky-100;
+    @apply rounded-full object-cover bg-brand-100;
   }
 
   .bottom-nav-item {
@@ -127,17 +128,17 @@ body {
   }
 
   .bottom-nav-item.active {
-    @apply text-sky-600;
+    @apply text-brand;
   }
 }
 
 /* ── Gradient helpers ───────────────────────────────────── */
-.gradient-sky {
-  background: linear-gradient(135deg, #0A2463 0%, #0A63CA 50%, #00B4D8 100%);
+.gradient-brand {
+  background: linear-gradient(135deg, #2A22A0 0%, #3D32CF 50%, #5A51D8 100%);
 }
 
 .gradient-card {
-  background: linear-gradient(135deg, #0A63CA 0%, #3e9ef8 100%);
+  background: linear-gradient(135deg, #3D32CF 0%, #5A51D8 100%);
 }
 
 /* ── iOS-style frosted glass ────────────────────────────── */

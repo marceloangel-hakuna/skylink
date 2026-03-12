@@ -21,6 +21,15 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "SkyLink",
+    startupImage: "/icons/apple-touch-icon.png",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   formatDetection: {
     telephone: false,
@@ -33,10 +42,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0A63CA" },
-    { media: "(prefers-color-scheme: dark)",  color: "#0A2463" },
-  ],
+  themeColor: "#3D32CF",
 };
 
 export default function RootLayout({

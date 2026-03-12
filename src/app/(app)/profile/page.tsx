@@ -27,7 +27,7 @@ export default async function ProfilePage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarUrl} alt={fullName} className="w-20 h-20 rounded-3xl object-cover" />
             ) : (
-              <div className="w-20 h-20 rounded-3xl bg-sky-100 flex items-center justify-center text-sky-700 font-black text-3xl">
+              <div className="w-20 h-20 rounded-3xl bg-brand-100 flex items-center justify-center text-brand-600 font-black text-3xl">
                 {firstName[0]}
               </div>
             )}
@@ -35,7 +35,7 @@ export default async function ProfilePage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-black text-navy-900">{fullName}</h2>
+            <h2 className="text-lg font-black text-navy-800">{fullName}</h2>
             {(headline || company) && (
               <p className="text-sm text-slate-500 mt-0.5">
                 {[headline, company].filter(Boolean).join(" · ")}
@@ -55,7 +55,7 @@ export default async function ProfilePage() {
             { label: "Points",      value: "0"   },
           ].map(({ label, value }) => (
             <div key={label} className="card text-center py-4">
-              <p className="text-xl font-black text-sky-600">{value}</p>
+              <p className="text-xl font-black text-brand">{value}</p>
               <p className="text-xs text-slate-500 mt-0.5">{label}</p>
             </div>
           ))}

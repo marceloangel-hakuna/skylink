@@ -4,8 +4,8 @@
   "description": "Network at 35,000 ft with fellow business travelers.",
   "start_url": "/home",
   "display": "standalone",
-  "background_color": "#0A63CA",
-  "theme_color": "#0A63CA",
+  "background_color": "#3D32CF",
+  "theme_color": "#3D32CF",
   "orientation": "portrait",
   "icons": [
     {

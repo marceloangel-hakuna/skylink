@@ -73,14 +73,14 @@ export default function LoginPage() {
       <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col items-center justify-center px-8 text-center">
         <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950 flex items-center justify-center mb-6">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="#2B88D8"/>
+            <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="#3D32CF"/>
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-[#0A1E3D] dark:text-white mb-2">Check your inbox</h2>
+        <h2 className="text-xl font-bold text-[#1E1878] dark:text-white mb-2">Check your inbox</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-          We sent a confirmation link to <strong className="text-[#0A1E3D] dark:text-white">{email}</strong>
+          We sent a confirmation link to <strong className="text-[#1E1878] dark:text-white">{email}</strong>
         </p>
-        <button onClick={() => { setEmailSent(false); setShowEmail(false); }} className="text-sm font-semibold text-[#2B88D8]">
+        <button onClick={() => { setEmailSent(false); setShowEmail(false); }} className="text-sm font-semibold text-[#3D32CF]">
           Back to sign in
         </button>
       </div>
@@ -98,8 +98,8 @@ export default function LoginPage() {
       {/* Wordmark */}
       <div className="flex flex-col items-center px-8">
         <h1 className="text-[42px] font-black tracking-tight leading-none select-none">
-          <span style={{ color: "#2B88D8" }}>Sky</span>
-          <span style={{ color: "#0A1E3D" }} className="dark:text-white">Link</span>
+          <span style={{ color: "#3D32CF" }}>Sky</span>
+          <span style={{ color: "#1E1878" }} className="dark:text-white">Link</span>
         </h1>
         <p className="mt-2 text-sm text-slate-400 dark:text-slate-500 tracking-wide">
           Network at 36,000 feet
@@ -123,7 +123,7 @@ export default function LoginPage() {
             <button
               onClick={handleGoogle}
               disabled={loading !== null}
-              className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white border border-[#E2E8F0] rounded-2xl py-[15px] text-sm font-semibold text-[#0A1E3D] shadow-sm active:scale-[0.98] transition-all disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-3 bg-white dark:bg-white border border-[#E2E8F0] rounded-2xl py-[15px] text-sm font-semibold text-[#1E1878] shadow-sm active:scale-[0.98] transition-all disabled:opacity-60"
             >
               {loading === "google" ? <Spinner dark /> : <GoogleLogo />}
               Continue with Google
@@ -144,7 +144,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-center pt-2">
               <button
                 onClick={() => setShowEmail(true)}
-                className="text-sm text-slate-400 dark:text-slate-500 hover:text-[#2B88D8] transition-colors"
+                className="text-sm text-slate-400 dark:text-slate-500 hover:text-[#3D32CF] transition-colors"
               >
                 Sign up with email
               </button>
@@ -156,7 +156,7 @@ export default function LoginPage() {
               {(["Sign in", "Sign up"] as const).map((label, i) => (
                 <button key={label} type="button" onClick={() => setIsSignUp(i === 1)}
                   className={`flex-1 text-sm font-semibold py-2 rounded-full transition-all ${
-                    isSignUp === (i === 1) ? "bg-white dark:bg-white/20 text-[#0A1E3D] dark:text-white shadow-sm" : "text-slate-400"
+                    isSignUp === (i === 1) ? "bg-white dark:bg-white/20 text-[#1E1878] dark:text-white shadow-sm" : "text-slate-400"
                   }`}
                 >
                   {label}
@@ -165,15 +165,15 @@ export default function LoginPage() {
             </div>
             <input type="email" required placeholder="Email" value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#F5F7FA] dark:bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-[#0A1E3D] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2B88D8] transition"
+              className="w-full bg-[#F5F7FA] dark:bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-[#1E1878] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#3D32CF] transition"
             />
             <input type="password" required placeholder="Password" value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#F5F7FA] dark:bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-[#0A1E3D] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2B88D8] transition"
+              className="w-full bg-[#F5F7FA] dark:bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-[#1E1878] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#3D32CF] transition"
             />
             <button type="submit" disabled={loading !== null}
               className="w-full rounded-2xl py-[15px] text-sm font-semibold text-white active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-              style={{ background: "linear-gradient(135deg, #2B88D8, #0A1E3D)" }}
+              style={{ background: "linear-gradient(135deg, #3D32CF, #1E1878)" }}
             >
               {loading === "email" ? <Spinner /> : (isSignUp ? "Create account" : "Sign in")}
             </button>
@@ -198,8 +198,8 @@ export default function LoginPage() {
 function Spinner({ dark }: { dark?: boolean }) {
   return (
     <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke={dark ? "#0A1E3D" : "white"} strokeWidth="3" strokeOpacity="0.25"/>
-      <path d="M12 2a10 10 0 0 1 10 10" stroke={dark ? "#0A1E3D" : "white"} strokeWidth="3" strokeLinecap="round"/>
+      <circle cx="12" cy="12" r="10" stroke={dark ? "#1E1878" : "white"} strokeWidth="3" strokeOpacity="0.25"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke={dark ? "#1E1878" : "white"} strokeWidth="3" strokeLinecap="round"/>
     </svg>
   );
 }
