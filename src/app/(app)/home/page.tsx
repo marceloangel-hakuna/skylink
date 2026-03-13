@@ -48,7 +48,7 @@ export default async function HomePage() {
       {/* ── Top bar ──────────────────────────────────────── */}
       <div className="flex items-center px-4 pb-3 gap-3"
            style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
-        <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm">
+        <Link href="/profile" className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm active:scale-90 transition-transform">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
@@ -57,7 +57,7 @@ export default async function HomePage() {
               {firstName[0]}
             </div>
           )}
-        </div>
+        </Link>
 
         <div className="flex-1 min-w-0">
           <p className="text-[17px] font-bold text-zinc-900 leading-tight">Hey, {firstName} 👋</p>
