@@ -329,33 +329,37 @@ export default function NetworkPage() {
             const match = calcMatch(myProfile?.interests ?? [], u.interests ?? [], u.match);
             const sent  = sentIds.has(u.id);
             return (
-              <div key={u.id ?? i} className="bg-white rounded-2xl shadow-card p-4">
-                <div className="flex items-start gap-3">
-                  <Avatar profile={u} size={12} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <p className="font-bold text-zinc-900 text-sm truncate">{u.full_name}</p>
-                      <MatchBadge pct={match} />
-                    </div>
-                    <p className="text-xs text-zinc-500 truncate">
-                      {[u.role, u.company].filter(Boolean).join(" @ ") || "SkyLink Member"}
-                    </p>
-                    {(u.interests?.length ?? 0) > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {u.interests.slice(0, 3).map(k => (
-                          <span key={k} className="text-[10px] font-medium bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full">
-                            {INTEREST_LABELS[k] ?? k}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+              <div key={u.id ?? i} className="bg-white rounded-2xl shadow-card p-4 flex items-center gap-3">
+                <Avatar profile={u} size={12} />
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <p className="font-bold text-zinc-900 text-sm truncate">{u.full_name}</p>
+                    <MatchBadge pct={match} />
                   </div>
+                  <p className="text-xs text-zinc-500 truncate">
+                    {[u.role, u.company].filter(Boolean).join(" @ ") || "SkyLink Member"}
+                  </p>
+                  {(u.interests?.length ?? 0) > 0 && (
+                    <div className="flex gap-1 mt-1.5 flex-wrap">
+                      {u.interests.slice(0, 2).map(k => (
+                        <span key={k} className="text-[10px] font-medium bg-[#F5F3FF] text-brand px-2 py-0.5 rounded-full">
+                          {INTEREST_LABELS[k] ?? k}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <button onClick={() => !sent && setModalUser(u)} disabled={sent}
-                  className={`mt-3 w-full py-2.5 rounded-2xl text-sm font-semibold transition-all active:scale-[0.98] ${
-                    sent ? "bg-emerald-50 text-emerald-600" : "bg-brand text-white"
-                  }`}>
-                  {sent ? "✓ Request Sent" : "Connect"}
+
+                <button
+                  onClick={() => !sent && setModalUser(u)}
+                  disabled={sent}
+                  className={`flex-shrink-0 text-xs font-semibold px-3 py-2 rounded-full transition-all active:scale-95 ${
+                    sent ? "border text-[#059669] bg-[#34D399]/10" : "text-white"
+                  }`}
+                  style={sent ? { borderColor: "#34D399" } : { background: "#4A27E8" }}
+                >
+                  {sent ? "Sent ✓" : "Connect"}
                 </button>
               </div>
             );

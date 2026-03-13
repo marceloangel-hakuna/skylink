@@ -273,42 +273,47 @@ function PeopleTab({ people, onConnect }: { people: Person[]; onConnect: (id: st
       </div>
 
       {/* People list */}
-      {people.map(person => (
-        <div key={person.id} className="card flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-2xl ${person.color} flex items-center justify-center text-sm font-black flex-shrink-0`}>
-            {person.initials}
-          </div>
+      {people.map(person => {
+        const matchCls = person.match >= 85
+          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+          : person.match >= 70
+          ? "bg-amber-50 text-amber-600 border-amber-100"
+          : "bg-zinc-100 text-zinc-500 border-zinc-200";
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <p className="text-sm font-bold text-zinc-900 truncate">{person.name}</p>
-              <span className="flex-shrink-0 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-100">
-                {person.match}%
-              </span>
+        return (
+          <div key={person.id} className="card flex items-center gap-3">
+            <div className={`w-12 h-12 rounded-2xl ${person.color} flex items-center justify-center text-sm font-black flex-shrink-0`}>
+              {person.initials}
             </div>
-            <p className="text-xs text-zinc-500 truncate">{person.role} · {person.company}</p>
-            <p className="text-[10px] text-zinc-400 mt-0.5">
-              Seat {person.seat}
-              {person.mutual > 0 && ` · ${person.mutual} mutual connection${person.mutual > 1 ? "s" : ""}`}
-            </p>
-          </div>
 
-          <button
-            onClick={() => onConnect(person.id)}
-            className={`flex-shrink-0 text-xs font-semibold px-3 py-2 rounded-full transition-all active:scale-95 ${
-              person.connected
-                ? "border text-[#059669] bg-[#34D399]/10"
-                : "text-white shadow-sm"
-            }`}
-            style={person.connected
-              ? { borderColor: "#34D399" }
-              : { background: "#34D399" }
-            }
-          >
-            {person.connected ? "Connected ✓" : "Connect"}
-          </button>
-        </div>
-      ))}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <p className="text-sm font-bold text-zinc-900 truncate">{person.name}</p>
+                <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${matchCls}`}>
+                  {person.match}%
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 truncate">{person.role} · {person.company}</p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">
+                Seat {person.seat}
+                {person.mutual > 0 && ` · ${person.mutual} mutual`}
+              </p>
+            </div>
+
+            <button
+              onClick={() => onConnect(person.id)}
+              className={`flex-shrink-0 text-xs font-semibold px-3 py-2 rounded-full transition-all active:scale-95 ${
+                person.connected
+                  ? "border text-[#059669] bg-[#34D399]/10"
+                  : "text-white"
+              }`}
+              style={person.connected ? { borderColor: "#34D399" } : { background: "#4A27E8" }}
+            >
+              {person.connected ? "Connected ✓" : "Connect"}
+            </button>
+          </div>
+        );
+      })}
 
     </div>
   );
