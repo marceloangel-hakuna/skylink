@@ -1,4 +1,5 @@
 import PageHeader from "@/components/layout/PageHeader";
+import Link from "next/link";
 
 export default function FlightPage() {
   return (
@@ -35,7 +36,8 @@ export default function FlightPage() {
                 status: "upcoming",
               },
             ].map((flight) => (
-              <div key={flight.number} className="card">
+              <Link key={flight.number} href={`/flight/${flight.number.toLowerCase().replace(" ", "-")}`} className="block active:scale-[0.98] transition-transform">
+          <div className="card">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-bold text-navy-900 text-sm">{flight.number}</span>
                   <div className="flex items-center gap-2">
@@ -73,6 +75,7 @@ export default function FlightPage() {
                   <p className="text-xs text-sky-600 font-semibold">{flight.connections} nearby</p>
                 </div>
               </div>
+          </Link>
             ))}
           </div>
         </div>

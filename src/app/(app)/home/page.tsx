@@ -78,7 +78,7 @@ export default async function HomePage() {
       <div className="px-4 flex flex-col gap-5">
 
         {/* ── Flight Card ───────────────────────────────── */}
-        <Link href="/flight" className="block active:scale-[0.98] transition-transform">
+        <Link href="/flight/aa-2317" className="block active:scale-[0.98] transition-transform">
           <div className="rounded-3xl p-5 text-white overflow-hidden relative"
                style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
             <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
