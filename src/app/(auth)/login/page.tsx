@@ -111,7 +111,7 @@ export default function LoginPage() {
           width={360}
           height={200}
           priority
-          className="w-full max-w-[340px] select-none"
+          className="w-full max-w-[238px] select-none"
         />
       </div>
 
