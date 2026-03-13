@@ -96,10 +96,10 @@ export default function LoginPage() {
 
       {/* Paper plane animation — behind logo */}
       <div className="plane-container" aria-hidden="true">
-        <svg className="paper-plane" width="44" height="44" viewBox="0 0 44 44" fill="none">
+        <svg className="paper-plane" width="56" height="56" viewBox="0 0 44 44" fill="none">
           <path d="M2 22L42 22L28 6L2 22Z" fill="white" fillOpacity="0.95"/>
-          <path d="M2 22L42 22L28 38L2 22Z" fill="white" fillOpacity="0.55"/>
-          <line x1="28" y1="22" x2="14" y2="22" stroke="white" strokeWidth="1" strokeOpacity="0.4"/>
+          <path d="M2 22L42 22L28 38L2 22Z" fill="white" fillOpacity="0.6"/>
+          <line x1="28" y1="22" x2="10" y2="22" stroke="white" strokeWidth="1.2" strokeOpacity="0.5"/>
         </svg>
       </div>
 
