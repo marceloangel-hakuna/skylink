@@ -45,11 +45,14 @@ export default function OnboardingPage() {
     if (!user) { router.push("/login"); return; }
 
     // Upsert profile with interests + onboarding flag
+    const meta = user.user_metadata ?? {};
     const { error: profileError } = await supabase.from("profiles").upsert({
       id: user.id,
-      full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-      avatar_url: user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
+      full_name: meta.full_name ?? meta.name ?? null,
+      avatar_url: meta.avatar_url ?? meta.picture ?? null,
       email: user.email,
+      role: meta.headline ?? meta.job_title ?? null,
+      company: meta.company ?? meta.organization ?? null,
       interests,
       onboarding_complete: true,
       updated_at: new Date().toISOString(),
