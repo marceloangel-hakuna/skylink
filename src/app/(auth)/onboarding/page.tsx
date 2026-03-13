@@ -78,19 +78,19 @@ export default function OnboardingPage() {
       <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col px-6 pt-14 pb-10">
         {/* Progress */}
         <div className="flex gap-2 mb-10">
-          <div className="h-1 flex-1 rounded-full bg-[#3D32CF]" />
+          <div className="h-1 flex-1 rounded-full bg-[#4A27E8]" />
           <div className="h-1 flex-1 rounded-full bg-slate-200 dark:bg-white/10" />
         </div>
 
-        <p className="text-xs font-semibold text-[#3D32CF] uppercase tracking-widest mb-3">
+        <p className="text-xs font-semibold text-[#4A27E8] uppercase tracking-widest mb-3">
           Step 1 of 2
         </p>
-        <h2 className="text-2xl font-black text-[#1E1878] dark:text-white mb-1">
+        <h2 className="text-2xl font-black text-[#1A1A1A] dark:text-white mb-1">
           What moves you?
         </h2>
         <p className="text-sm text-slate-400 mb-8">
           Pick up to {MAX_INTERESTS} topics you&apos;re passionate about.{" "}
-          <span className="text-[#3D32CF] font-semibold">
+          <span className="text-[#4A27E8] font-semibold">
             {interests.length}/{MAX_INTERESTS} selected
           </span>
         </p>
@@ -106,7 +106,7 @@ export default function OnboardingPage() {
                 disabled={maxed}
                 className={`flex items-center gap-3 px-4 py-4 rounded-2xl border-2 text-left transition-all active:scale-[0.97] ${
                   selected
-                    ? "border-[#3D32CF] bg-blue-50 dark:bg-blue-950/40"
+                    ? "border-[#4A27E8] bg-blue-50 dark:bg-blue-950/40"
                     : maxed
                     ? "border-slate-100 dark:border-white/5 opacity-40"
                     : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5"
@@ -114,12 +114,12 @@ export default function OnboardingPage() {
               >
                 <span className="text-2xl leading-none">{icon}</span>
                 <span className={`text-sm font-semibold ${
-                  selected ? "text-[#3D32CF]" : "text-[#1E1878] dark:text-white"
+                  selected ? "text-[#4A27E8]" : "text-[#1A1A1A] dark:text-white"
                 }`}>
                   {label}
                 </span>
                 {selected && (
-                  <span className="ml-auto w-5 h-5 rounded-full bg-[#3D32CF] flex items-center justify-center flex-shrink-0">
+                  <span className="ml-auto w-5 h-5 rounded-full bg-[#4A27E8] flex items-center justify-center flex-shrink-0">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                       <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -135,7 +135,7 @@ export default function OnboardingPage() {
             onClick={() => setStep(1)}
             disabled={interests.length === 0}
             className="w-full py-4 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, #3D32CF, #1E1878)" }}
+            style={{ background: "linear-gradient(135deg, #4A27E8, #1A1A1A)" }}
           >
             Continue
           </button>
@@ -149,14 +149,14 @@ export default function OnboardingPage() {
     <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col px-6 pt-14 pb-10">
       {/* Progress */}
       <div className="flex gap-2 mb-10">
-        <div className="h-1 flex-1 rounded-full bg-[#3D32CF]" />
-        <div className="h-1 flex-1 rounded-full bg-[#3D32CF]" />
+        <div className="h-1 flex-1 rounded-full bg-[#4A27E8]" />
+        <div className="h-1 flex-1 rounded-full bg-[#4A27E8]" />
       </div>
 
-      <p className="text-xs font-semibold text-[#3D32CF] uppercase tracking-widest mb-3">
+      <p className="text-xs font-semibold text-[#4A27E8] uppercase tracking-widest mb-3">
         Step 2 of 2
       </p>
-      <h2 className="text-2xl font-black text-[#1E1878] dark:text-white mb-1">
+      <h2 className="text-2xl font-black text-[#1A1A1A] dark:text-white mb-1">
         What&apos;s your flight?
       </h2>
       <p className="text-sm text-slate-400 mb-8">
@@ -175,7 +175,7 @@ export default function OnboardingPage() {
           placeholder="e.g. AA 247, UA 890"
           value={flightNumber}
           onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
-          className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-white/10 rounded-2xl text-sm font-mono font-semibold text-[#1E1878] dark:text-white placeholder:text-slate-300 placeholder:font-sans placeholder:font-normal border-0 focus:outline-none focus:ring-2 focus:ring-[#3D32CF] transition tracking-widest"
+          className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-white/10 rounded-2xl text-sm font-mono font-semibold text-[#1A1A1A] dark:text-white placeholder:text-slate-300 placeholder:font-sans placeholder:font-normal border-0 focus:outline-none focus:ring-2 focus:ring-[#4A27E8] transition tracking-widest"
           maxLength={8}
           autoCapitalize="characters"
           autoCorrect="off"
@@ -194,7 +194,7 @@ export default function OnboardingPage() {
           onClick={finish}
           disabled={saving}
           className="w-full py-4 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, #3D32CF, #1E1878)" }}
+          style={{ background: "linear-gradient(135deg, #4A27E8, #1A1A1A)" }}
         >
           {saving ? (
             <>

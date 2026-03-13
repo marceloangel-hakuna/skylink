@@ -71,7 +71,7 @@ export default function LoginPage() {
 
   if (emailSent) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center px-8 text-center" style={{ backgroundColor: "#3D32CF" }}>
+      <div className="min-h-dvh flex flex-col items-center justify-center px-8 text-center" style={{ backgroundColor: "#4A27E8" }}>
         <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <path d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z" fill="white"/>
@@ -89,7 +89,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col relative overflow-hidden" style={{ backgroundColor: "#3D32CF" }}>
+    <div className="min-h-dvh flex flex-col relative overflow-hidden" style={{ backgroundColor: "#4A27E8" }}>
       <Suspense fallback={null}>
         <CallbackError onError={setError} />
       </Suspense>
@@ -130,7 +130,7 @@ export default function LoginPage() {
             <button
               onClick={handleGoogle}
               disabled={loading !== null}
-              className="w-full flex items-center justify-center gap-3 bg-white rounded-2xl py-[15px] text-sm font-semibold text-[#1E1878] shadow-sm active:scale-[0.98] transition-all disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-3 bg-white rounded-2xl py-[15px] text-sm font-semibold text-[#1A1A1A] shadow-sm active:scale-[0.98] transition-all disabled:opacity-60"
             >
               {loading === "google" ? <Spinner dark /> : <GoogleLogo />}
               Continue with Google
@@ -163,7 +163,7 @@ export default function LoginPage() {
               {(["Sign in", "Sign up"] as const).map((label, i) => (
                 <button key={label} type="button" onClick={() => setIsSignUp(i === 1)}
                   className={`flex-1 text-sm font-semibold py-2 rounded-full transition-all ${
-                    isSignUp === (i === 1) ? "bg-white text-[#1E1878] shadow-sm" : "text-white/60"
+                    isSignUp === (i === 1) ? "bg-white text-[#1A1A1A] shadow-sm" : "text-white/60"
                   }`}
                 >
                   {label}
@@ -179,7 +179,7 @@ export default function LoginPage() {
               className="w-full bg-white/10 border-0 rounded-2xl px-4 py-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/50 transition"
             />
             <button type="submit" disabled={loading !== null}
-              className="w-full rounded-2xl py-[15px] text-sm font-semibold text-[#3D32CF] bg-white active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              className="w-full rounded-2xl py-[15px] text-sm font-semibold text-[#4A27E8] bg-white active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {loading === "email" ? <Spinner dark /> : (isSignUp ? "Create account" : "Sign in")}
             </button>
@@ -204,8 +204,8 @@ export default function LoginPage() {
 function Spinner({ dark }: { dark?: boolean }) {
   return (
     <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="10" stroke={dark ? "#1E1878" : "white"} strokeWidth="3" strokeOpacity="0.25"/>
-      <path d="M12 2a10 10 0 0 1 10 10" stroke={dark ? "#1E1878" : "white"} strokeWidth="3" strokeLinecap="round"/>
+      <circle cx="12" cy="12" r="10" stroke={dark ? "#1A1A1A" : "white"} strokeWidth="3" strokeOpacity="0.25"/>
+      <path d="M12 2a10 10 0 0 1 10 10" stroke={dark ? "#1A1A1A" : "white"} strokeWidth="3" strokeLinecap="round"/>
     </svg>
   );
 }

@@ -4,24 +4,26 @@
 
 /* ── CSS custom properties ─────────────────────────────── */
 :root {
-  --background: #F5F4FF;
-  --foreground: #1E1878;
-
-  --color-brand: #3D32CF;
-  --color-brand-dark: #2A22A0;
-  --color-brand-light: #5A51D8;
-  --color-accent-pink: #EE4080;
-  --color-accent-gold: #F0A829;
-  --color-accent-teal: #2EC9A0;
-
+  --background: #FAFAFA;
+  --foreground: #1A1A1A;
+  --color-brand:       #4A27E8;
+  --color-brand-dark:  #3418C8;
+  --color-brand-light: #6B4AF0;
+  --color-accent-pink: #EC4899;
+  --color-accent-gold: #EAB308;
+  --color-accent-green:#34D399;
   --radius-card: 1rem;
-  --radius-pill: 9999px;
-
-  --nav-height: 64px;
+  --nav-height:  64px;
   --header-height: 60px;
 }
 
-/* ── Base reset / mobile-first defaults ────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0A0A0B;
+    --foreground: #F5F5F5;
+  }
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -44,7 +46,6 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* ── App container — max 430 px centred on desktop ──────── */
 #app-root {
   width: 100%;
   max-width: 430px;
@@ -55,7 +56,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Scrollable page area above bottom nav ──────────────── */
 .page-scroll {
   height: calc(100dvh - var(--nav-height));
   overflow-y: auto;
@@ -65,7 +65,9 @@ body {
 }
 .page-scroll::-webkit-scrollbar { display: none; }
 
-/* ── Safe area helpers ──────────────────────────────────── */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 .pt-safe { padding-top:    env(safe-area-inset-top,    0px); }
 
@@ -73,58 +75,42 @@ body {
 @layer components {
   .btn-primary {
     @apply bg-brand text-white font-semibold rounded-full
-           px-6 py-3 text-sm active:scale-95 transition-all
-           hover:bg-brand-light disabled:opacity-50 disabled:cursor-not-allowed
-           shadow-sm;
+           px-5 py-2.5 text-sm active:scale-95 transition-all
+           disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-surface-muted text-brand font-semibold rounded-full
-           px-6 py-3 text-sm border border-surface-border
-           active:scale-95 transition-all hover:bg-brand-50
+    @apply bg-white text-brand font-semibold rounded-full
+           px-5 py-2.5 text-sm border border-zinc-200
+           active:scale-95 transition-all
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
-    @apply text-brand font-semibold text-sm active:opacity-70
-           transition-opacity;
+    @apply text-brand font-semibold text-sm active:opacity-70 transition-opacity;
   }
 
   .card {
-    @apply bg-surface-card rounded-2xl shadow-card p-4;
+    @apply bg-white rounded-2xl shadow-card p-4;
   }
 
   .input-field {
     @apply w-full bg-surface-muted border border-surface-border rounded-xl
-           px-4 py-3 text-sm text-foreground placeholder:text-slate-400
-           focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent
-           transition;
+           px-4 py-3 text-sm text-foreground placeholder:text-zinc-400
+           focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition;
   }
 
   .badge {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
 
-  .badge-primary {
-    @apply badge bg-brand-100 text-brand-700;
-  }
-
-  .badge-accent {
-    @apply badge bg-teal-100 text-teal-700;
-  }
-
   .section-title {
-    @apply text-base font-bold text-navy-800 tracking-tight;
-  }
-
-  .avatar {
-    @apply rounded-full object-cover bg-brand-100;
+    @apply text-[15px] font-bold text-zinc-800 tracking-tight;
   }
 
   .bottom-nav-item {
     @apply flex flex-col items-center justify-center gap-0.5
-           flex-1 py-2 text-slate-400 transition-colors
-           active:scale-90;
+           flex-1 py-2 text-zinc-400 transition-colors active:scale-90;
   }
 
   .bottom-nav-item.active {
@@ -134,11 +120,7 @@ body {
 
 /* ── Gradient helpers ───────────────────────────────────── */
 .gradient-brand {
-  background: linear-gradient(135deg, #2A22A0 0%, #3D32CF 50%, #5A51D8 100%);
-}
-
-.gradient-card {
-  background: linear-gradient(135deg, #3D32CF 0%, #5A51D8 100%);
+  background: linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%);
 }
 
 /* ── Paper plane login animation ───────────────────────── */
@@ -160,42 +142,23 @@ body {
 }
 
 @keyframes paperPlane {
-  /* Fade in, bottom-left, pointing upper-right */
   0%   { transform: translate(-50px, 520px) rotate(-45deg); opacity: 0; }
   6%   { transform: translate(-10px, 470px) rotate(-45deg); opacity: 1; }
-
-  /* Straight diagonal flight */
   35%  { transform: translate(90px,  305px) rotate(-45deg); opacity: 1; }
-
-  /* Entering loop — turning clockwise */
   44%  { transform: translate(160px, 240px) rotate(0deg);   opacity: 1; }
-
-  /* Right side of loop */
   52%  { transform: translate(235px, 200px) rotate(50deg);  opacity: 1; }
-
-  /* Bottom of loop */
   60%  { transform: translate(265px, 255px) rotate(100deg); opacity: 1; }
-
-  /* Lower-left of loop */
   67%  { transform: translate(215px, 305px) rotate(155deg); opacity: 1; }
-
-  /* Left side of loop */
   73%  { transform: translate(145px, 265px) rotate(205deg); opacity: 1; }
-
-  /* Top of loop — completing 360° */
   80%  { transform: translate(170px, 195px) rotate(280deg); opacity: 1; }
-
-  /* Exit loop, flying upper-right */
   88%  { transform: translate(300px, 110px) rotate(315deg); opacity: 1; }
-
-  /* Fly away and fade out */
   96%  { transform: translate(460px,  20px) rotate(315deg); opacity: 0.4; }
   100% { transform: translate(560px, -50px) rotate(315deg); opacity: 0; }
 }
 
 /* ── iOS-style frosted glass ────────────────────────────── */
 .glass {
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
