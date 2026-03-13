@@ -2,6 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 // ─── Placeholder data ─────────────────────────────────────────────────────────
 
@@ -503,11 +506,37 @@ function HistoryTab() {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function FlightDashboardPage() {
+  const params = useParams();
+  const flightId = (params.id as string) ?? "unknown";
+
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [people, setPeople] = useState<Person[]>(PEOPLE);
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Supabase client + channel refs — stable across renders
+  const supabase = useRef(createClient());
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  // ── Supabase Realtime subscription ─────────────────────────────────────────
+  // Each flight gets its own broadcast channel: "flight-chat:<id>"
+  // Any message sent by any passenger is received by all subscribers in real time.
+  useEffect(() => {
+    const channel = supabase.current
+      .channel(`flight-chat:${flightId}`)
+      .on("broadcast", { event: "message" }, ({ payload }) => {
+        // Incoming message from another passenger — render on the left
+        setMessages(prev => [...prev, { ...(payload as Message), isMe: false }]);
+      })
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      supabase.current.removeChannel(channel);
+    };
+  }, [flightId]);
 
   // Scroll to bottom when chat becomes active or new message arrives
   useEffect(() => {
@@ -521,22 +550,31 @@ export default function FlightDashboardPage() {
     setPeople(prev => prev.map(p => p.id === id ? { ...p, connected: !p.connected } : p));
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputText.trim()) return;
     const now = new Date();
-    setMessages(prev => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        author: "Me",
-        initials: "ME",
-        color: "bg-brand text-white",
-        text: inputText.trim(),
-        time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        isMe: true,
-      },
-    ]);
+    const outgoing: Message = {
+      id: Date.now().toString(),
+      author: "Me",
+      initials: "ME",
+      color: "bg-brand text-white",
+      text: inputText.trim(),
+      time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      isMe: true,
+    };
+
+    // Show immediately in sender's UI
+    setMessages(prev => [...prev, outgoing]);
     setInputText("");
+
+    // Broadcast to every other passenger subscribed to this flight's channel
+    if (channelRef.current) {
+      await channelRef.current.send({
+        type: "broadcast",
+        event: "message",
+        payload: outgoing, // recipients receive this; their handler sets isMe: false
+      });
+    }
   };
 
   const tabs: { id: Tab; label: string }[] = [
