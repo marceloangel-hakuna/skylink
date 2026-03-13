@@ -37,8 +37,8 @@ const AlertsIcon = ({ active }: { active: boolean }) => (
 
 const navItems: NavItem[] = [
   { href: "/home",          label: "Home",      icon: (a) => <HomeIcon    active={a} /> },
-  { href: "/flight",        label: "My Flight", icon: (a) => <FlightIcon  active={a} /> },
-  { href: "/network",       label: "Network",   icon: (a) => <NetworkIcon active={a} /> },
+  { href: "/flight",        label: "My Flights",  icon: (a) => <FlightIcon  active={a} /> },
+  { href: "/network",       label: "My Network", icon: (a) => <NetworkIcon active={a} /> },
   { href: "/notifications", label: "Alerts",    icon: (a) => <AlertsIcon  active={a} /> },
 ];
 

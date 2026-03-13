@@ -48,44 +48,9 @@ const INITIAL_MESSAGES = [
   { id: "5", author: "Sarah Chen",    initials: "SC", color: "bg-violet-100 text-violet-700", text: "Anyone want to grab coffee at the lounge before we land?",            time: "10:43 AM", isMe: false },
 ];
 
-const HISTORY = [
-  {
-    id: "h1", number: "DL 455", from: "BOS", to: "JFK",
-    date: "Mar 8, 2026", duration: "1h 15m", points: 240,
-    people: [
-      { name: "Alex Kim",   role: "Designer",  initials: "AK", color: "bg-indigo-100 text-indigo-700" },
-      { name: "Nina Torres",role: "PM",        initials: "NT", color: "bg-rose-100 text-rose-700"    },
-      { name: "Carlos Wu",  role: "Engineer",  initials: "CW", color: "bg-teal-100 text-teal-700"    },
-      { name: "Lisa Park",  role: "Marketing", initials: "LP", color: "bg-orange-100 text-orange-700"},
-    ],
-  },
-  {
-    id: "h2", number: "AA 102", from: "ORD", to: "BOS",
-    date: "Mar 2, 2026", duration: "2h 40m", points: 410,
-    people: [
-      { name: "Jake Stone", role: "Investor", initials: "JS", color: "bg-violet-100 text-violet-700" },
-      { name: "Maya Lee",   role: "Founder",  initials: "ML", color: "bg-emerald-100 text-emerald-700"},
-      { name: "Ryan Gold",  role: "Advisor",  initials: "RG", color: "bg-amber-100 text-amber-700"  },
-      { name: "Zoe Davis",  role: "CTO",      initials: "ZD", color: "bg-sky-100 text-sky-700"      },
-      { name: "Ben Clark",  role: "BD",       initials: "BC", color: "bg-pink-100 text-pink-700"    },
-      { name: "Fiona Wu",   role: "VC",       initials: "FW", color: "bg-teal-100 text-teal-700"    },
-      { name: "Omar Hassan",role: "COO",      initials: "OH", color: "bg-rose-100 text-rose-700"    },
-    ],
-  },
-  {
-    id: "h3", number: "UA 890", from: "LAX", to: "SFO",
-    date: "Feb 24, 2026", duration: "1h 20m", points: 180,
-    people: [
-      { name: "Iris Chang",  role: "Data Scientist", initials: "IC", color: "bg-indigo-100 text-indigo-700" },
-      { name: "Dave Mills",  role: "Product Lead",   initials: "DM", color: "bg-orange-100 text-orange-700" },
-      { name: "Sana Kapoor", role: "UX Designer",    initials: "SK", color: "bg-violet-100 text-violet-700" },
-    ],
-  },
-];
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = "overview" | "people" | "chat" | "history";
+type Tab = "overview" | "people" | "chat";
 
 type Message = {
   id: string; author: string; initials: string; color: string;
@@ -429,80 +394,6 @@ function ChatTab({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-function HistoryTab() {
-  return (
-    <div className="px-4 py-5 flex flex-col gap-4">
-
-      {/* Lifetime stats */}
-      <div className="card border border-violet-100"
-           style={{ background: "linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)" }}>
-        <p className="text-[11px] text-violet-500 font-semibold uppercase tracking-wide mb-3">All Time</p>
-        <div className="flex gap-6">
-          <div>
-            <p className="text-2xl font-black text-brand">14</p>
-            <p className="text-[10px] text-zinc-500 mt-0.5">Flights</p>
-          </div>
-          <div>
-            <p className="text-2xl font-black" style={{ color: "#34D399" }}>47</p>
-            <p className="text-[10px] text-zinc-500 mt-0.5">Connections</p>
-          </div>
-          <div>
-            <p className="text-2xl font-black text-amber-500">2,450</p>
-            <p className="text-[10px] text-zinc-500 mt-0.5">SkyPoints</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Past flights */}
-      {HISTORY.map(flight => (
-        <div key={flight.id} className="card flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-black text-zinc-900">{flight.number}</span>
-                <span className="text-sm text-zinc-500 font-medium">{flight.from} → {flight.to}</span>
-              </div>
-              <p className="text-xs text-zinc-400 mt-0.5">{flight.date} · {flight.duration}</p>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <svg width="11" height="11" viewBox="0 0 24 24">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                  fill="#EAB308"/>
-              </svg>
-              <span className="text-xs font-bold text-amber-600">+{flight.points} pts</span>
-            </div>
-          </div>
-
-          {/* People met */}
-          <div>
-            <p className="text-[10px] text-zinc-400 font-semibold mb-2">
-              {flight.people.length} connections made
-            </p>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {flight.people.map((person, i) => (
-                <div
-                  key={i}
-                  title={`${person.name} · ${person.role}`}
-                  className={`w-9 h-9 rounded-xl ${person.color} flex items-center justify-center text-[10px] font-black`}
-                >
-                  {person.initials}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button className="text-xs font-semibold text-brand text-left active:opacity-60 transition-opacity">
-            View connections →
-          </button>
-        </div>
-      ))}
-
-    </div>
-  );
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function FlightDashboardPage() {
@@ -581,7 +472,6 @@ export default function FlightDashboardPage() {
     { id: "overview", label: "Overview" },
     { id: "people",   label: `People ${people.length}` },
     { id: "chat",     label: "Chat" },
-    { id: "history",  label: "History" },
   ];
 
   return (
@@ -647,7 +537,6 @@ export default function FlightDashboardPage() {
           messagesEndRef={messagesEndRef}
         />
       )}
-      {activeTab === "history"  && <HistoryTab />}
     </div>
   );
 }

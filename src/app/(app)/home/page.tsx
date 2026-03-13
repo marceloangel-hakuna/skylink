@@ -28,14 +28,17 @@ export default async function HomePage() {
     if (!profile?.onboarding_complete) redirect("/onboarding");
   }
 
+  // Prefer an active flight, then the next upcoming one
   const { data: flights } = await supabase
     .from("flights")
-    .select("flight_number")
+    .select("flight_number, status, departure_airport, arrival_airport, departure_time")
     .eq("user_id", user?.id ?? "")
-    .order("created_at", { ascending: false })
+    .in("status", ["active", "upcoming"])
+    .order("departure_time", { ascending: true })
     .limit(1);
 
-  const flightNumber = flights?.[0]?.flight_number ?? null;
+  const activeFlight = flights?.[0] ?? null;
+  const flightNumber = activeFlight?.flight_number ?? null;
 
   const meta      = user?.user_metadata ?? {};
   const fullName  = meta.full_name ?? meta.name ?? "Traveler";
@@ -61,8 +64,17 @@ export default async function HomePage() {
 
         <div className="flex-1 min-w-0">
           <p className="text-[17px] font-bold text-zinc-900 leading-tight">Hey, {firstName} 👋</p>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            {flightNumber ? `${flightNumber} · SFO → JFK` : "No active flight"}
+          <p className="text-xs text-zinc-500 mt-0.5 flex items-center gap-1.5">
+            {activeFlight?.status === "active" ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0 animate-pulse" />
+                {`${activeFlight.flight_number} · ${activeFlight.departure_airport} → ${activeFlight.arrival_airport} · In flight`}
+              </>
+            ) : activeFlight?.status === "upcoming" ? (
+              `Next: ${activeFlight.flight_number} · ${activeFlight.departure_airport} → ${activeFlight.arrival_airport}`
+            ) : (
+              "No active flight"
+            )}
           </p>
         </div>
 
