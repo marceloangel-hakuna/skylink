@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,6 +12,12 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        "c-card":   "var(--c-card)",
+        "c-muted":  "var(--c-muted)",
+        "c-border": "var(--c-border)",
+        "c-text1":  "var(--c-text1)",
+        "c-text2":  "var(--c-text2)",
+        "c-text3":  "var(--c-text3)",
         brand: {
           DEFAULT: "#4A27E8",
           light:   "#6B4AF0",
@@ -44,10 +51,10 @@ const config: Config = {
           green: "#34D399",
         },
         surface: {
-          DEFAULT: "#FAFAFA",
-          muted:   "#F4F4F5",
-          card:    "#FFFFFF",
-          border:  "#E4E4E7",
+          DEFAULT: "var(--c-muted)",
+          muted:   "var(--c-muted)",
+          card:    "var(--c-card)",
+          border:  "var(--c-border)",
         },
       },
       fontFamily: {

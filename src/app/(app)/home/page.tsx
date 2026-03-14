@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const PEOPLE_NEARBY = [
   { name: "Sarah Chen",    role: "CTO",             match: 94, initials: "SC", color: "bg-violet-100 text-violet-700"  },
@@ -60,20 +61,24 @@ export default async function HomePage() {
         </Link>
 
         <div className="flex-1 min-w-0">
-          <p className="text-[17px] font-bold text-zinc-900 leading-tight">Hey, {firstName} 👋</p>
-          <p className="text-xs text-zinc-500 mt-0.5 flex items-center gap-1.5">
+          <p className="text-[17px] font-bold text-zinc-900 dark:text-zinc-50 leading-tight">Hey, {firstName} 👋</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0 animate-pulse" />
             {`${flightNumber} · SFO → JFK · In flight`}
           </p>
         </div>
 
-        <Link href="/chat"
-          className="w-10 h-10 rounded-full bg-white shadow-card flex items-center justify-center active:scale-90 transition-transform flex-shrink-0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
-              stroke="#4A27E8" strokeWidth="1.8" strokeLinejoin="round"/>
-          </svg>
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link href="/chat"
+            className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
+            style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
+                stroke="#4A27E8" strokeWidth="1.8" strokeLinejoin="round"/>
+            </svg>
+          </Link>
+        </div>
       </div>
 
       <div className="px-4 flex flex-col gap-5">
@@ -143,26 +148,26 @@ export default async function HomePage() {
         </Link>
 
         {/* ── Atlas AI Card ─────────────────────────────── */}
-        <div className="rounded-2xl p-4 border border-amber-200"
+        <div className="rounded-2xl p-4 border border-amber-200 dark:border-amber-900"
              style={{ background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" }}>
           <div className="flex items-center gap-2 mb-2.5">
             <span className="text-amber-500 text-base leading-none">✦</span>
-            <span className="text-[13px] font-black text-amber-700 tracking-wide">Atlas</span>
+            <span className="text-[13px] font-black text-amber-700 dark:text-amber-400 tracking-wide">Atlas</span>
             <span className="ml-auto text-[10px] font-semibold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full border border-amber-200">
               AI Match
             </span>
           </div>
-          <p className="text-[13px] font-bold text-zinc-800 mb-0.5">
+          <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 mb-0.5">
             Sarah Chen · Fintech · Seat 3A
           </p>
-          <p className="text-xs text-zinc-500 mb-3">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
             Invests in early-stage SaaS — aligns with your space
           </p>
           <div className="flex gap-2">
             <button className="flex-1 bg-amber-500 text-white text-xs font-semibold py-2.5 rounded-full active:scale-95 transition-transform">
               Connect
             </button>
-            <button className="flex-1 bg-white text-amber-600 text-xs font-semibold py-2.5 rounded-full active:scale-95 transition-transform border border-amber-200">
+            <button className="flex-1 bg-white dark:bg-[#211F35] text-amber-600 text-xs font-semibold py-2.5 rounded-full active:scale-95 transition-transform border border-amber-200 dark:border-amber-900">
               Later
             </button>
           </div>
@@ -185,10 +190,10 @@ export default async function HomePage() {
                     {p.match}%
                   </span>
                 </div>
-                <p className="text-[11px] font-semibold text-zinc-800 text-center leading-tight">
+                <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-100 text-center leading-tight">
                   {p.name.split(" ")[0]}
                 </p>
-                <p className="text-[10px] text-zinc-400 text-center leading-tight">{p.role}</p>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center leading-tight">{p.role}</p>
               </div>
             ))}
           </div>
@@ -196,7 +201,7 @@ export default async function HomePage() {
 
         {/* ── SkyPoints ─────────────────────────────────── */}
         <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
-          <div className="card flex items-center gap-4 border border-violet-100"
+          <div className="card flex items-center gap-4 border border-violet-100 dark:border-violet-900/40"
                style={{ background: "linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)" }}>
             <div className="w-11 h-11 rounded-xl bg-brand flex items-center justify-center flex-shrink-0">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -210,7 +215,7 @@ export default async function HomePage() {
             </div>
             <div className="text-right">
               <span className="text-[10px] font-bold bg-violet-100 text-violet-600 px-2 py-1 rounded-full">Silver</span>
-              <p className="text-[10px] text-zinc-400 mt-1">550 to Gold</p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">550 to Gold</p>
             </div>
           </div>
         </Link>
@@ -224,12 +229,12 @@ export default async function HomePage() {
           <div className="flex flex-col gap-3">
             {SKY_CREWS.map((crew) => (
               <div key={crew.name} className="card flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-violet-50 flex items-center justify-center text-2xl flex-shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-violet-50 dark:bg-[#1E1C35] flex items-center justify-center text-2xl flex-shrink-0">
                   {crew.emoji}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-zinc-800">{crew.name}</p>
-                  <p className="text-xs text-zinc-400">{crew.members} members · {crew.route}</p>
+                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">{crew.name}</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500">{crew.members} members · {crew.route}</p>
                 </div>
                 <button className="text-xs font-semibold text-brand border border-brand/30 rounded-full px-3 py-1.5 active:scale-95 transition-transform flex-shrink-0">
                   Join

@@ -187,15 +187,14 @@ export default function ConversationPage() {
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div
-        className="flex-shrink-0 bg-white border-b border-surface-border"
+        className="flex-shrink-0 bg-white dark:bg-[#18172A] border-b border-surface-border dark:border-[#2E2C4A]"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="flex items-center gap-3 px-4 py-3">
           {/* Back */}
           <Link
             href="/chat"
-            className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
-            style={{ background: "#F5F3FF" }}
+            className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0 bg-[#F5F3FF] dark:bg-[#1E1C35]"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M15 18L9 12L15 6" stroke="#4A27E8" strokeWidth="2.2" strokeLinecap="round"/>
@@ -217,7 +216,7 @@ export default function ConversationPage() {
 
           {/* Name + subtitle */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-zinc-900 leading-tight truncate">
+            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate">
               {loading ? "Loading…" : otherName || "Unknown"}
             </p>
             {otherSubline && (
@@ -238,8 +237,7 @@ export default function ConversationPage() {
 
       {/* ── Messages ───────────────────────────────────────────────────── */}
       <div
-        className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1"
-        style={{ background: "#F8F7FF" }}
+        className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1 bg-[#F8F7FF] dark:bg-[#0D0C18]"
       >
         {/* Loading spinner */}
         {loading && (
@@ -275,7 +273,7 @@ export default function ConversationPage() {
               {/* Timestamp divider */}
               {showTs && (
                 <div className="flex justify-center my-3">
-                  <span className="text-[10px] text-zinc-400 bg-white rounded-full px-2.5 py-1 shadow-sm border border-surface-border">
+                  <span className="text-[10px] text-zinc-400 bg-white dark:bg-[#18172A] rounded-full px-2.5 py-1 shadow-sm border border-surface-border dark:border-[#2E2C4A]">
                     {formatTime(msg.created_at)}
                   </span>
                 </div>
@@ -287,7 +285,7 @@ export default function ConversationPage() {
                   className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                     isMe
                       ? "rounded-br-sm text-white"
-                      : "rounded-bl-sm bg-white text-zinc-800 shadow-sm border border-surface-border"
+                      : "rounded-bl-sm bg-white dark:bg-[#211F35] text-zinc-800 dark:text-zinc-100 shadow-sm border border-surface-border dark:border-[#2E2C4A]"
                   } ${isTemp ? "opacity-70" : ""}`}
                   style={isMe ? { background: "#4A27E8" } : undefined}
                 >
@@ -303,7 +301,7 @@ export default function ConversationPage() {
 
       {/* ── Input bar ──────────────────────────────────────────────────── */}
       <div
-        className="flex-shrink-0 bg-white border-t border-surface-border px-4 py-3"
+        className="flex-shrink-0 bg-white dark:bg-[#18172A] border-t border-surface-border dark:border-[#2E2C4A] px-4 py-3"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
       >
         <div className="flex items-center gap-2">
@@ -313,7 +311,7 @@ export default function ConversationPage() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            className="flex-1 bg-surface-muted rounded-full px-4 py-2.5 text-sm outline-none border border-transparent focus:border-brand/30 transition-colors"
+            className="flex-1 bg-surface-muted dark:bg-[#211F35] rounded-full px-4 py-2.5 text-sm outline-none border border-transparent focus:border-brand/30 transition-colors"
           />
           <button
             onClick={handleSend}

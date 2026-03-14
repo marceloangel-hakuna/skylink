@@ -135,7 +135,7 @@ function ConnectModal({ user, myName, myInterests, onSend, onClose, sending }: {
     <div className="fixed inset-0 z-50 flex items-end justify-center"
          onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-t-3xl w-full max-w-[430px] p-5 flex flex-col gap-4"
+      <div className="relative bg-white dark:bg-[#18172A] rounded-t-3xl w-full max-w-[430px] p-5 flex flex-col gap-4"
            style={{ paddingBottom: "max(28px, env(safe-area-inset-bottom))" }}>
 
         <div className="w-10 h-1 bg-zinc-200 rounded-full mx-auto" />
@@ -143,8 +143,8 @@ function ConnectModal({ user, myName, myInterests, onSend, onClose, sending }: {
         <div className="flex items-center gap-3">
           <Avatar profile={user} size={12} />
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-zinc-900 text-sm">{user.full_name}</p>
-            <p className="text-xs text-zinc-500 truncate">
+            <p className="font-bold text-zinc-900 dark:text-zinc-50 text-sm">{user.full_name}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
               {[user.role, user.company].filter(Boolean).join(" @ ") || "SkyLink Member"}
             </p>
           </div>
@@ -157,11 +157,11 @@ function ConnectModal({ user, myName, myInterests, onSend, onClose, sending }: {
         </div>
 
         <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={4}
-          className="w-full bg-zinc-50 rounded-2xl px-4 py-3 text-sm text-zinc-800 resize-none focus:outline-none focus:ring-2 focus:ring-brand border border-zinc-100" />
+          className="w-full bg-zinc-50 dark:bg-[#211F35] rounded-2xl px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 resize-none focus:outline-none focus:ring-2 focus:ring-brand border border-zinc-100 dark:border-[#2E2C4A]" />
 
         <div className="flex gap-2.5">
           <button onClick={onClose}
-            className="flex-1 py-3 rounded-2xl border border-zinc-200 text-sm font-semibold text-zinc-600 active:scale-95 transition-transform">
+            className="flex-1 py-3 rounded-2xl border border-zinc-200 dark:border-[#2E2C4A] text-sm font-semibold text-zinc-600 dark:text-zinc-300 active:scale-95 transition-transform">
             Cancel
           </button>
           <button onClick={() => onSend(msg)} disabled={sending || !msg.trim()}
@@ -301,12 +301,12 @@ export default function NetworkPage() {
 
       {/* Header + tabs */}
       <div className="px-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
-        <h1 className="text-2xl font-black text-zinc-900 mb-4">Network</h1>
-        <div className="flex bg-zinc-100 rounded-2xl p-1 mb-5">
+        <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 mb-4">Network</h1>
+        <div className="flex bg-zinc-100 dark:bg-[#211F35] rounded-2xl p-1 mb-5">
           {(["discover", "network"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex-1 py-2 text-sm font-semibold rounded-xl transition-all ${
-                tab === t ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500"
+                tab === t ? "bg-white dark:bg-[#18172A] text-zinc-900 dark:text-zinc-50 shadow-sm" : "text-zinc-500 dark:text-zinc-400"
               }`}>
               {t === "discover" ? "Discover" : `My Network${accepted.length ? ` (${accepted.length})` : ""}`}
             </button>
@@ -329,21 +329,21 @@ export default function NetworkPage() {
             const match = calcMatch(myProfile?.interests ?? [], u.interests ?? [], u.match);
             const sent  = sentIds.has(u.id);
             return (
-              <div key={u.id ?? i} className="bg-white rounded-2xl shadow-card p-4 flex items-center gap-3">
+              <div key={u.id ?? i} className="bg-[var(--c-card)] rounded-2xl shadow-card p-4 flex items-center gap-3 border border-[var(--c-border)]">
                 <Avatar profile={u} size={12} />
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
-                    <p className="font-bold text-zinc-900 text-sm truncate">{u.full_name}</p>
+                    <p className="font-bold text-zinc-900 dark:text-zinc-50 text-sm truncate">{u.full_name}</p>
                     <MatchBadge pct={match} />
                   </div>
-                  <p className="text-xs text-zinc-500 truncate">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                     {[u.role, u.company].filter(Boolean).join(" @ ") || "SkyLink Member"}
                   </p>
                   {(u.interests?.length ?? 0) > 0 && (
                     <div className="flex gap-1 mt-1.5 flex-wrap">
                       {u.interests.slice(0, 2).map(k => (
-                        <span key={k} className="text-[10px] font-medium bg-[#F5F3FF] text-brand px-2 py-0.5 rounded-full">
+                        <span key={k} className="text-[10px] font-medium bg-[#F5F3FF] dark:bg-[#1E1C35] text-brand px-2 py-0.5 rounded-full">
                           {INTEREST_LABELS[k] ?? k}
                         </span>
                       ))}
@@ -376,13 +376,13 @@ export default function NetworkPage() {
             </svg>
             <input type="text" placeholder="Search by name, role, or company…"
               value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full bg-white rounded-2xl pl-10 pr-4 py-3 text-sm border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-brand placeholder:text-zinc-400 shadow-card" />
+              className="w-full bg-white dark:bg-[#18172A] rounded-2xl pl-10 pr-4 py-3 text-sm border border-zinc-200 dark:border-[#2E2C4A] focus:outline-none focus:ring-2 focus:ring-brand placeholder:text-zinc-400 dark:text-zinc-200 shadow-card" />
           </div>
 
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16">
-              <div className="w-16 h-16 rounded-3xl bg-zinc-100 flex items-center justify-center text-3xl">🤝</div>
-              <p className="text-zinc-500 text-sm font-medium text-center">
+              <div className="w-16 h-16 rounded-3xl bg-zinc-100 dark:bg-[#211F35] flex items-center justify-center text-3xl">🤝</div>
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium text-center">
                 {search ? "No connections match your search" : "No connections yet"}
               </p>
               {!search && (
@@ -396,12 +396,12 @@ export default function NetworkPage() {
             if (!p) return null;
             const isEditing = editingNotes?.id === conn.id;
             return (
-              <div key={conn.id} className="bg-white rounded-2xl shadow-card p-4 flex flex-col gap-3">
+              <div key={conn.id} className="bg-[var(--c-card)] rounded-2xl shadow-card p-4 flex flex-col gap-3 border border-[var(--c-border)]">
                 <div className="flex items-center gap-3">
                   <Avatar profile={p} size={12} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-zinc-900 text-sm">{p.full_name}</p>
-                    <p className="text-xs text-zinc-500 truncate">
+                    <p className="font-bold text-zinc-900 dark:text-zinc-50 text-sm">{p.full_name}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                       {[p.role, p.company].filter(Boolean).join(" @ ") || "SkyLink Member"}
                     </p>
                     {conn.met_on_flight && (
@@ -413,27 +413,27 @@ export default function NetworkPage() {
                   </span>
                 </div>
 
-                <div className="h-px bg-zinc-100" />
+                <div className="h-px bg-zinc-100 dark:bg-[#2E2C4A]" />
 
                 <div>
-                  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-2">Tags</p>
+                  <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Tags</p>
                   <TagPicker current={conn.tags ?? []} onChange={tags => updateTags(conn.id, tags)} />
                 </div>
 
-                <div className="h-px bg-zinc-100" />
+                <div className="h-px bg-zinc-100 dark:bg-[#2E2C4A]" />
 
                 <div>
-                  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-2">Private Notes</p>
+                  <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-2">Private Notes</p>
                   {isEditing ? (
                     <div className="flex flex-col gap-2">
                       <textarea autoFocus rows={3}
                         value={editingNotes.notes}
                         onChange={e => setEditingNotes({ id: conn.id, notes: e.target.value })}
                         placeholder="Add private notes about this connection…"
-                        className="w-full bg-zinc-50 rounded-xl px-3 py-2.5 text-xs text-zinc-700 resize-none focus:outline-none focus:ring-2 focus:ring-brand border border-zinc-100" />
+                        className="w-full bg-zinc-50 dark:bg-[#211F35] rounded-xl px-3 py-2.5 text-xs text-zinc-700 dark:text-zinc-300 resize-none focus:outline-none focus:ring-2 focus:ring-brand border border-zinc-100 dark:border-[#2E2C4A]" />
                       <div className="flex gap-2">
                         <button onClick={() => setEditingNotes(null)}
-                          className="text-xs text-zinc-400 font-medium py-1.5 px-3 rounded-xl border border-zinc-200">
+                          className="text-xs text-zinc-400 dark:text-zinc-500 font-medium py-1.5 px-3 rounded-xl border border-zinc-200 dark:border-[#2E2C4A]">
                           Cancel
                         </button>
                         <button onClick={() => saveNotes(conn.id, editingNotes.notes)}
@@ -444,10 +444,10 @@ export default function NetworkPage() {
                     </div>
                   ) : (
                     <button onClick={() => setEditingNotes({ id: conn.id, notes: conn.notes ?? "" })}
-                      className="w-full text-left text-xs bg-zinc-50 rounded-xl px-3 py-2.5 active:bg-zinc-100 transition-colors min-h-[38px] border border-zinc-100">
+                      className="w-full text-left text-xs bg-zinc-50 dark:bg-[#211F35] rounded-xl px-3 py-2.5 active:bg-zinc-100 dark:active:bg-[#2E2C4A] transition-colors min-h-[38px] border border-zinc-100 dark:border-[#2E2C4A]">
                       {conn.notes
-                        ? <span className="text-zinc-600">{conn.notes}</span>
-                        : <span className="text-zinc-300">Tap to add private notes…</span>}
+                        ? <span className="text-zinc-600 dark:text-zinc-300">{conn.notes}</span>
+                        : <span className="text-zinc-300 dark:text-zinc-600">Tap to add private notes…</span>}
                     </button>
                   )}
                 </div>

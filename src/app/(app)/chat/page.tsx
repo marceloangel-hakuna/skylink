@@ -126,15 +126,15 @@ export default async function ChatPage() {
         {/* Empty state */}
         {conversations.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <div className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: "#F5F3FF" }}>
+            <div className="w-16 h-16 rounded-3xl flex items-center justify-center bg-[#F5F3FF] dark:bg-[#1E1C35]">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                 <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
                   stroke="#4A27E8" strokeWidth="1.8" strokeLinejoin="round"/>
               </svg>
             </div>
             <div>
-              <p className="text-sm font-bold text-zinc-800">No messages yet</p>
-              <p className="text-xs text-zinc-400 mt-1">Connect with people on your flight to start chatting</p>
+              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">No messages yet</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Connect with people on your flight to start chatting</p>
             </div>
             <Link href="/network"
               className="mt-1 text-xs font-semibold px-4 py-2 rounded-full text-white"
@@ -171,13 +171,13 @@ export default async function ChatPage() {
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
-                  <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-bold text-zinc-900" : "font-semibold text-zinc-700"}`}>
+                  <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-bold text-zinc-900 dark:text-zinc-50" : "font-semibold text-zinc-700 dark:text-zinc-200"}`}>
                     {name}
                   </p>
-                  <p className="text-[11px] text-zinc-400 flex-shrink-0 ml-2">{formatTime(conv.lastTime)}</p>
+                  <p className="text-[11px] text-zinc-400 dark:text-zinc-500 flex-shrink-0 ml-2">{formatTime(conv.lastTime)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <p className={`text-xs truncate flex-1 ${conv.unreadCount > 0 ? "text-zinc-700" : "text-zinc-400"}`}>
+                  <p className={`text-xs truncate flex-1 ${conv.unreadCount > 0 ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-400 dark:text-zinc-500"}`}>
                     {conv.lastMessage}
                   </p>
                   {conv.unreadCount > 0 && (

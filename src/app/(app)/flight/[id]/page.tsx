@@ -158,12 +158,12 @@ function OverviewTab() {
           { label: "Gates",     value: `${FLIGHT.fromGate} → ${FLIGHT.toGate}`, emoji: "⬡" },
         ].map(s => (
           <div key={s.label} className="card flex items-center gap-3 py-3.5">
-            <div className="w-9 h-9 rounded-xl bg-[#F5F3FF] flex items-center justify-center flex-shrink-0 text-brand font-black text-base">
+            <div className="w-9 h-9 rounded-xl bg-[#F5F3FF] dark:bg-[#1E1C35] flex items-center justify-center flex-shrink-0 text-brand font-black text-base">
               {s.emoji}
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wide">{s.label}</p>
-              <p className="text-sm font-bold text-zinc-800 truncate">{s.value}</p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">{s.label}</p>
+              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100 truncate">{s.value}</p>
             </div>
           </div>
         ))}
@@ -196,7 +196,7 @@ function OverviewTab() {
                 AI
               </span>
             </div>
-            <p className="text-xs text-zinc-600 mb-2.5 leading-relaxed">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2.5 leading-relaxed">
               High-value flight — {FLIGHT.peopleCount} professionals onboard, 6 strong matches
             </p>
             <div className="flex gap-1.5 flex-wrap">
@@ -213,15 +213,15 @@ function OverviewTab() {
       {/* ── Quick Stats Row ──────────────────────── */}
       <div className="flex gap-3">
         <div className="card flex-1 text-center py-3.5">
-          <p className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wide">Seat</p>
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">Seat</p>
           <p className="text-2xl font-black text-brand mt-0.5">{FLIGHT.seat}</p>
         </div>
         <div className="card flex-1 text-center py-3.5">
-          <p className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wide">Cabin</p>
-          <p className="text-2xl font-black text-zinc-800 mt-0.5">{FLIGHT.cabin}</p>
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">Cabin</p>
+          <p className="text-2xl font-black text-zinc-800 dark:text-zinc-100 mt-0.5">{FLIGHT.cabin}</p>
         </div>
         <div className="card flex-1 text-center py-3.5">
-          <p className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wide">Onboard</p>
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">Onboard</p>
           <p className="text-2xl font-black mt-0.5" style={{ color: "#34D399" }}>{FLIGHT.peopleCount}</p>
         </div>
       </div>
@@ -243,15 +243,15 @@ function PeopleTab({ people, onConnect }: { people: Person[]; onConnect: (id: st
       <div className="flex gap-3">
         <div className="card flex-1 text-center py-3">
           <p className="text-2xl font-black" style={{ color: "#34D399" }}>{connectedCount}</p>
-          <p className="text-[10px] text-zinc-400 font-semibold mt-0.5">Connected</p>
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-0.5">Connected</p>
         </div>
         <div className="card flex-1 text-center py-3">
           <p className="text-2xl font-black text-brand">{people.length}</p>
-          <p className="text-[10px] text-zinc-400 font-semibold mt-0.5">On Flight</p>
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-0.5">On Flight</p>
         </div>
         <div className="card flex-1 text-center py-3">
           <p className="text-2xl font-black text-amber-500">6</p>
-          <p className="text-[10px] text-zinc-400 font-semibold mt-0.5">Top Matches</p>
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold mt-0.5">Top Matches</p>
         </div>
       </div>
 
@@ -264,7 +264,7 @@ function PeopleTab({ people, onConnect }: { people: Person[]; onConnect: (id: st
             className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
               filter === f
                 ? "bg-brand text-white shadow-sm"
-                : "bg-white text-zinc-500 border border-surface-border"
+                : "bg-white dark:bg-[#211F35] text-zinc-500 border border-surface-border dark:border-[#2E2C4A]"
             }`}
           >
             {f}
@@ -288,13 +288,13 @@ function PeopleTab({ people, onConnect }: { people: Person[]; onConnect: (id: st
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <p className="text-sm font-bold text-zinc-900 truncate">{person.name}</p>
+                <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">{person.name}</p>
                 <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${matchCls}`}>
                   {person.match}%
                 </span>
               </div>
-              <p className="text-xs text-zinc-500 truncate">{person.role} · {person.company}</p>
-              <p className="text-[10px] text-zinc-400 mt-0.5">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{person.role} · {person.company}</p>
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
                 Seat {person.seat}
                 {person.mutual > 0 && ` · ${person.mutual} mutual`}
               </p>
@@ -336,7 +336,7 @@ function ChatTab({
       <div className="px-4 pt-4 flex flex-col gap-3" style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 72px)" }}>
         {/* Flight chat label */}
         <div className="flex justify-center">
-          <span className="text-[11px] text-zinc-400 bg-white rounded-full px-3 py-1 shadow-sm border border-surface-border">
+          <span className="text-[11px] text-zinc-400 bg-white dark:bg-[#18172A] rounded-full px-3 py-1 shadow-sm border border-surface-border dark:border-[#2E2C4A]">
             {FLIGHT.number} · {FLIGHT.from} → {FLIGHT.to} · {FLIGHT.peopleCount} passengers
           </span>
         </div>
@@ -355,7 +355,7 @@ function ChatTab({
               <div className={`rounded-2xl px-3.5 py-2.5 ${
                 msg.isMe
                   ? "rounded-tr-sm text-white"
-                  : "rounded-tl-sm bg-white text-zinc-800 shadow-sm border border-surface-border"
+                  : "rounded-tl-sm bg-white dark:bg-[#211F35] text-zinc-800 dark:text-zinc-100 shadow-sm border border-surface-border dark:border-[#2E2C4A]"
               }`}
               style={msg.isMe ? { background: "#4A27E8" } : undefined}>
                 <p className="text-sm leading-relaxed">{msg.text}</p>
@@ -370,7 +370,7 @@ function ChatTab({
 
       {/* Sticky input — above bottom nav */}
       <div
-        className="sticky bg-white border-t border-surface-border px-4 py-3 z-30"
+        className="sticky bg-white dark:bg-[#18172A] border-t border-surface-border dark:border-[#2E2C4A] px-4 py-3 z-30"
         style={{ bottom: "calc(64px + env(safe-area-inset-bottom, 0px))" }}
       >
         <div className="flex gap-2 items-center">
@@ -380,7 +380,7 @@ function ChatTab({
             onChange={e => setInputText(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); } }}
             placeholder="Message the flight…"
-            className="flex-1 bg-surface-muted rounded-full px-4 py-2.5 text-sm outline-none border border-transparent focus:border-brand/30 transition-colors"
+            className="flex-1 bg-surface-muted dark:bg-[#211F35] rounded-full px-4 py-2.5 text-sm outline-none border border-transparent focus:border-brand/30 transition-colors"
           />
           <button
             onClick={onSend}
@@ -488,12 +488,12 @@ export default function FlightDashboardPage() {
     }}>
 
       {/* ── Sticky header ──────────────────────── */}
-      <div className="sticky top-0 z-30 bg-white border-b border-surface-border">
+      <div className="sticky top-0 z-30 border-b border-[var(--c-border)]" style={{ background: "var(--c-card)" }}>
         {/* Flight info bar */}
         <div className="flex items-center gap-3 px-4 pt-3 pb-2.5">
           <Link
             href="/flight"
-            className="w-8 h-8 rounded-full bg-[#F5F3FF] flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
+            className="w-8 h-8 rounded-full bg-[#F5F3FF] dark:bg-[#1E1C35] flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M15 18L9 12L15 6" stroke="#4A27E8" strokeWidth="2.2" strokeLinecap="round"/>
@@ -502,17 +502,17 @@ export default function FlightDashboardPage() {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-base font-black text-zinc-900">{FLIGHT.number}</span>
+              <span className="text-base font-black text-zinc-900 dark:text-zinc-100">{FLIGHT.number}</span>
               <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
                 Active
               </span>
             </div>
-            <p className="text-xs text-zinc-400 truncate">{FLIGHT.fromCity} → {FLIGHT.toCity}</p>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">{FLIGHT.fromCity} → {FLIGHT.toCity}</p>
           </div>
 
           <div className="text-right flex-shrink-0">
-            <p className="text-[10px] text-zinc-400 uppercase tracking-wide">ETA</p>
-            <p className="text-sm font-bold text-zinc-900">{FLIGHT.arrivalTime}</p>
+            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">ETA</p>
+            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{FLIGHT.arrivalTime}</p>
           </div>
         </div>
 
@@ -523,7 +523,7 @@ export default function FlightDashboardPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 py-2.5 text-xs font-semibold relative transition-colors ${
-                activeTab === tab.id ? "text-brand" : "text-zinc-400"
+                activeTab === tab.id ? "text-brand" : "text-zinc-400 dark:text-zinc-500"
               }`}
             >
               {tab.label}

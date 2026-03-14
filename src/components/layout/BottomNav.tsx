@@ -48,7 +48,7 @@ export default function BottomNav() {
   return (
     <nav
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50
-                 glass border-t border-surface-border shadow-nav"
+                 glass border-t border-[var(--c-border)] shadow-nav"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="flex items-stretch h-[64px]">
