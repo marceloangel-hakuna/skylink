@@ -21,7 +21,7 @@ const FLIGHT = {
   departureTime: "10:15 AM",
   arrivalTime: "6:32 PM",
   duration: "5h 17m",
-  aircraft: "Boeing 777-300ER",
+  aircraft: "B777-300ER",
   cabin: "Business",
   seat: "4A",
   altitudeFt: "36,000",
@@ -108,8 +108,8 @@ function OverviewTab() {
               {/* full dashed arc */}
               <path d="M16 84 Q160 8 304 84"
                 stroke="white" strokeOpacity="0.2" strokeWidth="1.5" fill="none" strokeDasharray="5 4"/>
-              {/* progress arc from start to plane */}
-              <path d={`M16 84 Q${16 + p * (160 - 16) * 1.1} ${84 - p * (84 - 8) * 1.4} ${bx} ${by}`}
+              {/* progress arc — control point derived from bezier subdivision: Q_cp = (1-p)·P0 + p·P1 */}
+              <path d={`M16 84 Q${(1-p)*16 + p*160} ${(1-p)*84 + p*8} ${bx} ${by}`}
                 stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
               {/* plane icon at current position */}
               <g transform={`translate(${bx},${by}) rotate(${angle})`}>
@@ -332,8 +332,8 @@ function ChatTab({
 }) {
   return (
     <>
-      {/* Messages */}
-      <div className="px-4 pt-4 pb-2 flex flex-col gap-3">
+      {/* Messages — pb clears the sticky input + nav */}
+      <div className="px-4 pt-4 flex flex-col gap-3" style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 72px)" }}>
         {/* Flight chat label */}
         <div className="flex justify-center">
           <span className="text-[11px] text-zinc-400 bg-white rounded-full px-3 py-1 shadow-sm border border-surface-border">
@@ -480,7 +480,12 @@ export default function FlightDashboardPage() {
   ];
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 8px)" }}>
+    // Chat tab manages its own bottom spacing via sticky input + pb on messages
+    <div className="animate-fade-in" style={{
+      paddingBottom: activeTab === "chat"
+        ? 0
+        : "calc(64px + env(safe-area-inset-bottom, 0px) + 8px)"
+    }}>
 
       {/* ── Sticky header ──────────────────────── */}
       <div className="sticky top-0 z-30 bg-white border-b border-surface-border">
