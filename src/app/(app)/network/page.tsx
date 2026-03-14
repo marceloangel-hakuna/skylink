@@ -136,7 +136,7 @@ function ConnectModal({ user, myName, myInterests, onSend, onClose, sending }: {
          onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white dark:bg-[#18172A] rounded-t-3xl w-full max-w-[430px] p-5 flex flex-col gap-4"
-           style={{ paddingBottom: "max(28px, env(safe-area-inset-bottom))" }}>
+           style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}>
 
         <div className="w-10 h-1 bg-zinc-200 rounded-full mx-auto" />
 
