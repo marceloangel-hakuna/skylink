@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 // ── Constants ─────────────────────────────────────────────
 const INTEREST_LABELS: Record<string, string> = {
@@ -408,9 +409,21 @@ export default function NetworkPage() {
                       <p className="text-[10px] text-brand font-medium mt-0.5">✈ Met on {conn.met_on_flight}</p>
                     )}
                   </div>
-                  <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1 rounded-full flex-shrink-0">
-                    Connected
-                  </span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Link
+                      href={`/chat/${p.id}`}
+                      className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                      style={{ background: "var(--c-muted)" }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
+                          stroke="#4A27E8" strokeWidth="1.8" strokeLinejoin="round"/>
+                      </svg>
+                    </Link>
+                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1 rounded-full">
+                      Connected
+                    </span>
+                  </div>
                 </div>
 
                 <div className="h-px bg-zinc-100 dark:bg-[#2E2C4A]" />

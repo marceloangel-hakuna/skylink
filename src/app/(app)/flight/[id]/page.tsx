@@ -368,9 +368,9 @@ function ChatTab({
         <div ref={messagesEndRef} className="h-1" />
       </div>
 
-      {/* Sticky input — above bottom nav */}
+      {/* Fixed input — pinned above bottom nav regardless of scroll */}
       <div
-        className="sticky bg-white dark:bg-[#18172A] border-t border-surface-border dark:border-[#2E2C4A] px-4 py-3 z-30"
+        className="fixed left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[var(--c-card)] border-t border-[var(--c-border)] px-4 py-3 z-30"
         style={{ bottom: "calc(64px + env(safe-area-inset-bottom, 0px))" }}
       >
         <div className="flex gap-2 items-center">

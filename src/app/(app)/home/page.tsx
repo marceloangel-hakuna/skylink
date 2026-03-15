@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const PEOPLE_NEARBY = [
   { name: "Sarah Chen",    role: "CTO",             match: 94, initials: "SC", color: "bg-violet-100 text-violet-700"  },
@@ -69,7 +68,6 @@ export default async function HomePage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <Link href="/chat"
             className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
             style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>

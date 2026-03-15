@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import PageHeader from "@/components/layout/PageHeader";
 import LogoutButton from "@/components/auth/LogoutButton";
 import Link from "next/link";
+import { AppearanceRow } from "@/components/AppearanceRow";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -62,7 +63,7 @@ export default async function ProfilePage() {
         </div>
 
         {/* Settings menu */}
-        <div className="card flex flex-col divide-y divide-surface-border">
+        <div className="card flex flex-col divide-y divide-[var(--c-border)]">
           {[
             { label: "Notifications",    href: "/notifications", icon: "🔔" },
             { label: "Rewards & Points", href: "/rewards",       icon: "🏆" },
@@ -74,12 +75,14 @@ export default async function ProfilePage() {
               className="flex items-center gap-3 py-3.5 active:bg-surface-muted transition -mx-4 px-4 first:-mt-4 last:-mb-4 first:rounded-t-2xl last:rounded-b-2xl"
             >
               <span className="text-lg w-7 text-center">{icon}</span>
-              <span className="flex-1 text-sm font-medium text-navy-800">{label}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-slate-400">
+              <span className="flex-1 text-sm font-medium" style={{ color: "var(--c-text1)" }}>{label}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)" }}>
                 <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </Link>
           ))}
+          {/* Theme toggle row */}
+          <AppearanceRow />
         </div>
 
         {/* Sign out */}
