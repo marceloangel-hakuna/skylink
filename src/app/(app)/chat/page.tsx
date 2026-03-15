@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import { redirect } from "next/navigation";
+import NewConversationButton from "@/components/NewConversationButton";
 
 export const dynamic = "force-dynamic";
 
@@ -106,13 +107,7 @@ export default async function ChatPage() {
       <PageHeader
         title="Messages"
         subtitle={totalUnread > 0 ? `${totalUnread} unread` : undefined}
-        action={
-          <button className="p-2 rounded-full active:bg-surface-muted transition" style={{ color: "#4A27E8" }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
-            </svg>
-          </button>
-        }
+        action={<NewConversationButton />}
       />
 
       <div className="px-4 pt-2 pb-6 flex flex-col gap-2">
@@ -157,8 +152,8 @@ export default async function ChatPage() {
               href={`/chat/${conv.partnerId}`}
               className="card flex items-center gap-3 active:scale-[0.98] transition-transform"
             >
-              {/* Avatar */}
-              <div className="relative flex-shrink-0">
+              {/* Avatar — tap to view profile */}
+              <Link href={`/profile/${conv.partnerId}`} onClick={e => e.stopPropagation()} className="relative flex-shrink-0 active:opacity-70 transition-opacity">
                 {conv.profile?.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={conv.profile.avatar_url} alt={name}
@@ -168,7 +163,7 @@ export default async function ChatPage() {
                     {initials(name)}
                   </div>
                 )}
-              </div>
+              </Link>
 
               {/* Content */}
               <div className="flex-1 min-w-0">

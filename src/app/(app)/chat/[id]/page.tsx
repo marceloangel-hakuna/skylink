@@ -257,7 +257,7 @@ export default function ConversationPage() {
             </svg>
           </Link>
 
-          <div className="relative flex-shrink-0">
+          <Link href={`/profile/${otherId}`} className="relative flex-shrink-0 active:opacity-70 transition-opacity">
             {otherProfile?.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={otherProfile.avatar_url} alt={otherName}
@@ -273,7 +273,7 @@ export default function ConversationPage() {
                 style={{ borderColor: "var(--c-card)" }}
               />
             )}
-          </div>
+          </Link>
 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold leading-tight truncate" style={{ color: "var(--c-text1)" }}>
@@ -283,7 +283,7 @@ export default function ConversationPage() {
               className="text-[11px] truncate transition-colors"
               style={{ color: isOtherTyping ? "#4A27E8" : isOtherOnline ? "#22c55e" : "var(--c-text3)" }}
             >
-              {isOtherTyping ? "typing…" : isOtherOnline ? "Online" : otherSubline}
+              {isOtherTyping ? "typing…" : isOtherOnline ? "Online" : (otherSubline || "SkyLink Member")}
             </p>
           </div>
 

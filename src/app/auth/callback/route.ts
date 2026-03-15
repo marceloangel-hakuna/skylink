@@ -46,11 +46,14 @@ export async function GET(request: NextRequest) {
   if (!error && data.session?.user) {
     const u    = data.session.user;
     const meta = u.user_metadata ?? {};
-    await supabase.from("profiles").upsert({
-      id:         u.id,
-      full_name:  meta.full_name ?? meta.name ?? null,
-      avatar_url: meta.avatar_url ?? meta.picture ?? null,
-    }, { onConflict: "id", ignoreDuplicates: true });
+    // Build update object — only include non-null LinkedIn fields so we
+    // don't overwrite user-edited data with nulls
+    const update: Record<string, string | null> = { id: u.id };
+    if (meta.full_name ?? meta.name)                             update.full_name  = meta.full_name ?? meta.name;
+    if (meta.avatar_url ?? meta.picture)                         update.avatar_url = meta.avatar_url ?? meta.picture;
+    if (meta.headline ?? meta.job_title ?? meta.title)           update.role       = meta.headline ?? meta.job_title ?? meta.title;
+    if (meta.company ?? meta.organization ?? meta.employer)      update.company    = meta.company ?? meta.organization ?? meta.employer;
+    await supabase.from("profiles").upsert(update, { onConflict: "id" });
   }
 
   let destination: string;

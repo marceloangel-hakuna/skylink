@@ -140,18 +140,20 @@ export default function NotificationsPage() {
             <div key={req.id} className="card flex flex-col gap-3">
               {/* Person row */}
               <div className="flex items-center gap-3">
-                {req.profile?.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={req.profile.avatar_url} alt={name}
-                    className="w-12 h-12 rounded-2xl object-cover flex-shrink-0" />
-                ) : (
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm flex-shrink-0 text-white"
-                    style={{ background: "#4A27E8" }}
-                  >
-                    {inits}
-                  </div>
-                )}
+                <Link href={`/profile/${req.requester_id}`} className="flex-shrink-0 active:opacity-70 transition-opacity">
+                  {req.profile?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={req.profile.avatar_url} alt={name}
+                      className="w-12 h-12 rounded-2xl object-cover" />
+                  ) : (
+                    <div
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm text-white"
+                      style={{ background: "#4A27E8" }}
+                    >
+                      {inits}
+                    </div>
+                  )}
+                </Link>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold truncate" style={{ color: "var(--c-text1)" }}>
                     {name}

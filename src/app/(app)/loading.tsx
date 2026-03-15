@@ -8,11 +8,7 @@ export default function AppLoading() {
   return (
     <div
       className="fixed inset-0 flex flex-col items-center justify-center gap-8"
-      style={{
-        background: "linear-gradient(160deg, #3418C8 0%, #4A27E8 55%, #5A35F0 100%)",
-        maxWidth: 430,
-        margin: "0 auto",
-      }}
+      style={{ background: "var(--background)", maxWidth: 430, margin: "0 auto" }}
     >
       {/* App icon */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -26,12 +22,12 @@ export default function AppLoading() {
       {/* Brand name */}
       <div className="flex flex-col items-center gap-1">
         <p
-          className="text-4xl font-black tracking-widest text-white uppercase"
-          style={{ letterSpacing: "0.18em", textShadow: "0 2px 16px rgba(0,0,0,0.2)" }}
+          className="text-4xl font-black uppercase"
+          style={{ letterSpacing: "0.18em", color: "var(--c-text1)" }}
         >
           SKYLINK
         </p>
-        <p className="text-xs font-medium tracking-wider" style={{ color: "rgba(255,255,255,0.55)" }}>
+        <p className="text-xs font-medium tracking-wider" style={{ color: "var(--c-text3)" }}>
           Network at 35,000 ft
         </p>
       </div>
