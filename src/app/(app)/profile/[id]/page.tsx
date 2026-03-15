@@ -4,6 +4,8 @@ import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import ConnectButton from "@/components/ConnectButton";
 
+export const dynamic = "force-dynamic";
+
 const INTEREST_LABELS: Record<string, string> = {
   ai_ml: "AI / ML", fintech: "Fintech", climate: "Climate Tech",
   saas: "SaaS", web3: "Web3", design: "Design",
@@ -26,7 +28,21 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
     .eq("id", params.id)
     .single();
 
-  if (!profile) redirect("/network");
+  // Don't hard-redirect if profile row missing — show what we have
+  if (!profile && user.id !== params.id) {
+    // Return a minimal "not found" state rather than bouncing to /network
+    return (
+      <div className="animate-fade-in pb-[100px]">
+        <PageHeader title="Profile" />
+        <div className="px-4 pt-8 flex flex-col items-center gap-3 text-center">
+          <div className="w-20 h-20 rounded-3xl bg-violet-100 text-violet-700 flex items-center justify-center font-black text-3xl">?</div>
+          <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>Profile not available</p>
+          <p className="text-xs" style={{ color: "var(--c-text3)" }}>This user hasn&apos;t set up their profile yet</p>
+        </div>
+      </div>
+    );
+  }
+  if (!profile) redirect("/profile");
 
   // Check connection status
   const { data: conn } = await supabase

@@ -36,10 +36,10 @@ export default function EditProfileSheet({ initial }: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold px-4 py-2 rounded-full border active:scale-95 transition-transform"
-        style={{ borderColor: "var(--c-border)", color: "var(--c-text2)" }}
+        className="text-xs font-semibold px-4 py-2 rounded-full active:scale-95 transition-transform"
+        style={{ background: "var(--c-muted)", color: "#4A27E8", border: "1px solid #4A27E840" }}
       >
-        Edit Profile
+        ✏️ Edit Profile
       </button>
 
       {open && (
@@ -49,7 +49,7 @@ export default function EditProfileSheet({ initial }: Props) {
             className="relative rounded-t-3xl w-full max-w-[430px]"
             style={{
               background: "var(--c-card)",
-              paddingBottom: "calc(32px + env(safe-area-inset-bottom, 0px))",
+              paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
             }}
           >
             {/* Handle */}
