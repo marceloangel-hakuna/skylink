@@ -1,37 +1,52 @@
 export default function AppLoading() {
+  const dots = [
+    { color: "#F73D8A", delay: "0s" },     // brand pink
+    { color: "#F5B81C", delay: "0.18s" },  // brand amber/yellow
+    { color: "#14D9A4", delay: "0.36s" },  // brand teal/green
+  ];
+
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center gap-6"
-      style={{ background: "var(--background)", maxWidth: 430, margin: "0 auto" }}
+      className="fixed inset-0 flex flex-col items-center justify-center gap-8"
+      style={{
+        background: "linear-gradient(160deg, #3418C8 0%, #4A27E8 55%, #5A35F0 100%)",
+        maxWidth: 430,
+        margin: "0 auto",
+      }}
     >
-      {/* Logo */}
-      <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-glass"
-        style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}
-      >
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"
-            fill="white"
-          />
-        </svg>
-      </div>
+      {/* App icon */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/icons/icon-512.png"
+        alt="SkyLink"
+        className="w-24 h-24 rounded-3xl shadow-2xl"
+        style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}
+      />
 
+      {/* Brand name */}
       <div className="flex flex-col items-center gap-1">
-        <p className="text-lg font-black" style={{ color: "var(--c-text1)" }}>SkyLink</p>
-        <p className="text-xs" style={{ color: "var(--c-text3)" }}>Network at 35,000 ft</p>
+        <p
+          className="text-4xl font-black tracking-widest text-white uppercase"
+          style={{ letterSpacing: "0.18em", textShadow: "0 2px 16px rgba(0,0,0,0.2)" }}
+        >
+          SKYLINK
+        </p>
+        <p className="text-xs font-medium tracking-wider" style={{ color: "rgba(255,255,255,0.55)" }}>
+          Network at 35,000 ft
+        </p>
       </div>
 
-      {/* Animated dots */}
-      <div className="flex gap-2">
-        {[0, 1, 2].map(i => (
+      {/* Brand-colored bouncing dots */}
+      <div className="flex gap-3 mt-2">
+        {dots.map((dot, i) => (
           <div
             key={i}
-            className="w-1.5 h-1.5 rounded-full animate-pulse"
+            className="w-3 h-3 rounded-full animate-bounce"
             style={{
-              background: "#4A27E8",
-              animationDelay: `${i * 0.25}s`,
-              animationDuration: "1s",
+              background: dot.color,
+              animationDelay: dot.delay,
+              animationDuration: "0.9s",
+              boxShadow: `0 4px 12px ${dot.color}80`,
             }}
           />
         ))}

@@ -283,7 +283,7 @@ export default function ConversationPage() {
               className="text-[11px] truncate transition-colors"
               style={{ color: isOtherTyping ? "#4A27E8" : isOtherOnline ? "#22c55e" : "var(--c-text3)" }}
             >
-              {isOtherTyping ? "typing…" : isOtherOnline ? "Online" : (otherSubline || "SkyLink Member")}
+              {isOtherTyping ? "typing…" : isOtherOnline ? "Online" : otherSubline}
             </p>
           </div>
 
