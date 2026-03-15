@@ -44,12 +44,17 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   }
   if (!profile) redirect("/profile");
 
-  // Check connection status
-  const { data: conn } = await supabase
+  // Check connection status — fetch all connections involving this user and
+  // filter client-side to avoid PostgREST nested-and() parsing issues
+  const { data: conns } = await supabase
     .from("connections")
-    .select("status")
-    .or(`and(requester_id.eq.${user.id},receiver_id.eq.${params.id}),and(requester_id.eq.${params.id},receiver_id.eq.${user.id})`)
-    .single();
+    .select("status, requester_id, receiver_id")
+    .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`);
+
+  const conn = conns?.find(c =>
+    (c.requester_id === user.id && c.receiver_id === params.id) ||
+    (c.requester_id === params.id && c.receiver_id === user.id)
+  ) ?? null;
 
   const isMe        = user.id === params.id;
   const isConnected = conn?.status === "accepted";
