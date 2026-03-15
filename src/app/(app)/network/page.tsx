@@ -287,7 +287,7 @@ function ConnectModal({ user, myName, myInterests, onSend, onClose, sending }: {
 export default function NetworkPage() {
   const supabase = createClient();
 
-  const [tab, setTab]                     = useState<"discover" | "network">("discover");
+  const [tab, setTab]                     = useState<"discover" | "network">("network");
   const [myProfile, setMyProfile]         = useState<Profile | null>(null);
   const [discoverUsers, setDiscoverUsers] = useState<Profile[]>([]);
   const [connections, setConnections]     = useState<Connection[]>([]);
@@ -420,7 +420,7 @@ export default function NetworkPage() {
       <div className="px-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
         <h1 className="text-2xl font-black mb-4" style={{ color: "var(--c-text1)" }}>Network</h1>
         <div className="flex rounded-2xl p-1 mb-5" style={{ background: "var(--c-muted)" }}>
-          {(["discover", "network"] as const).map(t => (
+          {(["network", "discover"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`flex-1 py-2 text-sm font-semibold rounded-xl transition-all ${
                 tab === t ? "shadow-sm" : ""

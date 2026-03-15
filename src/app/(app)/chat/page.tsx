@@ -3,6 +3,8 @@ import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatTime(iso: string): string {
