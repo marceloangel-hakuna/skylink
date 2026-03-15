@@ -55,6 +55,7 @@ export default function ConversationPage() {
   const [loading,       setLoading]       = useState(true);
   const [isOtherOnline, setIsOtherOnline] = useState(false);
   const [isOtherTyping, setIsOtherTyping] = useState(false);
+  const [sendError,     setSendError]     = useState<string | null>(null);
 
   const messagesEndRef    = useRef<HTMLDivElement>(null);
   const msgChannelRef     = useRef<RealtimeChannel | null>(null);
@@ -208,7 +209,10 @@ export default function ConversationPage() {
       console.error("Send error:", error);
       setMessages(prev => prev.filter(m => m.id !== tempId));
       setInput(text);
+      setSendError(`${error.code}: ${error.message}`);
+      setTimeout(() => setSendError(null), 6000);
     } else if (saved) {
+      setSendError(null);
       setMessages(prev => prev.map(m => m.id === tempId ? saved : m));
     }
 
@@ -400,6 +404,13 @@ export default function ConversationPage() {
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* ── Send error banner ──────────────────────────────────────────── */}
+      {sendError && (
+        <div className="flex-shrink-0 px-4 py-2 text-xs font-medium text-center text-red-600 bg-red-50 border-t border-red-100">
+          ⚠️ {sendError}
+        </div>
+      )}
 
       {/* ── Input ──────────────────────────────────────────────────────── */}
       <div
