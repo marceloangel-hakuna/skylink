@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -20,14 +20,28 @@ const INTERESTS = [
 const MAX_INTERESTS = 5;
 
 export default function OnboardingPage() {
-  const router = useRouter();
+  const router  = useRouter();
   const supabase = createClient();
 
-  const [step, setStep] = useState(0);
-  const [interests, setInterests] = useState<string[]>([]);
+  const [step,         setStep]         = useState(0);
+  const [interests,    setInterests]    = useState<string[]>([]);
+  const [role,         setRole]         = useState("");
+  const [company,      setCompany]      = useState("");
+  const [bio,          setBio]          = useState("");
   const [flightNumber, setFlightNumber] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [saving,       setSaving]       = useState(false);
+  const [error,        setError]        = useState<string | null>(null);
+
+  // Pre-populate professional fields from LinkedIn / OAuth metadata
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const m = user.user_metadata ?? {};
+      setRole(m.headline ?? m.job_title ?? m.title ?? "");
+      setCompany(m.company ?? m.organization ?? m.employer ?? "");
+      setBio(m.bio ?? m.summary ?? m.description ?? "");
+    });
+  }, [supabase]);
 
   function toggleInterest(id: string) {
     setInterests((prev) => {
@@ -44,18 +58,18 @@ export default function OnboardingPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
 
-    // Upsert profile with interests + onboarding flag
     const meta = user.user_metadata ?? {};
     const { error: profileError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      full_name: meta.full_name ?? meta.name ?? null,
-      avatar_url: meta.avatar_url ?? meta.picture ?? null,
-      email: user.email,
-      role: meta.headline ?? meta.job_title ?? null,
-      company: meta.company ?? meta.organization ?? null,
+      id:                 user.id,
+      full_name:          meta.full_name ?? meta.name ?? null,
+      avatar_url:         meta.avatar_url ?? meta.picture ?? null,
+      email:              user.email,
+      role:               role.trim() || null,
+      company:            company.trim() || null,
+      bio:                bio.trim() || null,
       interests,
       onboarding_complete: true,
-      updated_at: new Date().toISOString(),
+      updated_at:         new Date().toISOString(),
     });
 
     if (profileError) {
@@ -64,10 +78,9 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Save flight if provided
     if (flightNumber.trim()) {
       await supabase.from("flights").insert({
-        user_id: user.id,
+        user_id:       user.id,
         flight_number: flightNumber.trim().toUpperCase(),
       });
     }
@@ -75,52 +88,35 @@ export default function OnboardingPage() {
     router.push("/home");
   }
 
-  // ── Step 0: Interests ──────────────────────────────────────
+  const TOTAL_STEPS = 3;
+
+  // ── Step 0: Interests ──────────────────────────────────────────────────────
   if (step === 0) {
     return (
       <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col px-6 pt-14 pb-10">
-        {/* Progress */}
         <div className="flex gap-2 mb-10">
-          <div className="h-1 flex-1 rounded-full bg-[#4A27E8]" />
-          <div className="h-1 flex-1 rounded-full bg-slate-200 dark:bg-white/10" />
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <div key={i} className={`h-1 flex-1 rounded-full ${i <= 0 ? "bg-[#4A27E8]" : "bg-slate-200 dark:bg-white/10"}`} />
+          ))}
         </div>
-
-        <p className="text-xs font-semibold text-[#4A27E8] uppercase tracking-widest mb-3">
-          Step 1 of 2
-        </p>
-        <h2 className="text-2xl font-black text-[#1A1A1A] dark:text-white mb-1">
-          What moves you?
-        </h2>
+        <p className="text-xs font-semibold text-[#4A27E8] uppercase tracking-widest mb-3">Step 1 of {TOTAL_STEPS}</p>
+        <h2 className="text-2xl font-black text-[#1A1A1A] dark:text-white mb-1">What moves you?</h2>
         <p className="text-sm text-slate-400 mb-8">
           Pick up to {MAX_INTERESTS} topics you&apos;re passionate about.{" "}
-          <span className="text-[#4A27E8] font-semibold">
-            {interests.length}/{MAX_INTERESTS} selected
-          </span>
+          <span className="text-[#4A27E8] font-semibold">{interests.length}/{MAX_INTERESTS} selected</span>
         </p>
-
         <div className="grid grid-cols-2 gap-3 flex-1">
           {INTERESTS.map(({ id, label, icon }) => {
             const selected = interests.includes(id);
-            const maxed = interests.length >= MAX_INTERESTS && !selected;
+            const maxed    = interests.length >= MAX_INTERESTS && !selected;
             return (
-              <button
-                key={id}
-                onClick={() => toggleInterest(id)}
-                disabled={maxed}
+              <button key={id} onClick={() => toggleInterest(id)} disabled={maxed}
                 className={`flex items-center gap-3 px-4 py-4 rounded-2xl border-2 text-left transition-all active:scale-[0.97] ${
-                  selected
-                    ? "border-[#4A27E8] bg-blue-50 dark:bg-blue-950/40"
-                    : maxed
-                    ? "border-slate-100 dark:border-white/5 opacity-40"
-                    : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5"
-                }`}
-              >
+                  selected ? "border-[#4A27E8] bg-blue-50 dark:bg-blue-950/40"
+                  : maxed   ? "border-slate-100 dark:border-white/5 opacity-40"
+                  : "border-slate-200 dark:border-white/10 bg-white dark:bg-white/5"}`}>
                 <span className="text-2xl leading-none">{icon}</span>
-                <span className={`text-sm font-semibold ${
-                  selected ? "text-[#4A27E8]" : "text-[#1A1A1A] dark:text-white"
-                }`}>
-                  {label}
-                </span>
+                <span className={`text-sm font-semibold ${selected ? "text-[#4A27E8]" : "text-[#1A1A1A] dark:text-white"}`}>{label}</span>
                 {selected && (
                   <span className="ml-auto w-5 h-5 rounded-full bg-[#4A27E8] flex items-center justify-center flex-shrink-0">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -132,14 +128,10 @@ export default function OnboardingPage() {
             );
           })}
         </div>
-
         <div className="pt-8">
-          <button
-            onClick={() => setStep(1)}
-            disabled={interests.length === 0}
+          <button onClick={() => setStep(1)} disabled={interests.length === 0}
             className="w-full py-4 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, #4A27E8, #1A1A1A)" }}
-          >
+            style={{ background: "linear-gradient(135deg, #4A27E8, #1A1A1A)" }}>
             Continue
           </button>
         </div>
@@ -147,26 +139,80 @@ export default function OnboardingPage() {
     );
   }
 
-  // ── Step 1: Flight number ──────────────────────────────────
+  // ── Step 1: Professional Info ──────────────────────────────────────────────
+  if (step === 1) {
+    return (
+      <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col px-6 pt-14 pb-10">
+        <div className="flex gap-2 mb-10">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <div key={i} className={`h-1 flex-1 rounded-full ${i <= 1 ? "bg-[#4A27E8]" : "bg-slate-200 dark:bg-white/10"}`} />
+          ))}
+        </div>
+        <p className="text-xs font-semibold text-[#4A27E8] uppercase tracking-widest mb-3">Step 2 of {TOTAL_STEPS}</p>
+        <h2 className="text-2xl font-black text-[#1A1A1A] dark:text-white mb-1">Your professional profile</h2>
+        <p className="text-sm text-slate-400 mb-8">This is what other professionals will see about you.</p>
+
+        <div className="flex flex-col gap-4 flex-1">
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Role / Title</label>
+            <input
+              type="text"
+              placeholder="e.g. Co-founder, VP Engineering, Partner"
+              value={role}
+              onChange={e => setRole(e.target.value)}
+              className="w-full px-4 py-3.5 bg-slate-50 dark:bg-white/10 rounded-2xl text-sm text-[#1A1A1A] dark:text-white placeholder:text-slate-300 border-0 focus:outline-none focus:ring-2 focus:ring-[#4A27E8] transition"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Company</label>
+            <input
+              type="text"
+              placeholder="e.g. Stripe, OpenAI, Independent"
+              value={company}
+              onChange={e => setCompany(e.target.value)}
+              className="w-full px-4 py-3.5 bg-slate-50 dark:bg-white/10 rounded-2xl text-sm text-[#1A1A1A] dark:text-white placeholder:text-slate-300 border-0 focus:outline-none focus:ring-2 focus:ring-[#4A27E8] transition"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5 block">Short Bio <span className="normal-case font-normal text-slate-400">(optional)</span></label>
+            <textarea
+              rows={4}
+              placeholder="What do you work on? What are you building or investing in?"
+              value={bio}
+              onChange={e => setBio(e.target.value)}
+              maxLength={280}
+              className="w-full px-4 py-3.5 bg-slate-50 dark:bg-white/10 rounded-2xl text-sm text-[#1A1A1A] dark:text-white placeholder:text-slate-300 border-0 focus:outline-none focus:ring-2 focus:ring-[#4A27E8] transition resize-none"
+            />
+            <p className="text-xs text-slate-400 text-right mt-1">{bio.length}/280</p>
+          </div>
+        </div>
+
+        <div className="pt-6 flex flex-col gap-3">
+          <button onClick={() => setStep(2)}
+            className="w-full py-4 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98]"
+            style={{ background: "linear-gradient(135deg, #4A27E8, #1A1A1A)" }}>
+            Continue
+          </button>
+          <button onClick={() => setStep(2)} className="text-sm text-slate-400 py-2">
+            Skip for now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Step 2: Flight number ──────────────────────────────────────────────────
   return (
     <div className="min-h-dvh bg-white dark:bg-[#0A0A0B] flex flex-col px-6 pt-14 pb-10">
-      {/* Progress */}
       <div className="flex gap-2 mb-10">
-        <div className="h-1 flex-1 rounded-full bg-[#4A27E8]" />
-        <div className="h-1 flex-1 rounded-full bg-[#4A27E8]" />
+        {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+          <div key={i} className={`h-1 flex-1 rounded-full bg-[#4A27E8]`} />
+        ))}
       </div>
+      <p className="text-xs font-semibold text-[#4A27E8] uppercase tracking-widest mb-3">Step 3 of {TOTAL_STEPS}</p>
+      <h2 className="text-2xl font-black text-[#1A1A1A] dark:text-white mb-1">What&apos;s your flight?</h2>
+      <p className="text-sm text-slate-400 mb-8">We&apos;ll find professionals on your flight to connect with.</p>
 
-      <p className="text-xs font-semibold text-[#4A27E8] uppercase tracking-widest mb-3">
-        Step 2 of 2
-      </p>
-      <h2 className="text-2xl font-black text-[#1A1A1A] dark:text-white mb-1">
-        What&apos;s your flight?
-      </h2>
-      <p className="text-sm text-slate-400 mb-8">
-        We&apos;ll find professionals on your flight to connect with.
-      </p>
-
-      {/* Flight input */}
       <div className="relative">
         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -187,45 +233,24 @@ export default function OnboardingPage() {
       </div>
 
       {error && (
-        <p className="mt-3 text-xs text-red-500 bg-red-50 dark:bg-red-950/40 rounded-xl px-4 py-2">
-          {error}
-        </p>
+        <p className="mt-3 text-xs text-red-500 bg-red-50 dark:bg-red-950/40 rounded-xl px-4 py-2">{error}</p>
       )}
 
       <div className="mt-auto flex flex-col gap-3 pt-8">
-        <button
-          onClick={finish}
-          disabled={saving}
+        <button onClick={finish} disabled={saving}
           className="w-full py-4 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, #4A27E8, #1A1A1A)" }}
-        >
+          style={{ background: "linear-gradient(135deg, #4A27E8, #1A1A1A)" }}>
           {saving ? (
             <>
-              <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity="0.25"/>
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10"/>
               </svg>
-              Setting up your profile…
+              Setting up…
             </>
-          ) : (
-            "Let's fly →"
-          )}
+          ) : "Enter SkyLink ✈"}
         </button>
-
-        <button
-          onClick={finish}
-          disabled={saving}
-          className="text-sm text-slate-400 dark:text-slate-500 text-center py-2"
-        >
-          Skip for now
-        </button>
-
-        <button
-          onClick={() => setStep(0)}
-          disabled={saving}
-          className="text-sm text-slate-400 dark:text-slate-500 text-center py-1"
-        >
-          ← Back
+        <button onClick={finish} disabled={saving} className="text-sm text-slate-400 py-2">
+          Skip — add flight later
         </button>
       </div>
     </div>

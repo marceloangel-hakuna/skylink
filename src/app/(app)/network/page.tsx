@@ -535,16 +535,21 @@ export default function NetworkPage() {
               <div key={conn.id} className="rounded-2xl shadow-card p-4 flex flex-col gap-3 border"
                    style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
                 <div className="flex items-center gap-3">
-                  <Avatar profile={p} size={12} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm" style={{ color: "var(--c-text1)" }}>{p.full_name}</p>
-                    <p className="text-xs truncate" style={{ color: "var(--c-text2)" }}>
-                      {[p.role, p.company].filter(Boolean).join(" @ ") || "SkyLink Member"}
-                    </p>
-                    {conn.met_on_flight && (
-                      <p className="text-[10px] text-brand font-medium mt-0.5">✈ Met on {conn.met_on_flight}</p>
-                    )}
-                  </div>
+                  <button
+                    className="flex items-center gap-3 flex-1 min-w-0 text-left active:opacity-70 transition-opacity"
+                    onClick={() => p && setProfileSheet({ id: p.id, full_name: p.full_name, avatar_url: p.avatar_url, role: p.role, company: p.company, interests: p.interests ?? [] })}
+                  >
+                    <Avatar profile={p} size={12} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm" style={{ color: "var(--c-text1)" }}>{p.full_name}</p>
+                      <p className="text-xs truncate" style={{ color: "var(--c-text2)" }}>
+                        {[p.role, p.company].filter(Boolean).join(" @ ") || "SkyLink Member"}
+                      </p>
+                      {conn.met_on_flight && (
+                        <p className="text-[10px] text-brand font-medium mt-0.5">✈ Met on {conn.met_on_flight}</p>
+                      )}
+                    </div>
+                  </button>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <Link
                       href={`/chat/${p.id}`}

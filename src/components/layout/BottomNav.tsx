@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 type NavItem = { href: string; label: string; icon: (active: boolean) => React.ReactNode };
 
@@ -44,6 +45,12 @@ const navItems: NavItem[] = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router   = useRouter();
+
+  // Prefetch all nav destinations immediately for instant navigation
+  useEffect(() => {
+    navItems.forEach(item => router.prefetch(item.href));
+  }, [router]);
 
   return (
     <nav

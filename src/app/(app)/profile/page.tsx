@@ -12,9 +12,18 @@ export default async function ProfilePage() {
   const fullName  = meta.full_name ?? meta.name ?? "Traveler";
   const firstName = fullName.split(" ")[0];
   const avatarUrl = meta.avatar_url ?? meta.picture ?? null;
-  const headline  = meta.headline ?? meta.job_title ?? null;
-  const company   = meta.company ?? meta.organization ?? null;
   const email     = user?.email ?? null;
+
+  // Fetch profile row for role, company, bio (set during onboarding)
+  const { data: profileRow } = user ? await supabase
+    .from("profiles")
+    .select("role, company, bio")
+    .eq("id", user.id)
+    .single() : { data: null };
+
+  const headline = profileRow?.role ?? meta.headline ?? meta.job_title ?? null;
+  const company  = profileRow?.company ?? meta.company ?? meta.organization ?? null;
+  const bio      = profileRow?.bio ?? null;
 
   return (
     <div className="animate-fade-in">
@@ -44,6 +53,9 @@ export default async function ProfilePage() {
             )}
             {email && (
               <p className="text-xs text-slate-400 mt-1">{email}</p>
+            )}
+            {bio && (
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed max-w-[260px]">{bio}</p>
             )}
           </div>
         </div>

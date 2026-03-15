@@ -30,11 +30,11 @@ export default async function HomePage() {
     if (!profile?.onboarding_complete) redirect("/onboarding");
   }
 
-  const { data: flights } = await supabase
-    .from("flights")
-    .select("flight_number")
-    .eq("user_id", user?.id ?? "")
-    .limit(1);
+  const uid = user?.id ?? "";
+  const [{ data: flights }, { count: unreadCount }] = await Promise.all([
+    supabase.from("flights").select("flight_number").eq("user_id", uid).limit(1),
+    supabase.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", uid).is("read_at", null),
+  ]);
 
   // Fall back to demo data when no real flight exists in DB yet
   const flightNumber = flights?.[0]?.flight_number ?? "AA 2317";
@@ -43,12 +43,6 @@ export default async function HomePage() {
   const fullName  = meta.full_name ?? meta.name ?? "Traveler";
   const firstName = fullName.split(" ")[0];
   const avatarUrl = meta.avatar_url ?? meta.picture ?? null;
-
-  const { count: unreadCount } = await supabase
-    .from("messages")
-    .select("id", { count: "exact", head: true })
-    .eq("receiver_id", user?.id ?? "")
-    .is("read_at", null);
 
   return (
     <div className="animate-fade-in pb-[80px]">

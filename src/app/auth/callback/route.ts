@@ -42,6 +42,17 @@ export async function GET(request: NextRequest) {
 
   const { error, data } = await supabase.auth.exchangeCodeForSession(code);
 
+  // Sync OAuth metadata (name, avatar) to profiles on every login
+  if (!error && data.session?.user) {
+    const u    = data.session.user;
+    const meta = u.user_metadata ?? {};
+    await supabase.from("profiles").upsert({
+      id:         u.id,
+      full_name:  meta.full_name ?? meta.name ?? null,
+      avatar_url: meta.avatar_url ?? meta.picture ?? null,
+    }, { onConflict: "id", ignoreDuplicates: true });
+  }
+
   let destination: string;
   if (error) {
     destination = `${base}/login?error=${encodeURIComponent(error.message)}`;
