@@ -21,7 +21,7 @@ type Profile = {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
-  title: string | null;
+  role: string | null;
   company: string | null;
 };
 
@@ -71,7 +71,7 @@ export default function ConversationPage() {
       // Other person's profile
       const { data: profile } = await sb
         .from("profiles")
-        .select("id, full_name, avatar_url, title, company")
+        .select("id, full_name, avatar_url, role, company")
         .eq("id", otherId)
         .single();
       setOtherProfile(profile);
@@ -179,7 +179,7 @@ export default function ConversationPage() {
   // ── Derived display values ────────────────────────────────────────────────
   const otherName    = otherProfile?.full_name ?? "";
   const otherInits   = initials(otherName || null);
-  const otherSubline = [otherProfile?.title, otherProfile?.company]
+  const otherSubline = [otherProfile?.role, otherProfile?.company]
     .filter(Boolean).join(" at ");
 
   return (

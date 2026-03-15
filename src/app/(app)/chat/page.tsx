@@ -86,7 +86,7 @@ export default async function ChatPage() {
   const { data: profiles } = partnerIds.length > 0
     ? await supabase
         .from("profiles")
-        .select("id, full_name, avatar_url, title, company")
+        .select("id, full_name, avatar_url, role, company")
         .in("id", partnerIds)
     : { data: [] };
 
