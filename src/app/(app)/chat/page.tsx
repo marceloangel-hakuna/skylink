@@ -147,13 +147,10 @@ export default async function ChatPage() {
           const color = avatarColor(conv.partnerId);
 
           return (
-            <Link
-              key={conv.partnerId}
-              href={`/chat/${conv.partnerId}`}
-              className="card flex items-center gap-3 active:scale-[0.98] transition-transform"
-            >
+            // No nested <a> — avatar links to profile, content links to chat
+            <div key={conv.partnerId} className="card flex items-center gap-3">
               {/* Avatar — tap to view profile */}
-              <Link href={`/profile/${conv.partnerId}`} onClick={e => e.stopPropagation()} className="relative flex-shrink-0 active:opacity-70 transition-opacity">
+              <Link href={`/profile/${conv.partnerId}`} className="relative flex-shrink-0 active:opacity-70 transition-opacity">
                 {conv.profile?.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={conv.profile.avatar_url} alt={name}
@@ -165,8 +162,8 @@ export default async function ChatPage() {
                 )}
               </Link>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
+              {/* Content — tap to open chat */}
+              <Link href={`/chat/${conv.partnerId}`} className="flex-1 min-w-0 active:opacity-70 transition-opacity">
                 <div className="flex items-center justify-between mb-0.5">
                   <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-bold text-zinc-900 dark:text-zinc-50" : "font-semibold text-zinc-700 dark:text-zinc-200"}`}>
                     {name}
@@ -186,8 +183,8 @@ export default async function ChatPage() {
                     </span>
                   )}
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           );
         })}
       </div>

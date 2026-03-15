@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
+import ConnectButton from "@/components/ConnectButton";
 
 const INTEREST_LABELS: Record<string, string> = {
   ai_ml: "AI / ML", fintech: "Fintech", climate: "Climate Tech",
@@ -102,11 +103,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
                 Request Sent ✓
               </button>
             ) : (
-              <Link href={`/network`}
-                className="w-full py-3 rounded-2xl text-white text-sm font-semibold text-center"
-                style={{ background: "#4A27E8" }}>
-                Connect
-              </Link>
+              <ConnectButton targetId={params.id} targetName={profile.full_name ?? "them"} />
             )}
           </div>
         )}

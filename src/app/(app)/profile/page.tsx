@@ -3,6 +3,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import LogoutButton from "@/components/auth/LogoutButton";
 import Link from "next/link";
 import { AppearanceRow } from "@/components/AppearanceRow";
+import EditProfileSheet from "@/components/EditProfileSheet";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -58,6 +59,7 @@ export default async function ProfilePage() {
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed max-w-[260px]">{bio}</p>
             )}
           </div>
+          <EditProfileSheet initial={{ role: headline ?? "", company: company ?? "", bio: bio ?? "" }} />
         </div>
 
         {/* Stats */}
