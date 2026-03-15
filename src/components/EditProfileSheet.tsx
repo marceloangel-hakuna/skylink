@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -15,6 +16,9 @@ export default function EditProfileSheet({ initial }: Props) {
   const [company, setCompany] = useState(initial.company);
   const [bio,     setBio]     = useState(initial.bio);
   const [saving,  setSaving]  = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const save = async () => {
     setSaving(true);
@@ -42,8 +46,8 @@ export default function EditProfileSheet({ initial }: Props) {
         ✏️ Edit Profile
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+      {open && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div
             className="relative rounded-t-3xl w-full max-w-[430px]"
@@ -123,7 +127,8 @@ export default function EditProfileSheet({ initial }: Props) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

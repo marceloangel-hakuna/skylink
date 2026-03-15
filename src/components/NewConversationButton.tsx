@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -33,6 +34,9 @@ export default function NewConversationButton() {
   const [open,     setOpen]     = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading,  setLoading]  = useState(false);
+  const [mounted,  setMounted]  = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!open || contacts.length > 0) return;
@@ -74,8 +78,8 @@ export default function NewConversationButton() {
         </svg>
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+      {open && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div
             className="relative rounded-t-3xl w-full max-w-[430px] flex flex-col overflow-hidden"
@@ -145,7 +149,8 @@ export default function NewConversationButton() {
               })}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
