@@ -313,9 +313,15 @@ export default function ConversationPage() {
 
         {!loading && messages.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-violet-100 text-violet-700 flex items-center justify-center text-xl font-black">
-              {otherInits}
-            </div>
+            {otherProfile?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={otherProfile.avatar_url} alt={otherName}
+                className="w-20 h-20 rounded-3xl object-cover shadow-sm" />
+            ) : (
+              <div className="w-20 h-20 rounded-3xl bg-violet-100 text-violet-700 flex items-center justify-center text-2xl font-black">
+                {otherInits}
+              </div>
+            )}
             <div>
               <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{otherName || "Unknown"}</p>
               {otherSubline && (

@@ -367,7 +367,16 @@ export default function NetworkPage() {
           .in("id", otherIds);
         const pMap = Object.fromEntries((connProfiles ?? []).map((x: Profile) => [x.id, x]));
 
-        setConnections(conns.map((c: Connection) => {
+        // Deduplicate: one connection entry per partner (prefer accepted over pending)
+        const partnerMap = new Map<string, Connection>();
+        for (const c of conns) {
+          const oid = c.requester_id === user.id ? c.receiver_id : c.requester_id;
+          const existing = partnerMap.get(oid);
+          if (!existing || (c.status === "accepted" && existing.status !== "accepted")) {
+            partnerMap.set(oid, c);
+          }
+        }
+        setConnections(Array.from(partnerMap.values()).map((c: Connection) => {
           const oid = c.requester_id === user.id ? c.receiver_id : c.requester_id;
           const ph  = PLACEHOLDERS.find(ph => ph.id === oid);
           return { ...c, profile: pMap[oid] ?? (ph ? { ...ph, avatar_url: null } : undefined) };
