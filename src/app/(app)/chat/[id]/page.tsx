@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -36,7 +36,6 @@ function initials(name: string | null): string {
   return name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
-// Show a timestamp divider if messages are more than 5 min apart
 function shouldShowTimestamp(curr: Message, prev: Message | undefined): boolean {
   if (!prev) return true;
   return new Date(curr.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60_000;
@@ -48,100 +47,143 @@ export default function ConversationPage() {
   const params  = useParams();
   const otherId = params.id as string;
 
-  const [messages,     setMessages]     = useState<Message[]>([]);
-  const [otherProfile, setOtherProfile] = useState<Profile | null>(null);
-  const [myId,         setMyId]         = useState<string | null>(null);
-  const [input,        setInput]        = useState("");
-  const [sending,      setSending]      = useState(false);
-  const [loading,      setLoading]      = useState(true);
+  const [messages,      setMessages]      = useState<Message[]>([]);
+  const [otherProfile,  setOtherProfile]  = useState<Profile | null>(null);
+  const [myId,          setMyId]          = useState<string | null>(null);
+  const [input,         setInput]         = useState("");
+  const [sending,       setSending]       = useState(false);
+  const [loading,       setLoading]       = useState(true);
+  const [isOtherOnline, setIsOtherOnline] = useState(false);
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const channelRef     = useRef<RealtimeChannel | null>(null);
-  const supabase       = useRef(createClient());
+  const messagesEndRef    = useRef<HTMLDivElement>(null);
+  const msgChannelRef     = useRef<RealtimeChannel | null>(null);
+  const presChannelRef    = useRef<RealtimeChannel | null>(null);
+  const typingTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const myIdRef           = useRef<string | null>(null);
+  const sb                = useRef(createClient());
 
-  // ── Init: load user, profile, messages, subscribe ────────────────────────
+  // ── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const sb = supabase.current;
+    const supabase = sb.current;
 
     async function init() {
-      const { data: { user } } = await sb.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       setMyId(user.id);
+      myIdRef.current = user.id;
 
       // Other person's profile
-      const { data: profile } = await sb
+      const { data: profile } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url, role, company")
         .eq("id", otherId)
         .single();
       setOtherProfile(profile);
 
-      // All messages between the two users, chronological
-      const { data: msgs } = await sb
+      // Load conversation — fetch all my messages and filter client-side
+      // (avoids PostgREST nested-and syntax issues)
+      const { data: msgs, error } = await supabase
         .from("messages")
         .select("*")
-        .or(
-          `and(sender_id.eq.${user.id},receiver_id.eq.${otherId}),` +
-          `and(sender_id.eq.${otherId},receiver_id.eq.${user.id})`
-        )
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order("created_at", { ascending: true });
 
-      setMessages(msgs ?? []);
+      if (error) console.error("messages load error:", error);
+
+      const filtered = (msgs ?? []).filter(m =>
+        (m.sender_id === user.id && m.receiver_id === otherId) ||
+        (m.sender_id === otherId && m.receiver_id === user.id)
+      );
+      setMessages(filtered);
       setLoading(false);
 
-      // Mark any unread messages from this person as read
-      await sb
+      // Mark incoming as read
+      await supabase
         .from("messages")
         .update({ read_at: new Date().toISOString() })
         .eq("receiver_id", user.id)
         .eq("sender_id", otherId)
         .is("read_at", null);
 
-      // ── Realtime: postgres_changes on messages table ──────────────────────
-      // Filter to rows where I'm the receiver — Supabase delivers them
-      // instantly when the other person inserts a row.
-      const channel = sb
-        .channel(`dm:${[user.id, otherId].sort().join(":")}`)
-        .on(
-          "postgres_changes",
-          {
-            event:  "INSERT",
-            schema: "public",
-            table:  "messages",
-            filter: `receiver_id=eq.${user.id}`,
-          },
-          async (payload) => {
-            const msg = payload.new as Message;
-            // Ignore messages from anyone other than this conversation
-            if (msg.sender_id !== otherId) return;
+      const convId = [user.id, otherId].sort().join(":");
 
-            setMessages(prev => [...prev, msg]);
-
-            // Auto-read
-            await sb
-              .from("messages")
-              .update({ read_at: new Date().toISOString() })
-              .eq("id", msg.id);
-          }
-        )
+      // ── Realtime: incoming messages ──────────────────────────────────────
+      const msgChannel = supabase
+        .channel(`dm_msg:${convId}`)
+        .on("postgres_changes", {
+          event:  "INSERT",
+          schema: "public",
+          table:  "messages",
+          filter: `receiver_id=eq.${user.id}`,
+        }, async (payload) => {
+          const msg = payload.new as Message;
+          if (msg.sender_id !== otherId) return;
+          setMessages(prev => [...prev, msg]);
+          // Mark as read immediately
+          await supabase.from("messages")
+            .update({ read_at: new Date().toISOString() })
+            .eq("id", msg.id);
+        })
         .subscribe();
+      msgChannelRef.current = msgChannel;
 
-      channelRef.current = channel;
+      // ── Presence + typing via broadcast ─────────────────────────────────
+      const presChannel = supabase
+        .channel(`dm_pres:${convId}`, {
+          config: { presence: { key: user.id } },
+        })
+        .on("presence", { event: "join" }, ({ key }) => {
+          if (key === otherId) setIsOtherOnline(true);
+        })
+        .on("presence", { event: "leave" }, ({ key }) => {
+          if (key === otherId) setIsOtherOnline(false);
+        })
+        .on("presence", { event: "sync" }, () => {
+          const state = presChannel.presenceState();
+          setIsOtherOnline(otherId in state);
+        })
+        .on("broadcast", { event: "typing" }, ({ payload }) => {
+          if (payload?.userId !== otherId) return;
+          setIsOtherTyping(true);
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setIsOtherTyping(false), 3000);
+        })
+        .subscribe(async (status) => {
+          if (status === "SUBSCRIBED") {
+            await presChannel.track({ online_at: new Date().toISOString() });
+          }
+        });
+      presChannelRef.current = presChannel;
     }
 
     init();
 
     return () => {
-      if (channelRef.current) sb.removeChannel(channelRef.current);
+      const supabase = sb.current;
+      if (msgChannelRef.current)  supabase.removeChannel(msgChannelRef.current);
+      if (presChannelRef.current) supabase.removeChannel(presChannelRef.current);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [otherId]);
 
-  // Scroll to bottom whenever messages change
+  // Scroll to bottom when messages or typing indicator changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isOtherTyping]);
 
-  // ── Send ─────────────────────────────────────────────────────────────────
+  // ── Typing broadcast ──────────────────────────────────────────────────────
+  const handleInputChange = useCallback((val: string) => {
+    setInput(val);
+    if (!presChannelRef.current || !myIdRef.current) return;
+    presChannelRef.current.send({
+      type:    "broadcast",
+      event:   "typing",
+      payload: { userId: myIdRef.current },
+    });
+  }, []);
+
+  // ── Send ──────────────────────────────────────────────────────────────────
   const handleSend = async () => {
     const text = input.trim();
     if (!text || !myId || sending) return;
@@ -149,60 +191,73 @@ export default function ConversationPage() {
     setSending(true);
     setInput("");
 
-    // Optimistic update — show immediately with a temp id
     const tempId  = `temp-${Date.now()}`;
     const tempMsg: Message = {
-      id:          tempId,
-      sender_id:   myId,
-      receiver_id: otherId,
-      content:     text,
-      created_at:  new Date().toISOString(),
-      read_at:     null,
+      id: tempId, sender_id: myId, receiver_id: otherId,
+      content: text, created_at: new Date().toISOString(), read_at: null,
     };
     setMessages(prev => [...prev, tempMsg]);
 
-    // Persist to Supabase
-    const { data: saved } = await supabase.current
+    const { data: saved, error } = await sb.current
       .from("messages")
       .insert({ sender_id: myId, receiver_id: otherId, content: text })
       .select()
       .single();
 
-    // Swap temp with the real row (has the canonical id + server timestamp)
-    if (saved) {
+    if (error) {
+      console.error("Send error:", error);
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      setInput(text);
+    } else if (saved) {
       setMessages(prev => prev.map(m => m.id === tempId ? saved : m));
     }
 
     setSending(false);
   };
 
-  // ── Derived display values ────────────────────────────────────────────────
+  // ── Derived ───────────────────────────────────────────────────────────────
   const otherName    = otherProfile?.full_name ?? "";
   const otherInits   = initials(otherName || null);
-  const otherSubline = [otherProfile?.role, otherProfile?.company]
-    .filter(Boolean).join(" at ");
+  const otherSubline = [otherProfile?.role, otherProfile?.company].filter(Boolean).join(" at ");
 
+  // ── Render ────────────────────────────────────────────────────────────────
+  // position:fixed escapes the outer page-scroll container so the input
+  // stays pinned to the bottom and only the messages area scrolls.
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)]">
-
+    <div
+      className="fixed flex flex-col"
+      style={{
+        top:       0,
+        bottom:    "calc(64px + env(safe-area-inset-bottom, 0px))",
+        left:      "50%",
+        transform: "translateX(-50%)",
+        width:     "100%",
+        maxWidth:  "430px",
+        background: "var(--background)",
+        zIndex:    10,
+      }}
+    >
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div
-        className="flex-shrink-0 bg-white dark:bg-[#18172A] border-b border-surface-border dark:border-[#2E2C4A]"
-        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+        className="flex-shrink-0"
+        style={{
+          background:   "var(--c-card)",
+          borderBottom: "1px solid var(--c-border)",
+          paddingTop:   "env(safe-area-inset-top, 0px)",
+        }}
       >
         <div className="flex items-center gap-3 px-4 py-3">
-          {/* Back */}
           <Link
             href="/chat"
-            className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0 bg-[#F5F3FF] dark:bg-[#1E1C35]"
+            className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
+            style={{ background: "var(--c-muted)" }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M15 18L9 12L15 6" stroke="#4A27E8" strokeWidth="2.2" strokeLinecap="round"/>
             </svg>
           </Link>
 
-          {/* Other person's avatar */}
-          <div className="flex-shrink-0">
+          <div className="relative flex-shrink-0">
             {otherProfile?.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={otherProfile.avatar_url} alt={otherName}
@@ -212,20 +267,27 @@ export default function ConversationPage() {
                 {loading ? "…" : otherInits}
               </div>
             )}
-          </div>
-
-          {/* Name + subtitle */}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate">
-              {loading ? "Loading…" : otherName || "Unknown"}
-            </p>
-            {otherSubline && (
-              <p className="text-[11px] text-zinc-400 truncate">{otherSubline}</p>
+            {isOtherOnline && (
+              <span
+                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2"
+                style={{ borderColor: "var(--c-card)" }}
+              />
             )}
           </div>
 
-          {/* Options */}
-          <button className="p-2 rounded-full active:bg-surface-muted transition text-zinc-400 flex-shrink-0">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold leading-tight truncate" style={{ color: "var(--c-text1)" }}>
+              {loading ? "Loading…" : otherName || "Unknown"}
+            </p>
+            <p
+              className="text-[11px] truncate transition-colors"
+              style={{ color: isOtherTyping ? "#4A27E8" : isOtherOnline ? "#22c55e" : "var(--c-text3)" }}
+            >
+              {isOtherTyping ? "typing…" : isOtherOnline ? "Online" : (otherSubline || "SkyLink Member")}
+            </p>
+          </div>
+
+          <button className="p-2 rounded-full active:scale-90 transition flex-shrink-0" style={{ color: "var(--c-text3)" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="5"  r="1.5"/>
               <circle cx="12" cy="12" r="1.5"/>
@@ -237,81 +299,132 @@ export default function ConversationPage() {
 
       {/* ── Messages ───────────────────────────────────────────────────── */}
       <div
-        className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1 bg-[#F8F7FF] dark:bg-[#0D0C18]"
+        className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1"
+        style={{ background: "var(--background)" }}
       >
-        {/* Loading spinner */}
         {loading && (
           <div className="flex justify-center items-center flex-1 py-20">
-            <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
-                 style={{ borderColor: "#4A27E8", borderTopColor: "transparent" }} />
+            <div
+              className="w-6 h-6 border-2 rounded-full animate-spin"
+              style={{ borderColor: "#4A27E8", borderTopColor: "transparent" }}
+            />
           </div>
         )}
 
-        {/* Empty state */}
         {!loading && messages.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <div className="w-16 h-16 rounded-2xl bg-violet-100 text-violet-700 flex items-center justify-center text-xl font-black">
               {otherInits}
             </div>
             <div>
-              <p className="text-sm font-bold text-zinc-800">{otherName || "Unknown"}</p>
-              {otherSubline && <p className="text-xs text-zinc-400 mt-0.5">{otherSubline}</p>}
-              <p className="text-xs text-zinc-400 mt-3">Say hello to start the conversation 👋</p>
+              <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{otherName || "Unknown"}</p>
+              {otherSubline && (
+                <p className="text-xs mt-0.5" style={{ color: "var(--c-text3)" }}>{otherSubline}</p>
+              )}
+              <p className="text-xs mt-3" style={{ color: "var(--c-text3)" }}>
+                Say hello to start the conversation 👋
+              </p>
             </div>
           </div>
         )}
 
-        {/* Message bubbles */}
         {!loading && messages.map((msg, i) => {
-          const isMe = msg.sender_id === myId;
-          const prev = messages[i - 1];
+          const isMe   = msg.sender_id === myId;
+          const prev   = messages[i - 1];
           const showTs = shouldShowTimestamp(msg, prev);
           const isTemp = msg.id.startsWith("temp-");
+          const isRead = isMe && msg.read_at !== null;
 
           return (
             <div key={msg.id}>
-              {/* Timestamp divider */}
               {showTs && (
                 <div className="flex justify-center my-3">
-                  <span className="text-[10px] text-zinc-400 bg-white dark:bg-[#18172A] rounded-full px-2.5 py-1 shadow-sm border border-surface-border dark:border-[#2E2C4A]">
+                  <span
+                    className="text-[10px] rounded-full px-2.5 py-1 shadow-sm"
+                    style={{ background: "var(--c-card)", color: "var(--c-text3)", border: "1px solid var(--c-border)" }}
+                  >
                     {formatTime(msg.created_at)}
                   </span>
                 </div>
               )}
 
-              {/* Bubble */}
               <div className={`flex mb-1 ${isMe ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                    isMe
-                      ? "rounded-br-sm text-white"
-                      : "rounded-bl-sm bg-white dark:bg-[#211F35] text-zinc-800 dark:text-zinc-100 shadow-sm border border-surface-border dark:border-[#2E2C4A]"
+                    isMe ? "rounded-br-sm text-white" : "rounded-bl-sm shadow-sm"
                   } ${isTemp ? "opacity-70" : ""}`}
-                  style={isMe ? { background: "#4A27E8" } : undefined}
+                  style={isMe
+                    ? { background: "#4A27E8" }
+                    : { background: "var(--c-card)", color: "var(--c-text1)", border: "1px solid var(--c-border)" }
+                  }
                 >
                   {msg.content}
+                  {isMe && (
+                    <span className="ml-1.5 inline-flex items-center" style={{ color: isRead ? "#93c5fd" : "rgba(255,255,255,0.55)" }}>
+                      {/* double tick = delivered+read, single = sent */}
+                      <svg width="14" height="9" viewBox="0 0 14 9" fill="none">
+                        {isRead ? (
+                          <>
+                            <path d="M1 4.5L4.5 8L9 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M5 4.5L8.5 8L13 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </>
+                        ) : (
+                          <path d="M3 4.5L6.5 8L11 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        )}
+                      </svg>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           );
         })}
 
+        {/* Typing indicator */}
+        {isOtherTyping && (
+          <div className="flex justify-start mb-1">
+            <div
+              className="px-4 py-3 rounded-2xl rounded-bl-sm flex gap-1 items-center shadow-sm"
+              style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}
+            >
+              {[0, 1, 2].map(i => (
+                <span
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full animate-bounce"
+                  style={{ background: "var(--c-text3)", animationDelay: `${i * 0.15}s` }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Input bar ──────────────────────────────────────────────────── */}
+      {/* ── Input ──────────────────────────────────────────────────────── */}
       <div
-        className="flex-shrink-0 bg-white dark:bg-[#18172A] border-t border-surface-border dark:border-[#2E2C4A] px-4 py-3"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
+        className="flex-shrink-0 px-4 py-3"
+        style={{
+          background:    "var(--c-card)",
+          borderTop:     "1px solid var(--c-border)",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+        }}
       >
         <div className="flex items-center gap-2">
           <input
             type="text"
             placeholder={`Message ${otherProfile?.full_name?.split(" ")[0] ?? "…"}`}
             value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            className="flex-1 bg-surface-muted dark:bg-[#211F35] rounded-full px-4 py-2.5 text-sm outline-none border border-transparent focus:border-brand/30 transition-colors"
+            onChange={e => handleInputChange(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+            }}
+            className="flex-1 rounded-full px-4 py-2.5 text-sm outline-none transition-colors"
+            style={{
+              background: "var(--c-muted)",
+              color:      "var(--c-text1)",
+              border:     "1px solid transparent",
+            }}
           />
           <button
             onClick={handleSend}
@@ -326,7 +439,6 @@ export default function ConversationPage() {
           </button>
         </div>
       </div>
-
     </div>
   );
 }
