@@ -223,7 +223,7 @@ export default async function HomePage() {
         {/* ── SkyPoints ─────────────────────────────────── */}
         <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
           <div className="rounded-2xl p-4 flex items-center gap-4"
-               style={{ background: "linear-gradient(135deg, #0891B2 0%, #14D9A4 100%)" }}>
+               style={{ background: "linear-gradient(135deg, #C2185B 0%, #F73D8A 100%)" }}>
             <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
