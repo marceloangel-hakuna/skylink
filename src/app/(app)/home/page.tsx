@@ -223,21 +223,22 @@ export default async function HomePage() {
         {/* ── SkyPoints ─────────────────────────────────── */}
         <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
           <div className="rounded-2xl p-4 flex items-center gap-4"
-               style={{ background: "linear-gradient(135deg, #C2185B 0%, #F73D8A 100%)" }}>
-            <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+               style={{ background: "linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)", border: "1px solid #FBCFE8" }}>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                 style={{ background: "#FCE7F3" }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                  fill="white" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+                  fill="#F73D8A" stroke="#F73D8A" strokeWidth="1.5" strokeLinejoin="round"/>
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-white/60 font-semibold uppercase tracking-wide">SkyPoints</p>
-              <p className="text-2xl font-black text-white leading-none">{totalPoints.toLocaleString()}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "#DB2777" }}>SkyPoints</p>
+              <p className="text-2xl font-black leading-none" style={{ color: "#9D174D" }}>{totalPoints.toLocaleString()}</p>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full">{tierName}</span>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "#FCE7F3", color: "#BE185D" }}>{tierName}</span>
               {ptsToNext && (
-                <p className="text-[10px] text-white/60 mt-1">{ptsToNext.toLocaleString()} to next tier</p>
+                <p className="text-[10px] mt-1" style={{ color: "#DB2777" }}>{ptsToNext.toLocaleString()} to next tier</p>
               )}
             </div>
           </div>

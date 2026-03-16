@@ -308,22 +308,22 @@ export default function RewardsPage() {
 
       {/* ── Balance header ─────────────────────────────── */}
       <div className="mx-4 rounded-3xl overflow-hidden mb-5"
-           style={{ background: "linear-gradient(135deg, #C2185B 0%, #F73D8A 100%)" }}>
+           style={{ background: "linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)", border: "1px solid #FBCFE8" }}>
         <div className="p-5">
           <div className="flex items-start justify-between mb-5">
             <div>
-              <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">SkyPoints Balance</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#DB2777" }}>SkyPoints Balance</p>
               {balance === null ? (
-                <div className="h-10 w-28 bg-white/20 rounded-xl mt-1 animate-pulse" />
+                <div className="h-10 w-28 rounded-xl mt-1 animate-pulse" style={{ background: "#FBCFE8" }} />
               ) : (
-                <p className="text-5xl font-black text-white mt-0.5 leading-none">
+                <p className="text-5xl font-black mt-0.5 leading-none" style={{ color: "#9D174D" }}>
                   {pts.toLocaleString()}
                 </p>
               )}
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="text-3xl">{tier.icon}</span>
-              <span className="text-[11px] font-bold text-white/90 bg-white/15 px-2.5 py-0.5 rounded-full">
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full" style={{ background: "#FCE7F3", color: "#BE185D" }}>
                 {tier.name}
               </span>
             </div>
@@ -331,24 +331,23 @@ export default function RewardsPage() {
 
           {next && (
             <div>
-              <div className="flex justify-between text-[11px] text-white/70 mb-1.5">
+              <div className="flex justify-between text-[11px] mb-1.5" style={{ color: "#DB2777" }}>
                 <span>{tier.name}</span>
                 <span>{next.name} · {next.needed.toLocaleString()} pts away</span>
               </div>
-              <div className="w-full h-2 bg-white/20 rounded-full">
-                <div className="h-2 bg-white rounded-full transition-all duration-700"
-                     style={{ width: `${next.progress}%` }} />
+              <div className="w-full h-2 rounded-full" style={{ background: "#FBCFE8" }}>
+                <div className="h-2 rounded-full transition-all duration-700"
+                     style={{ width: `${next.progress}%`, background: "#F73D8A" }} />
               </div>
             </div>
           )}
         </div>
 
         {/* Earn more strip */}
-        <div className="px-5 py-3 border-t border-white/10"
-             style={{ background: "rgba(0,0,0,0.15)" }}>
-          <p className="text-xs text-white/70 leading-relaxed">
+        <div className="px-5 py-3" style={{ borderTop: "1px solid #FBCFE8", background: "#FDF2F8" }}>
+          <p className="text-xs leading-relaxed" style={{ color: "#BE185D" }}>
             Earn points by flying, connecting, and engaging.{" "}
-            <span className="text-white font-semibold">Redeem for lounges, food, upgrades, and perks.</span>
+            <span className="font-semibold" style={{ color: "#9D174D" }}>Redeem for lounges, food, upgrades, and perks.</span>
           </p>
         </div>
       </div>
