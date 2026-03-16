@@ -75,7 +75,7 @@ export default async function HomePage() {
   const avatarUrl = meta.avatar_url ?? meta.picture ?? null;
 
   return (
-    <div className="animate-fade-in pb-[80px]">
+    <div className="animate-fade-in pb-6">
 
       {/* ── Top bar ──────────────────────────────────────── */}
       <div className="flex items-center px-4 pb-3 gap-3"
@@ -143,14 +143,20 @@ export default async function HomePage() {
                 </div>
                 <div className="flex-1 mx-3 mb-3">
                   <svg viewBox="0 0 160 50" fill="none" className="w-full">
+                    {/* Full route arc — dashed */}
                     <path d="M8 42 Q80 4 152 42" stroke="white" strokeOpacity="0.25"
                           strokeWidth="1.5" fill="none" strokeDasharray="4 3"/>
-                    <path d="M8 42 Q50 8 88 26" stroke="white" strokeWidth="2"
+                    {/* Progress arc — first half of same bezier (De Casteljau t=0.5):
+                        control pt = lerp(P0,P1,0.5) = (44,23), end = (80,23) */}
+                    <path d="M8 42 Q44 23 80 23" stroke="white" strokeWidth="2"
                           fill="none" strokeLinecap="round"/>
-                    <g transform="translate(81,22) rotate(-30)">
-                      <path d="M0 -5L8 0L0 5L2 0Z" fill="white"/>
+                    {/* Plane at midpoint (80,23) — tangent is horizontal at t=0.5 */}
+                    <g transform="translate(80,23)">
+                      <path d="M-7 0 L3 -3 L5 0 L3 3 Z
+                               M-7 -1 L-3 -5 L-2 -1 Z
+                               M-7  1 L-3  5 L-2  1 Z" fill="white"/>
                     </g>
-                    <circle cx="8"   cy="42" r="3" fill="white" fillOpacity="0.5"/>
+                    <circle cx="8"   cy="42" r="3" fill="white" fillOpacity="0.6"/>
                     <circle cx="152" cy="42" r="3" fill="white" fillOpacity="0.3"/>
                   </svg>
                 </div>
