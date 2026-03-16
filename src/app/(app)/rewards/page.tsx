@@ -308,7 +308,7 @@ export default function RewardsPage() {
 
       {/* ── Balance header ─────────────────────────────── */}
       <div className="mx-4 rounded-3xl overflow-hidden mb-5"
-           style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
+           style={{ background: "linear-gradient(135deg, #C2185B 0%, #F73D8A 100%)" }}>
         <div className="p-5">
           <div className="flex items-start justify-between mb-5">
             <div>
