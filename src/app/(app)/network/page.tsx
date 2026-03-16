@@ -401,6 +401,12 @@ export default function NetworkPage() {
     await supabase.from("connections").insert({
       requester_id: user.id, receiver_id: modalUser.id, status: "pending", message: msg,
     });
+    // Award connection points
+    await supabase.from("points").insert({
+      user_id: user.id,
+      amount:  100,
+      reason:  `Connected with ${modalUser.full_name ?? "someone"}`,
+    });
     setSentIds(prev => { const next = new Set(Array.from(prev)); next.add(modalUser.id); return next; });
     setSending(false); setModalUser(null);
   }, [modalUser, myProfile, supabase]);

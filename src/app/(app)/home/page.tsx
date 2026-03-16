@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import AtlasHomeSuggestion from "@/components/AtlasHomeSuggestion";
 
 export const dynamic = "force-dynamic";
 
@@ -31,13 +32,42 @@ export default async function HomePage() {
   }
 
   const uid = user?.id ?? "";
-  const [{ data: flights }, { count: unreadCount }] = await Promise.all([
+  const [{ data: flights }, { count: unreadCount }, { data: viewerProfileRow }, { data: pointsRows }] = await Promise.all([
     supabase.from("flights").select("flight_number").eq("user_id", uid).limit(1),
     supabase.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", uid).is("read_at", null),
+    supabase.from("profiles").select("id, full_name, role, company, bio, interests").eq("id", uid).single(),
+    supabase.from("points").select("amount").eq("user_id", uid),
   ]);
 
   // Fall back to demo data when no real flight exists in DB yet
   const flightNumber = flights?.[0]?.flight_number ?? "AA 2317";
+
+  const totalPoints = (pointsRows ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0);
+  const tierName    = totalPoints >= 5000 ? "Platinum" : totalPoints >= 1500 ? "Gold" : totalPoints >= 500 ? "Silver" : "Bronze";
+  const nextTierPts = totalPoints >= 5000 ? null : totalPoints >= 1500 ? 5000 : totalPoints >= 500 ? 1500 : 500;
+  const ptsToNext   = nextTierPts ? nextTierPts - totalPoints : null;
+
+  // Find other users on the same flight for Atlas matching
+  const { data: flightmates } = await supabase
+    .from("flights")
+    .select("user_id")
+    .eq("flight_number", flightNumber)
+    .neq("user_id", uid)
+    .limit(5);
+
+  const flightmateIds = (flightmates ?? []).map(f => f.user_id);
+  const { data: flightmateProfiles } = flightmateIds.length > 0
+    ? await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, role, company, bio, interests")
+        .in("id", flightmateIds)
+    : { data: [] };
+
+  const viewerForAtlas = viewerProfileRow ?? {
+    id: uid,
+    full_name: user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? null,
+    role: null, company: null, bio: null, interests: null,
+  };
 
   const meta      = user?.user_metadata ?? {};
   const fullName  = meta.full_name ?? meta.name ?? "Traveler";
@@ -153,30 +183,10 @@ export default async function HomePage() {
         </Link>
 
         {/* ── Atlas AI Card ─────────────────────────────── */}
-        <div className="rounded-2xl p-4 border border-amber-200 dark:border-amber-900"
-             style={{ background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" }}>
-          <div className="flex items-center gap-2 mb-2.5">
-            <span className="text-amber-500 text-base leading-none">✦</span>
-            <span className="text-[13px] font-black text-amber-700 dark:text-amber-400 tracking-wide">Atlas</span>
-            <span className="ml-auto text-[10px] font-semibold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full border border-amber-200">
-              AI Match
-            </span>
-          </div>
-          <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 mb-0.5">
-            Sarah Chen · Fintech · Seat 3A
-          </p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
-            Invests in early-stage SaaS — aligns with your space
-          </p>
-          <div className="flex gap-2">
-            <button className="flex-1 bg-amber-500 text-white text-xs font-semibold py-2.5 rounded-full active:scale-95 transition-transform">
-              Connect
-            </button>
-            <button className="flex-1 bg-white dark:bg-[#211F35] text-amber-600 text-xs font-semibold py-2.5 rounded-full active:scale-95 transition-transform border border-amber-200 dark:border-amber-900">
-              Later
-            </button>
-          </div>
-        </div>
+        <AtlasHomeSuggestion
+          viewerProfile={viewerForAtlas}
+          candidates={flightmateProfiles ?? []}
+        />
 
         {/* ── People Near You ───────────────────────────── */}
         <div>
@@ -206,21 +216,23 @@ export default async function HomePage() {
 
         {/* ── SkyPoints ─────────────────────────────────── */}
         <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
-          <div className="card flex items-center gap-4 border border-violet-100 dark:border-violet-900/40"
-               style={{ background: "linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)" }}>
-            <div className="w-11 h-11 rounded-xl bg-brand flex items-center justify-center flex-shrink-0">
+          <div className="rounded-2xl p-4 flex items-center gap-4"
+               style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 100%)" }}>
+            <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
                   fill="white" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-violet-500 font-semibold uppercase tracking-wide">SkyPoints</p>
-              <p className="text-2xl font-black text-brand leading-none">2,450</p>
+              <p className="text-[11px] text-white/60 font-semibold uppercase tracking-wide">SkyPoints</p>
+              <p className="text-2xl font-black text-white leading-none">{totalPoints.toLocaleString()}</p>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-bold bg-violet-100 text-violet-600 px-2 py-1 rounded-full">Silver</span>
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">550 to Gold</p>
+              <span className="text-[10px] font-bold bg-white/20 text-white px-2.5 py-1 rounded-full">{tierName}</span>
+              {ptsToNext && (
+                <p className="text-[10px] text-white/60 mt-1">{ptsToNext.toLocaleString()} to next tier</p>
+              )}
             </div>
           </div>
         </Link>

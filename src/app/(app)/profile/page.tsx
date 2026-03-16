@@ -15,16 +15,21 @@ export default async function ProfilePage() {
   const avatarUrl = meta.avatar_url ?? meta.picture ?? null;
   const email     = user?.email ?? null;
 
-  // Fetch profile row for role, company, bio (set during onboarding)
-  const { data: profileRow } = user ? await supabase
-    .from("profiles")
-    .select("role, company, bio")
-    .eq("id", user.id)
-    .single() : { data: null };
+  const uid = user?.id ?? "";
 
-  const headline = profileRow?.role ?? meta.headline ?? meta.job_title ?? null;
-  const company  = profileRow?.company ?? meta.company ?? meta.organization ?? null;
-  const bio      = profileRow?.bio ?? null;
+  const [{ data: profileRow }, { count: flightCount }, { count: connCount }, { data: pointsRows }] = await Promise.all([
+    supabase.from("profiles").select("role, company, bio").eq("id", uid).single(),
+    supabase.from("flights").select("id", { count: "exact", head: true }).eq("user_id", uid),
+    supabase.from("connections").select("id", { count: "exact", head: true })
+      .or(`requester_id.eq.${uid},receiver_id.eq.${uid}`)
+      .eq("status", "accepted"),
+    supabase.from("points").select("amount").eq("user_id", uid),
+  ]);
+
+  const headline   = profileRow?.role ?? meta.headline ?? meta.job_title ?? null;
+  const company    = profileRow?.company ?? meta.company ?? meta.organization ?? null;
+  const bio        = profileRow?.bio ?? null;
+  const totalPoints = (pointsRows ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0);
 
   return (
     <div className="animate-fade-in">
@@ -46,17 +51,17 @@ export default async function ProfilePage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-black text-navy-800">{fullName}</h2>
+            <h2 className="text-lg font-black" style={{ color: "var(--color-brand)" }}>{fullName}</h2>
             {(headline || company) && (
-              <p className="text-sm text-slate-500 mt-0.5">
+              <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--c-text1)" }}>
                 {[headline, company].filter(Boolean).join(" · ")}
               </p>
             )}
             {email && (
-              <p className="text-xs text-slate-400 mt-1">{email}</p>
+              <p className="text-xs mt-1" style={{ color: "var(--c-text2)" }}>{email}</p>
             )}
             {bio && (
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed max-w-[260px]">{bio}</p>
+              <p className="text-sm mt-2 leading-relaxed max-w-[260px]" style={{ color: "var(--c-text2)" }}>{bio}</p>
             )}
           </div>
           <EditProfileSheet initial={{ role: headline ?? "", company: company ?? "", bio: bio ?? "" }} />
@@ -65,13 +70,13 @@ export default async function ProfilePage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Connections", value: "0"   },
-            { label: "Flights",     value: "0"   },
-            { label: "Points",      value: "0"   },
+            { label: "Connections", value: (connCount ?? 0).toString()                },
+            { label: "Flights",     value: (flightCount ?? 0).toString()              },
+            { label: "Points",      value: totalPoints.toLocaleString()               },
           ].map(({ label, value }) => (
             <div key={label} className="card text-center py-4">
-              <p className="text-xl font-black text-brand">{value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+              <p className="text-xl font-black" style={{ color: "#4A27E8" }}>{value}</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>{label}</p>
             </div>
           ))}
         </div>

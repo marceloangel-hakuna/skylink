@@ -85,6 +85,20 @@ export default function OnboardingPage() {
       });
     }
 
+    // Award signup points (only if not already awarded)
+    const { count } = await supabase
+      .from("points")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("reason", "Welcome to SkyLink");
+    if (!count || count === 0) {
+      await supabase.from("points").insert({
+        user_id: user.id,
+        amount:  500,
+        reason:  "Welcome to SkyLink",
+      });
+    }
+
     router.push("/home");
   }
 

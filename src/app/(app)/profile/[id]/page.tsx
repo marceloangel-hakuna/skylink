@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import ConnectButton from "@/components/ConnectButton";
+import AtlasInsightCard from "@/components/AtlasInsightCard";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +23,18 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, full_name, avatar_url, role, company, bio, interests")
-    .eq("id", params.id)
-    .single();
+  const [{ data: profile }, { data: viewerProfile }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url, role, company, bio, interests")
+      .eq("id", params.id)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("id, full_name, role, company, bio, interests")
+      .eq("id", user.id)
+      .single(),
+  ]);
 
   // Don't hard-redirect if profile row missing — show what we have
   if (!profile && user.id !== params.id) {
@@ -99,6 +107,14 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
               ))}
             </div>
           </div>
+        )}
+
+        {/* Atlas Insight */}
+        {!isMe && viewerProfile && (
+          <AtlasInsightCard
+            viewerProfile={viewerProfile}
+            targetProfile={profile}
+          />
         )}
 
         {/* CTA */}
