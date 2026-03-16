@@ -148,8 +148,10 @@ export default function NotificationsPage() {
           .from("profiles")
           .select("id, full_name, avatar_url, role, company")
           .in("id", conns.map((c: { requester_id: string }) => c.requester_id));
-        const pMap = Object.fromEntries((profiles ?? []).map((p: { id: string }) => [p.id, p]));
-        setRequests(conns.map((c: ConnectionRequest) => ({ ...c, profile: pMap[c.requester_id] ?? null })));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pMap: Record<string, any> = Object.fromEntries((profiles ?? []).map((p: { id: string }) => [p.id, p]));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setRequests((conns as any[]).map(c => ({ ...c, profile: pMap[c.requester_id] ?? null })));
       }
 
       // Fetch stored notifications
@@ -374,7 +376,7 @@ export default function NotificationsPage() {
                   <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl"
                        style={{ background: "var(--c-muted)" }}>🤝</div>
                   <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>No pending requests</p>
-                  <p className="text-xs" style={{ color: "var(--c-text2)" }}>When someone wants to connect, they'll appear here</p>
+                  <p className="text-xs" style={{ color: "var(--c-text2)" }}>When someone wants to connect, they&apos;ll appear here</p>
                   <Link href="/network"
                     className="mt-1 text-xs font-semibold px-4 py-2 rounded-full text-white"
                     style={{ background: "#4A27E8" }}>
