@@ -13,11 +13,6 @@ const PEOPLE_NEARBY = [
   { name: "Aisha Okonkwo", role: "Angel Investor",  match: 71, initials: "AO", color: "bg-sky-100    text-sky-700"     },
 ];
 
-const SKY_CREWS = [
-  { name: "Fintech Founders", members: 12, route: "SFO → JFK", emoji: "💼" },
-  { name: "AI Builders",      members: 8,  route: "SFO → JFK", emoji: "🤖" },
-];
-
 export default async function HomePage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -38,6 +33,33 @@ export default async function HomePage() {
     supabase.from("profiles").select("id, full_name, role, company, bio, interests").eq("id", uid).single(),
     supabase.from("points").select("amount").eq("user_id", uid),
   ]);
+
+  // Fetch user's crews with member counts
+  const { data: myCrewMemberships } = await supabase
+    .from("crew_members")
+    .select("crew_id")
+    .eq("user_id", uid);
+
+  const myCrewIds = (myCrewMemberships ?? []).map(m => m.crew_id);
+
+  const { data: myCrewsData } = myCrewIds.length > 0
+    ? await supabase.from("crews").select("id, name, icon").in("id", myCrewIds).limit(3)
+    : { data: [] };
+
+  // Get member counts for those crews
+  const { data: allMemberships } = myCrewIds.length > 0
+    ? await supabase.from("crew_members").select("crew_id").in("crew_id", myCrewIds)
+    : { data: [] };
+
+  const memberCountMap: Record<string, number> = {};
+  for (const m of allMemberships ?? []) {
+    memberCountMap[m.crew_id] = (memberCountMap[m.crew_id] ?? 0) + 1;
+  }
+
+  const myCrews = (myCrewsData ?? []).map(c => ({
+    ...c,
+    member_count: memberCountMap[c.id] ?? 0,
+  }));
 
   // Fall back to demo data when no real flight exists in DB yet
   const flightNumber = flights?.[0]?.flight_number ?? "AA 2317";
@@ -248,24 +270,41 @@ export default async function HomePage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="section-title">Your Sky Crews</h3>
-            <button className="text-xs text-brand font-semibold">Browse</button>
+            <Link href="/crews" className="text-xs text-brand font-semibold">Browse</Link>
           </div>
-          <div className="flex flex-col gap-3">
-            {SKY_CREWS.map((crew) => (
-              <div key={crew.name} className="card flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-violet-50 dark:bg-[#1E1C35] flex items-center justify-center text-2xl flex-shrink-0">
-                  {crew.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">{crew.name}</p>
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500">{crew.members} members · {crew.route}</p>
-                </div>
-                <button className="text-xs font-semibold text-brand border border-brand/30 rounded-full px-3 py-1.5 active:scale-95 transition-transform flex-shrink-0">
-                  Join
-                </button>
+          {myCrews.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {myCrews.map((crew) => (
+                <Link key={crew.id} href={`/crews/${crew.id}`}
+                  className="card flex items-center gap-3 active:scale-[0.98] transition-transform">
+                  <div className="w-11 h-11 rounded-2xl bg-violet-50 dark:bg-[#1E1C35] flex items-center justify-center text-2xl flex-shrink-0">
+                    {crew.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">{crew.name}</p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">{crew.member_count} member{crew.member_count !== 1 ? "s" : ""}</p>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 18L15 12L9 6" stroke="#4A27E8" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="card flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-violet-50 dark:bg-[#1E1C35] flex items-center justify-center text-2xl flex-shrink-0">
+                ✈️
               </div>
-            ))}
-          </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">Find your crew</p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">Join communities of frequent flyers</p>
+              </div>
+              <Link href="/crews"
+                className="text-xs font-semibold text-brand border border-brand/30 rounded-full px-3 py-1.5 active:scale-95 transition-transform flex-shrink-0">
+                Browse
+              </Link>
+            </div>
+          )}
         </div>
 
       </div>
