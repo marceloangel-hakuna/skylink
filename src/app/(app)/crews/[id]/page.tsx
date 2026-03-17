@@ -230,7 +230,7 @@ const FALLBACK_THEMES: Omit<CrewTheme, "illustration">[] = [
   { bg: "linear-gradient(150deg, #FFFBEB 0%, #FEF3C7 60%, #FDE68A 100%)", border: "#FDE68A", accent: "#B45309", accentText: "#92400E", accentBadgeBg: "rgba(180,83,9,0.1)",   label: "Community" },
 ];
 
-function getCrewTheme(crewId: string, icon: string): CrewTheme {
+function getCrewTheme(crewId: string): CrewTheme {
   if (CREW_THEMES[crewId]) return CREW_THEMES[crewId];
   const hash = crewId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const base = FALLBACK_THEMES[hash % FALLBACK_THEMES.length];
@@ -680,7 +680,7 @@ export default function CrewDetailPage({ params }: { params: { id: string } }) {
     { key: "members", label: "Members" },
   ] as const;
 
-  const theme = getCrewTheme(crew.id, crew.icon);
+  const theme = getCrewTheme(crew.id);
 
   return (
     <div className="animate-fade-in pb-6">
