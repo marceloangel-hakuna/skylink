@@ -688,14 +688,14 @@ export default function CrewDetailPage({ params }: { params: { id: string } }) {
       {/* Back nav — sits above the hero card */}
       <div className="px-4 flex items-center gap-2"
            style={{ paddingTop: "max(16px, env(safe-area-inset-top))", paddingBottom: 12 }}>
-        <button onClick={() => router.back()}
+        <Link href="/crews"
           className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
           style={{ background: "var(--c-muted)" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M15 18L9 12L15 6" stroke="var(--c-text1)" strokeWidth="2" strokeLinecap="round"/>
           </svg>
-        </button>
-        <span className="text-sm font-semibold" style={{ color: "var(--c-text2)" }}>Sky Crews</span>
+        </Link>
+        <Link href="/crews" className="text-sm font-semibold" style={{ color: "var(--c-text2)" }}>Sky Crews</Link>
       </div>
 
       {/* ── Hero card — full-bleed, unique per crew ── */}
