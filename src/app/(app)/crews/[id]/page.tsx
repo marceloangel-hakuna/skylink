@@ -179,6 +179,72 @@ const IllustrationGlobe = () => (
   </svg>
 );
 
+const IllustrationGoldenGate = () => (
+  <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+    {/* Sunset glow */}
+    <circle cx="80" cy="72" r="46" fill="#92400E" fillOpacity="0.06"/>
+    <circle cx="80" cy="72" r="30" fill="#92400E" fillOpacity="0.05"/>
+    {/* Sun rays */}
+    <line x1="80" y1="28" x2="80" y2="20" stroke="#92400E" strokeOpacity="0.1" strokeWidth="1.2"/>
+    <line x1="101" y1="34" x2="107" y2="27" stroke="#92400E" strokeOpacity="0.08" strokeWidth="1"/>
+    <line x1="59"  y1="34" x2="53"  y2="27" stroke="#92400E" strokeOpacity="0.08" strokeWidth="1"/>
+    <line x1="114" y1="52" x2="122" y2="48" stroke="#92400E" strokeOpacity="0.07" strokeWidth="1"/>
+    <line x1="46"  y1="52" x2="38"  y2="48" stroke="#92400E" strokeOpacity="0.07" strokeWidth="1"/>
+    {/* Marin headlands (left hill) */}
+    <path d="M0 82 Q18 60 38 68 Q46 72 52 76 L0 76Z" fill="#92400E" fillOpacity="0.1"/>
+    {/* Treasure Island hills (right) */}
+    <path d="M112 78 Q128 62 148 66 Q156 68 160 70 L160 78Z" fill="#92400E" fillOpacity="0.08"/>
+    {/* Bay water */}
+    <path d="M0 92 Q20 89 40 92 Q60 95 80 92 Q100 89 120 92 Q140 95 160 92 L160 120 L0 120Z"
+          fill="#92400E" fillOpacity="0.07"/>
+    <path d="M0 98  Q30 95  60 98  Q90 101 120 98  Q140 96 160 98"
+          stroke="#92400E" strokeOpacity="0.1" strokeWidth="0.8"/>
+    <path d="M0 104 Q25 101 55 104 Q85 107 115 104 Q138 101 160 104"
+          stroke="#92400E" strokeOpacity="0.07" strokeWidth="0.7"/>
+    {/* LEFT TOWER */}
+    <rect x="47" y="42" width="7" height="50" rx="1" fill="#92400E" fillOpacity="0.22"/>
+    {/* Tower cross-braces */}
+    <rect x="47" y="54" width="7" height="2.5" rx="0.5" fill="#92400E" fillOpacity="0.16"/>
+    <rect x="47" y="64" width="7" height="2.5" rx="0.5" fill="#92400E" fillOpacity="0.14"/>
+    <rect x="47" y="74" width="7" height="2.5" rx="0.5" fill="#92400E" fillOpacity="0.12"/>
+    {/* Tower cap */}
+    <rect x="45" y="37" width="11" height="6" rx="1"   fill="#92400E" fillOpacity="0.24"/>
+    <rect x="48" y="30" width="5"  height="8" rx="0.5" fill="#92400E" fillOpacity="0.22"/>
+    <rect x="49" y="27" width="3"  height="4" rx="0.5" fill="#92400E" fillOpacity="0.2"/>
+    {/* RIGHT TOWER */}
+    <rect x="106" y="42" width="7" height="50" rx="1" fill="#92400E" fillOpacity="0.22"/>
+    <rect x="106" y="54" width="7" height="2.5" rx="0.5" fill="#92400E" fillOpacity="0.16"/>
+    <rect x="106" y="64" width="7" height="2.5" rx="0.5" fill="#92400E" fillOpacity="0.14"/>
+    <rect x="106" y="74" width="7" height="2.5" rx="0.5" fill="#92400E" fillOpacity="0.12"/>
+    <rect x="104" y="37" width="11" height="6" rx="1"   fill="#92400E" fillOpacity="0.24"/>
+    <rect x="107" y="30" width="5"  height="8" rx="0.5" fill="#92400E" fillOpacity="0.22"/>
+    <rect x="108" y="27" width="3"  height="4" rx="0.5" fill="#92400E" fillOpacity="0.2"/>
+    {/* MAIN CABLES — left anchor to left tower */}
+    <path d="M0 80 Q50 52 51 36" stroke="#92400E" strokeOpacity="0.22" strokeWidth="1.4"/>
+    {/* MAIN CABLES — center span (catenary curve) */}
+    <path d="M51 36 Q80 58 109 36" stroke="#92400E" strokeOpacity="0.25" strokeWidth="1.4"/>
+    {/* MAIN CABLES — right tower to right anchor */}
+    <path d="M109 36 Q158 52 160 80" stroke="#92400E" strokeOpacity="0.22" strokeWidth="1.4"/>
+    {/* HANGER CABLES — center span */}
+    <line x1="62"  y1="46" x2="62"  y2="80" stroke="#92400E" strokeOpacity="0.12" strokeWidth="0.8"/>
+    <line x1="69"  y1="42" x2="69"  y2="80" stroke="#92400E" strokeOpacity="0.12" strokeWidth="0.8"/>
+    <line x1="76"  y1="40" x2="76"  y2="80" stroke="#92400E" strokeOpacity="0.12" strokeWidth="0.8"/>
+    <line x1="83"  y1="40" x2="83"  y2="80" stroke="#92400E" strokeOpacity="0.12" strokeWidth="0.8"/>
+    <line x1="90"  y1="42" x2="90"  y2="80" stroke="#92400E" strokeOpacity="0.12" strokeWidth="0.8"/>
+    <line x1="97"  y1="46" x2="97"  y2="80" stroke="#92400E" strokeOpacity="0.12" strokeWidth="0.8"/>
+    {/* BRIDGE DECK */}
+    <rect x="0"   y="79" width="160" height="3"   rx="0.5" fill="#92400E" fillOpacity="0.2"/>
+    <rect x="0"   y="82" width="160" height="1.5" rx="0.5" fill="#92400E" fillOpacity="0.1"/>
+    {/* Cars */}
+    <circle cx="67" cy="80" r="1.2" fill="#92400E" fillOpacity="0.32"/>
+    <circle cx="81" cy="80" r="1.2" fill="#92400E" fillOpacity="0.28"/>
+    <circle cx="96" cy="80" r="1.2" fill="#92400E" fillOpacity="0.32"/>
+    {/* Fog wisps */}
+    <path d="M0 70 Q15 67 28 70 Q18 73 0 72Z"    fill="#92400E" fillOpacity="0.05"/>
+    <path d="M132 66 Q148 63 160 66 Q150 69 132 68Z" fill="#92400E" fillOpacity="0.05"/>
+  </svg>
+);
+
 // Generic fallback illustrations for user-created crews
 const IllustrationDots = (color: string) => (
   <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
@@ -219,6 +285,15 @@ const CREW_THEMES: Record<string, CrewTheme> = {
     accentBadgeBg:"rgba(6,95,70,0.1)",
     label:        "LatAm Tech",
     illustration: <IllustrationGlobe />,
+  },
+  "11111111-0000-0000-0000-000000000004": {
+    bg:           "linear-gradient(150deg, #FEFCE8 0%, #FEF9C3 55%, #FDE68A 100%)",
+    border:       "#FDE68A",
+    accent:       "#92400E",
+    accentText:   "#78350F",
+    accentBadgeBg:"rgba(146,64,14,0.1)",
+    label:        "Silicon Valley",
+    illustration: <IllustrationGoldenGate />,
   },
 };
 

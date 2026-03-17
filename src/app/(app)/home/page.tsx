@@ -5,6 +5,14 @@ import AtlasHomeSuggestion from "@/components/AtlasHomeSuggestion";
 
 export const dynamic = "force-dynamic";
 
+// Matches crew theme backgrounds in crews/[id]/page.tsx
+const CREW_ICON_BG: Record<string, string> = {
+  "11111111-0000-0000-0000-000000000001": "#FFEDD5", // SFO↔NYC — amber
+  "11111111-0000-0000-0000-000000000002": "#DBEAFE", // AI Founders — blue
+  "11111111-0000-0000-0000-000000000003": "#D1FAE5", // LatAm Tech — emerald
+  "11111111-0000-0000-0000-000000000004": "#FEF9C3", // Silicon Valley — golden
+};
+
 const PEOPLE_NEARBY = [
   { name: "Sarah Chen",    role: "CTO",             match: 94, initials: "SC", color: "bg-violet-100 text-violet-700"  },
   { name: "Marcus Rivera", role: "VC Partner",      match: 88, initials: "MR", color: "bg-pink-100   text-pink-700"    },
@@ -272,7 +280,8 @@ export default async function HomePage() {
             {featuredCrewsWithMeta.map((crew) => (
               <Link key={crew.id} href={`/crews/${crew.id}`}
                 className="card flex items-center gap-3 active:scale-[0.98] transition-transform">
-                <div className="w-11 h-11 rounded-2xl bg-violet-50 dark:bg-[#1E1C35] flex items-center justify-center text-2xl flex-shrink-0">
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                     style={{ background: CREW_ICON_BG[crew.id] ?? "#EDE9FE" }}>
                   {crew.icon}
                 </div>
                 <div className="flex-1 min-w-0">
