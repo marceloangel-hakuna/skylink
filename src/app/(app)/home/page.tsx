@@ -34,31 +34,27 @@ export default async function HomePage() {
     supabase.from("points").select("amount").eq("user_id", uid),
   ]);
 
-  // Fetch user's crews with member counts
-  const { data: myCrewMemberships } = await supabase
-    .from("crew_members")
-    .select("crew_id")
-    .eq("user_id", uid);
+  // Fetch featured crews with member counts
+  const { data: featuredCrews } = await supabase
+    .from("crews")
+    .select("id, name, icon")
+    .limit(3);
 
-  const myCrewIds = (myCrewMemberships ?? []).map(m => m.crew_id);
-
-  const { data: myCrewsData } = myCrewIds.length > 0
-    ? await supabase.from("crews").select("id, name, icon").in("id", myCrewIds).limit(3)
-    : { data: [] };
-
-  // Get member counts for those crews
-  const { data: allMemberships } = myCrewIds.length > 0
-    ? await supabase.from("crew_members").select("crew_id").in("crew_id", myCrewIds)
+  const { data: crewMemberships } = (featuredCrews ?? []).length > 0
+    ? await supabase.from("crew_members").select("crew_id, user_id").in("crew_id", (featuredCrews ?? []).map(c => c.id))
     : { data: [] };
 
   const memberCountMap: Record<string, number> = {};
-  for (const m of allMemberships ?? []) {
+  const joinedCrewIds = new Set<string>();
+  for (const m of crewMemberships ?? []) {
     memberCountMap[m.crew_id] = (memberCountMap[m.crew_id] ?? 0) + 1;
+    if (m.user_id === uid) joinedCrewIds.add(m.crew_id);
   }
 
-  const myCrews = (myCrewsData ?? []).map(c => ({
+  const featuredCrewsWithMeta = (featuredCrews ?? []).map(c => ({
     ...c,
     member_count: memberCountMap[c.id] ?? 0,
+    is_member: joinedCrewIds.has(c.id),
   }));
 
   // Fall back to demo data when no real flight exists in DB yet
@@ -266,45 +262,31 @@ export default async function HomePage() {
           </div>
         </Link>
 
-        {/* ── Your Sky Crews ────────────────────────────── */}
+        {/* ── Sky Crews ─────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="section-title">Your Sky Crews</h3>
-            <Link href="/crews" className="text-xs text-brand font-semibold">Browse</Link>
+            <h3 className="section-title">Sky Crews</h3>
+            <Link href="/crews" className="text-xs text-brand font-semibold">Browse all</Link>
           </div>
-          {myCrews.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {myCrews.map((crew) => (
-                <Link key={crew.id} href={`/crews/${crew.id}`}
-                  className="card flex items-center gap-3 active:scale-[0.98] transition-transform">
-                  <div className="w-11 h-11 rounded-2xl bg-violet-50 dark:bg-[#1E1C35] flex items-center justify-center text-2xl flex-shrink-0">
-                    {crew.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">{crew.name}</p>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500">{crew.member_count} member{crew.member_count !== 1 ? "s" : ""}</p>
-                  </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 18L15 12L9 6" stroke="#4A27E8" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="card flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-violet-50 dark:bg-[#1E1C35] flex items-center justify-center text-2xl flex-shrink-0">
-                ✈️
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">Find your crew</p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">Join communities of frequent flyers</p>
-              </div>
-              <Link href="/crews"
-                className="text-xs font-semibold text-brand border border-brand/30 rounded-full px-3 py-1.5 active:scale-95 transition-transform flex-shrink-0">
-                Browse
+          <div className="flex flex-col gap-3">
+            {featuredCrewsWithMeta.map((crew) => (
+              <Link key={crew.id} href={`/crews/${crew.id}`}
+                className="card flex items-center gap-3 active:scale-[0.98] transition-transform">
+                <div className="w-11 h-11 rounded-2xl bg-violet-50 dark:bg-[#1E1C35] flex items-center justify-center text-2xl flex-shrink-0">
+                  {crew.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">{crew.name}</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500">{crew.member_count} member{crew.member_count !== 1 ? "s" : ""}</p>
+                </div>
+                {crew.is_member ? (
+                  <span className="text-[10px] font-bold text-emerald-600 border border-emerald-200 bg-emerald-50 rounded-full px-2.5 py-1 flex-shrink-0">Joined</span>
+                ) : (
+                  <span className="text-xs font-semibold text-brand border border-brand/30 rounded-full px-3 py-1.5 flex-shrink-0">Join</span>
+                )}
               </Link>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
       </div>
