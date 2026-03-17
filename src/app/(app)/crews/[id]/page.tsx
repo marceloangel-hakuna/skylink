@@ -45,6 +45,198 @@ type Member = {
   profile?: { full_name: string | null; avatar_url: string | null; role: string | null; company: string | null };
 };
 
+// ── Crew Theme System ──────────────────────────────────────────────────────────
+type CrewTheme = {
+  bg: string;
+  border: string;
+  accent: string;
+  accentText: string;
+  accentBadgeBg: string;
+  label: string;
+  illustration: React.ReactNode;
+};
+
+// Unique SVG illustrations for each crew identity
+const IllustrationSkyline = () => (
+  <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+    {/* Stars */}
+    <circle cx="20" cy="18" r="1.5" fill="#C2410C" fillOpacity="0.3"/>
+    <circle cx="55" cy="10" r="1" fill="#C2410C" fillOpacity="0.25"/>
+    <circle cx="90" cy="22" r="1.5" fill="#C2410C" fillOpacity="0.2"/>
+    <circle cx="130" cy="8" r="1" fill="#C2410C" fillOpacity="0.3"/>
+    <circle cx="148" cy="30" r="1" fill="#C2410C" fillOpacity="0.2"/>
+    {/* Moon arc */}
+    <path d="M135 14 Q148 22 138 32 Q152 28 148 16 Q144 8 135 14Z" fill="#C2410C" fillOpacity="0.12"/>
+    {/* Skyline buildings */}
+    <rect x="0"   y="88" width="18" height="32" rx="1" fill="#C2410C" fillOpacity="0.12"/>
+    <rect x="3"   y="78" width="8"  height="10" rx="1" fill="#C2410C" fillOpacity="0.1"/>
+    <rect x="20"  y="70" width="22" height="50" rx="1" fill="#C2410C" fillOpacity="0.15"/>
+    <rect x="25"  y="62" width="6"  height="8"  rx="1" fill="#C2410C" fillOpacity="0.12"/>
+    <rect x="44"  y="82" width="16" height="38" rx="1" fill="#C2410C" fillOpacity="0.1"/>
+    <rect x="62"  y="55" width="28" height="65" rx="1" fill="#C2410C" fillOpacity="0.18"/>
+    <rect x="68"  y="48" width="8"  height="7"  rx="1" fill="#C2410C" fillOpacity="0.14"/>
+    <rect x="74"  y="42" width="2"  height="6"  fill="#C2410C" fillOpacity="0.2"/>
+    <rect x="92"  y="72" width="20" height="48" rx="1" fill="#C2410C" fillOpacity="0.12"/>
+    <rect x="114" y="65" width="24" height="55" rx="1" fill="#C2410C" fillOpacity="0.15"/>
+    <rect x="120" y="58" width="6"  height="7"  rx="1" fill="#C2410C" fillOpacity="0.1"/>
+    <rect x="140" y="80" width="20" height="40" rx="1" fill="#C2410C" fillOpacity="0.1"/>
+    {/* Windows */}
+    <rect x="65"  y="60" width="3" height="3" rx="0.5" fill="#C2410C" fillOpacity="0.2"/>
+    <rect x="72"  y="60" width="3" height="3" rx="0.5" fill="#C2410C" fillOpacity="0.15"/>
+    <rect x="65"  y="68" width="3" height="3" rx="0.5" fill="#C2410C" fillOpacity="0.18"/>
+    <rect x="72"  y="68" width="3" height="3" rx="0.5" fill="#C2410C" fillOpacity="0.12"/>
+    <rect x="22"  y="76" width="2.5" height="2.5" rx="0.5" fill="#C2410C" fillOpacity="0.18"/>
+    <rect x="28"  y="76" width="2.5" height="2.5" rx="0.5" fill="#C2410C" fillOpacity="0.14"/>
+    {/* Plane silhouette */}
+    <path d="M108 35 L116 32 L118 35 L116 38Z M108 34 L111 30 L112 34Z M108 36 L111 40 L112 36Z" fill="#C2410C" fillOpacity="0.25"/>
+    {/* Ground horizon */}
+    <line x1="0" y1="120" x2="160" y2="120" stroke="#C2410C" strokeOpacity="0.08" strokeWidth="1"/>
+  </svg>
+);
+
+const IllustrationNeural = () => (
+  <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+    {/* Connection lines */}
+    <line x1="20"  y1="40"  x2="60"  y2="25"  stroke="#1D4ED8" strokeOpacity="0.12" strokeWidth="1"/>
+    <line x1="20"  y1="40"  x2="60"  y2="60"  stroke="#1D4ED8" strokeOpacity="0.12" strokeWidth="1"/>
+    <line x1="20"  y1="40"  x2="60"  y2="95"  stroke="#1D4ED8" strokeOpacity="0.08" strokeWidth="1"/>
+    <line x1="60"  y1="25"  x2="105" y2="15"  stroke="#1D4ED8" strokeOpacity="0.12" strokeWidth="1"/>
+    <line x1="60"  y1="25"  x2="105" y2="45"  stroke="#1D4ED8" strokeOpacity="0.1"  strokeWidth="1"/>
+    <line x1="60"  y1="60"  x2="105" y2="45"  stroke="#1D4ED8" strokeOpacity="0.12" strokeWidth="1"/>
+    <line x1="60"  y1="60"  x2="105" y2="75"  stroke="#1D4ED8" strokeOpacity="0.12" strokeWidth="1"/>
+    <line x1="60"  y1="95"  x2="105" y2="75"  stroke="#1D4ED8" strokeOpacity="0.1"  strokeWidth="1"/>
+    <line x1="60"  y1="95"  x2="105" y2="105" stroke="#1D4ED8" strokeOpacity="0.1"  strokeWidth="1"/>
+    <line x1="105" y1="15"  x2="145" y2="35"  stroke="#1D4ED8" strokeOpacity="0.12" strokeWidth="1"/>
+    <line x1="105" y1="45"  x2="145" y2="35"  stroke="#1D4ED8" strokeOpacity="0.12" strokeWidth="1"/>
+    <line x1="105" y1="45"  x2="145" y2="70"  stroke="#1D4ED8" strokeOpacity="0.1"  strokeWidth="1"/>
+    <line x1="105" y1="75"  x2="145" y2="70"  stroke="#1D4ED8" strokeOpacity="0.12" strokeWidth="1"/>
+    <line x1="105" y1="105" x2="145" y2="70"  stroke="#1D4ED8" strokeOpacity="0.08" strokeWidth="1"/>
+    {/* Input nodes */}
+    <circle cx="20"  cy="40"  r="5" fill="#1D4ED8" fillOpacity="0.18"/>
+    <circle cx="20"  cy="40"  r="2" fill="#1D4ED8" fillOpacity="0.3"/>
+    {/* Hidden layer 1 */}
+    <circle cx="60"  cy="25"  r="5.5" fill="#1D4ED8" fillOpacity="0.15"/>
+    <circle cx="60"  cy="25"  r="2.5" fill="#1D4ED8" fillOpacity="0.25"/>
+    <circle cx="60"  cy="60"  r="5.5" fill="#1D4ED8" fillOpacity="0.18"/>
+    <circle cx="60"  cy="60"  r="2.5" fill="#1D4ED8" fillOpacity="0.3"/>
+    <circle cx="60"  cy="95"  r="5.5" fill="#1D4ED8" fillOpacity="0.12"/>
+    <circle cx="60"  cy="95"  r="2.5" fill="#1D4ED8" fillOpacity="0.2"/>
+    {/* Hidden layer 2 */}
+    <circle cx="105" cy="15"  r="5"   fill="#1D4ED8" fillOpacity="0.14"/>
+    <circle cx="105" cy="15"  r="2"   fill="#1D4ED8" fillOpacity="0.22"/>
+    <circle cx="105" cy="45"  r="6"   fill="#1D4ED8" fillOpacity="0.2"/>
+    <circle cx="105" cy="45"  r="3"   fill="#1D4ED8" fillOpacity="0.32"/>
+    <circle cx="105" cy="75"  r="5.5" fill="#1D4ED8" fillOpacity="0.16"/>
+    <circle cx="105" cy="75"  r="2.5" fill="#1D4ED8" fillOpacity="0.26"/>
+    <circle cx="105" cy="105" r="4.5" fill="#1D4ED8" fillOpacity="0.12"/>
+    <circle cx="105" cy="105" r="2"   fill="#1D4ED8" fillOpacity="0.2"/>
+    {/* Output node */}
+    <circle cx="145" cy="35"  r="6"   fill="#1D4ED8" fillOpacity="0.22"/>
+    <circle cx="145" cy="35"  r="3"   fill="#1D4ED8" fillOpacity="0.35"/>
+    <circle cx="145" cy="70"  r="5"   fill="#1D4ED8" fillOpacity="0.16"/>
+    <circle cx="145" cy="70"  r="2"   fill="#1D4ED8" fillOpacity="0.28"/>
+    {/* Floating dots */}
+    <circle cx="12"  cy="95"  r="2"   fill="#1D4ED8" fillOpacity="0.1"/>
+    <circle cx="135" cy="100" r="2.5" fill="#1D4ED8" fillOpacity="0.1"/>
+    <circle cx="80"  cy="108" r="1.5" fill="#1D4ED8" fillOpacity="0.1"/>
+  </svg>
+);
+
+const IllustrationGlobe = () => (
+  <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+    {/* Globe circle */}
+    <circle cx="100" cy="58" r="52" stroke="#065F46" strokeOpacity="0.12" strokeWidth="1.5"/>
+    <circle cx="100" cy="58" r="52" fill="#065F46" fillOpacity="0.03"/>
+    {/* Latitude lines */}
+    <ellipse cx="100" cy="58" rx="52" ry="14" stroke="#065F46" strokeOpacity="0.1" strokeWidth="1" strokeDasharray="3 3"/>
+    <ellipse cx="100" cy="40" rx="48" ry="10" stroke="#065F46" strokeOpacity="0.08" strokeWidth="1" strokeDasharray="3 3"/>
+    <ellipse cx="100" cy="76" rx="48" ry="10" stroke="#065F46" strokeOpacity="0.08" strokeWidth="1" strokeDasharray="3 3"/>
+    <ellipse cx="100" cy="22" rx="34" ry="7"  stroke="#065F46" strokeOpacity="0.07" strokeWidth="1" strokeDasharray="3 3"/>
+    <ellipse cx="100" cy="94" rx="34" ry="7"  stroke="#065F46" strokeOpacity="0.07" strokeWidth="1" strokeDasharray="3 3"/>
+    {/* Longitude lines */}
+    <path d="M100 6 Q130 30 130 58 Q130 86 100 110" stroke="#065F46" strokeOpacity="0.1" strokeWidth="1" strokeDasharray="3 3"/>
+    <path d="M100 6 Q70 30 70 58 Q70 86 100 110"  stroke="#065F46" strokeOpacity="0.1" strokeWidth="1" strokeDasharray="3 3"/>
+    <line x1="100" y1="6" x2="100" y2="110" stroke="#065F46" strokeOpacity="0.1" strokeWidth="1" strokeDasharray="3 3"/>
+    {/* Continent blobs (abstract) */}
+    <path d="M78 44 Q86 38 94 42 Q98 50 90 54 Q82 56 78 50Z" fill="#065F46" fillOpacity="0.15"/>
+    <path d="M104 38 Q114 34 118 42 Q116 50 108 52 Q102 48 104 38Z" fill="#065F46" fillOpacity="0.12"/>
+    <path d="M82 62 Q88 58 96 62 Q98 70 92 74 Q84 74 82 66Z" fill="#065F46" fillOpacity="0.1"/>
+    <path d="M106 64 Q112 62 116 68 Q114 76 108 76 Q104 72 106 64Z" fill="#065F46" fillOpacity="0.13"/>
+    {/* Location pins */}
+    <circle cx="86" cy="46" r="2"   fill="#065F46" fillOpacity="0.4"/>
+    <circle cx="112" cy="44" r="1.5" fill="#065F46" fillOpacity="0.35"/>
+    <circle cx="94"  cy="70" r="2"   fill="#065F46" fillOpacity="0.3"/>
+    {/* Flight path arc between two points */}
+    <path d="M86 46 Q100 28 112 44" stroke="#065F46" strokeOpacity="0.25" strokeWidth="1.2" strokeDasharray="2 2"/>
+    {/* Small plane */}
+    <path d="M97 33 L101 31 L102 33 L101 35Z M97 32 L99 29 L99.5 32Z M97 34 L99 37 L99.5 34Z" fill="#065F46" fillOpacity="0.35"/>
+    {/* Stars/dots around globe */}
+    <circle cx="28"  cy="20"  r="1.5" fill="#065F46" fillOpacity="0.2"/>
+    <circle cx="15"  cy="55"  r="1"   fill="#065F46" fillOpacity="0.15"/>
+    <circle cx="40"  cy="90"  r="1.5" fill="#065F46" fillOpacity="0.15"/>
+    <circle cx="148" cy="18"  r="1"   fill="#065F46" fillOpacity="0.2"/>
+    <circle cx="155" cy="90"  r="1.5" fill="#065F46" fillOpacity="0.15"/>
+  </svg>
+);
+
+// Generic fallback illustrations for user-created crews
+const IllustrationDots = (color: string) => (
+  <svg viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+    {[0,1,2,3,4,5,6,7].map(row =>
+      [0,1,2,3,4,5,6,7,8,9].map(col => (
+        <circle key={`${row}-${col}`}
+          cx={col * 18 + 8} cy={row * 16 + 8} r="2"
+          fill={color} fillOpacity={((row + col) % 3 === 0) ? 0.18 : 0.08}/>
+      ))
+    )}
+  </svg>
+);
+
+const CREW_THEMES: Record<string, CrewTheme> = {
+  "11111111-0000-0000-0000-000000000001": {
+    bg:           "linear-gradient(150deg, #FFF7ED 0%, #FFEDD5 60%, #FED7AA 100%)",
+    border:       "#FED7AA",
+    accent:       "#C2410C",
+    accentText:   "#9A3412",
+    accentBadgeBg:"rgba(194,65,12,0.1)",
+    label:        "Coast-to-Coast",
+    illustration: <IllustrationSkyline />,
+  },
+  "11111111-0000-0000-0000-000000000002": {
+    bg:           "linear-gradient(150deg, #EFF6FF 0%, #DBEAFE 60%, #BFDBFE 100%)",
+    border:       "#BFDBFE",
+    accent:       "#1D4ED8",
+    accentText:   "#1E3A8A",
+    accentBadgeBg:"rgba(29,78,216,0.1)",
+    label:        "AI & Founders",
+    illustration: <IllustrationNeural />,
+  },
+  "11111111-0000-0000-0000-000000000003": {
+    bg:           "linear-gradient(150deg, #ECFDF5 0%, #D1FAE5 60%, #A7F3D0 100%)",
+    border:       "#A7F3D0",
+    accent:       "#065F46",
+    accentText:   "#064E3B",
+    accentBadgeBg:"rgba(6,95,70,0.1)",
+    label:        "LatAm Tech",
+    illustration: <IllustrationGlobe />,
+  },
+};
+
+// Fallback themes for user-created crews (cycle by ID hash)
+const FALLBACK_THEMES: Omit<CrewTheme, "illustration">[] = [
+  { bg: "linear-gradient(150deg, #F5F3FF 0%, #EDE9FE 60%, #DDD6FE 100%)", border: "#DDD6FE", accent: "#6D28D9", accentText: "#5B21B6", accentBadgeBg: "rgba(109,40,217,0.1)", label: "Community" },
+  { bg: "linear-gradient(150deg, #FFF1F2 0%, #FFE4E6 60%, #FECDD3 100%)", border: "#FECDD3", accent: "#BE123C", accentText: "#9F1239", accentBadgeBg: "rgba(190,18,60,0.1)",  label: "Community" },
+  { bg: "linear-gradient(150deg, #F0FDFA 0%, #CCFBF1 60%, #99F6E4 100%)",  border: "#99F6E4",  accent: "#0F766E", accentText: "#115E59", accentBadgeBg: "rgba(15,118,110,0.1)", label: "Community" },
+  { bg: "linear-gradient(150deg, #FFFBEB 0%, #FEF3C7 60%, #FDE68A 100%)", border: "#FDE68A", accent: "#B45309", accentText: "#92400E", accentBadgeBg: "rgba(180,83,9,0.1)",   label: "Community" },
+];
+
+function getCrewTheme(crewId: string, icon: string): CrewTheme {
+  if (CREW_THEMES[crewId]) return CREW_THEMES[crewId];
+  const hash = crewId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const base = FALLBACK_THEMES[hash % FALLBACK_THEMES.length];
+  return { ...base, illustration: IllustrationDots(base.accent) };
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
   "bg-violet-100 text-violet-700", "bg-pink-100 text-pink-700",
@@ -84,7 +276,7 @@ function Avatar({ name, url, size = 10 }: { name: string; url?: string | null; s
 }
 
 // ── Feed Tab ───────────────────────────────────────────────────────────────────
-function FeedTab({ crewId, userId }: { crewId: string; userId: string }) {
+function FeedTab({ crewId, userId, accentColor }: { crewId: string; userId: string; accentColor: string }) {
   const supabase = createClient();
   const [posts, setPosts]       = useState<Post[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -163,7 +355,7 @@ function FeedTab({ crewId, userId }: { crewId: string; userId: string }) {
         <div className="flex justify-end mt-2">
           <button onClick={submitPost} disabled={!content.trim() || posting}
             className="px-4 py-2 rounded-xl text-sm font-semibold text-white active:scale-95 transition-transform disabled:opacity-40"
-            style={{ background: "#4A27E8" }}>
+            style={{ background: accentColor }}>
             {posting ? "Posting…" : "Post"}
           </button>
         </div>
@@ -220,7 +412,7 @@ function FeedTab({ crewId, userId }: { crewId: string; userId: string }) {
 }
 
 // ── Events Tab ─────────────────────────────────────────────────────────────────
-function EventsTab({ crewId, userId }: { crewId: string; userId: string }) {
+function EventsTab({ crewId, userId, accentColor }: { crewId: string; userId: string; accentColor: string }) {
   const supabase = createClient();
   const [events, setEvents]   = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -328,7 +520,7 @@ function EventsTab({ crewId, userId }: { crewId: string; userId: string }) {
                 className="w-full mt-3 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-all disabled:opacity-50"
                 style={evt.rsvp_by_me
                   ? { background: "rgba(52,211,153,0.1)", color: "#059669", border: "1px solid rgba(52,211,153,0.3)" }
-                  : { background: "#4A27E8", color: "white" }}>
+                  : { background: accentColor, color: "white" }}>
                 {rsvping === evt.id ? "…" : evt.rsvp_by_me ? "Going ✓ (cancel RSVP)" : "RSVP — I'm going!"}
               </button>
             )}
@@ -488,57 +680,85 @@ export default function CrewDetailPage({ params }: { params: { id: string } }) {
     { key: "members", label: "Members" },
   ] as const;
 
+  const theme = getCrewTheme(crew.id, crew.icon);
+
   return (
     <div className="animate-fade-in pb-6">
 
-      {/* Header */}
-      <div className="px-4 pt-4" style={{ paddingTop: "max(16px, env(safe-area-inset-top))" }}>
-        <div className="flex items-center gap-2 mb-4">
-          <button onClick={() => router.back()}
-            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-            style={{ background: "var(--c-muted)" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="var(--c-text1)" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </button>
-          <span className="text-sm font-semibold" style={{ color: "var(--c-text2)" }}>Sky Crews</span>
+      {/* Back nav — sits above the hero card */}
+      <div className="px-4 flex items-center gap-2"
+           style={{ paddingTop: "max(16px, env(safe-area-inset-top))", paddingBottom: 12 }}>
+        <button onClick={() => router.back()}
+          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+          style={{ background: "var(--c-muted)" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18L9 12L15 6" stroke="var(--c-text1)" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+        <span className="text-sm font-semibold" style={{ color: "var(--c-text2)" }}>Sky Crews</span>
+      </div>
+
+      {/* ── Hero card — full-bleed, unique per crew ── */}
+      <div className="mx-4 rounded-3xl overflow-hidden relative mb-4"
+           style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
+
+        {/* Illustration — fills right half, clipped */}
+        <div className="absolute right-0 top-0 w-[55%] h-full opacity-90 pointer-events-none">
+          {theme.illustration}
         </div>
 
-        {/* Crew info */}
-        <div className="rounded-3xl p-5 mb-4 text-white overflow-hidden relative"
-             style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
-          <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/5" />
-          <div className="absolute -bottom-8 -left-4 w-24 h-24 rounded-full bg-white/5" />
-          <div className="relative">
-            <div className="text-4xl mb-3">{crew.icon}</div>
-            <h1 className="text-xl font-black mb-1">{crew.name}</h1>
-            {crew.description && (
-              <p className="text-white/70 text-sm leading-relaxed mb-3">{crew.description}</p>
-            )}
-            <div className="flex items-center justify-between">
-              <p className="text-white/60 text-xs">{memberCount} member{memberCount !== 1 ? "s" : ""}</p>
-              {isMember ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold bg-white/20 text-white px-3 py-1 rounded-full">
-                    Joined ✓
-                  </span>
-                  <button onClick={leaveCrew} disabled={joining}
-                    className="text-[11px] font-medium text-white/70 active:opacity-60 transition-opacity disabled:opacity-40"
-                    >
-                    Leave
-                  </button>
-                </div>
-              ) : (
-                <button onClick={joinCrew} disabled={joining}
-                  className="text-sm font-bold bg-white text-brand px-4 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-60">
-                  {joining ? "Joining…" : "Join Crew"}
+        {/* Content */}
+        <div className="relative p-5 pr-[46%]">
+          {/* Category label */}
+          <span className="inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3"
+                style={{ background: theme.accentBadgeBg, color: theme.accent }}>
+            {theme.label}
+          </span>
+
+          {/* Icon + name */}
+          <div className="flex items-center gap-2.5 mb-2">
+            <span className="text-3xl leading-none">{crew.icon}</span>
+          </div>
+          <h1 className="text-[22px] font-black leading-tight mb-2" style={{ color: theme.accentText }}>
+            {crew.name}
+          </h1>
+
+          {crew.description && (
+            <p className="text-xs leading-relaxed mb-4 line-clamp-3" style={{ color: theme.accent, opacity: 0.75 }}>
+              {crew.description}
+            </p>
+          )}
+
+          {/* Footer row */}
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-semibold" style={{ color: theme.accent, opacity: 0.65 }}>
+              {memberCount} member{memberCount !== 1 ? "s" : ""}
+            </span>
+            {isMember ? (
+              <>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+                      style={{ background: theme.accentBadgeBg, color: theme.accent }}>
+                  Joined ✓
+                </span>
+                <button onClick={leaveCrew} disabled={joining}
+                  className="text-[11px] font-medium active:opacity-60 transition-opacity disabled:opacity-40"
+                  style={{ color: theme.accent, opacity: 0.55 }}>
+                  Leave
                 </button>
-              )}
-            </div>
+              </>
+            ) : (
+              <button onClick={joinCrew} disabled={joining}
+                className="text-[12px] font-bold px-4 py-1.5 rounded-full active:scale-95 transition-transform disabled:opacity-60"
+                style={{ background: theme.accent, color: "white" }}>
+                {joining ? "Joining…" : "Join Crew"}
+              </button>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Tabs */}
+      {/* Tabs */}
+      <div className="px-4">
         <div className="flex rounded-2xl p-1 mb-4" style={{ background: "var(--c-muted)" }}>
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
@@ -555,8 +775,8 @@ export default function CrewDetailPage({ params }: { params: { id: string } }) {
 
       {/* Tab content */}
       <div className="px-4">
-        {tab === "feed"    && <FeedTab    crewId={params.id} userId={userId} />}
-        {tab === "events"  && <EventsTab  crewId={params.id} userId={userId} />}
+        {tab === "feed"    && <FeedTab    crewId={params.id} userId={userId} accentColor={theme.accent} />}
+        {tab === "events"  && <EventsTab  crewId={params.id} userId={userId} accentColor={theme.accent} />}
         {tab === "members" && <MembersTab crewId={params.id} />}
       </div>
     </div>
