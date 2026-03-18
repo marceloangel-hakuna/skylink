@@ -503,9 +503,16 @@ function EditSheet({
 
   async function deleteCrew() {
     setDeleting(true);
-    // Remove all members first (cascade should handle posts, but be explicit)
+    // Delete dependent rows before the crew (FK constraints)
+    await supabase.from("crew_posts").delete().eq("crew_id", crew.id);
+    await supabase.from("crew_events").delete().eq("crew_id", crew.id);
     await supabase.from("crew_members").delete().eq("crew_id", crew.id);
-    await supabase.from("crews").delete().eq("id", crew.id);
+    const { error } = await supabase.from("crews").delete().eq("id", crew.id);
+    if (error) {
+      console.error("Delete crew error:", error);
+      setDeleting(false);
+      return;
+    }
     router.replace("/crews");
   }
 

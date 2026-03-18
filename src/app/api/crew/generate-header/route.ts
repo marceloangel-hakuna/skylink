@@ -24,49 +24,45 @@ export async function POST(req: Request) {
     }
 
     const msg = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 1800,
+      model: "claude-opus-4-6",
+      max_tokens: 4000,
+      thinking: { type: "adaptive" },
       messages: [
         {
           role: "user",
-          content: `Create a unique, thematic SVG illustration header for a travel networking crew.
+          content: `You are an expert SVG illustrator. Create a beautiful, recognizable header illustration for a networking crew.
 
 Crew name: "${name}"
 Description: "${description ?? "(none provided)"}"
 
-Your goal: analyze the crew name/description and create an illustration that VISUALLY REPRESENTS its theme.
+STEP 1 — THINK: What is the single most iconic, universally recognizable visual symbol for this crew?
+- "Buenos Aires" → the Obelisco monument (tall thin obelisk with stepped base), pink Casa Rosada silhouette, tango dancers
+- "Messi Fans" → soccer ball (hexagon/pentagon pattern), jersey with vertical stripes, stadium arcs
+- "AI Builders" → neural network nodes connected by lines, circuit traces, microchip grid
+- "Ocean Lovers" → layered wave silhouettes, fish shapes, crescent moon reflection on water
+- "Tokyo Crew" → torii gate silhouette, Mount Fuji outline, cherry blossom circles
+- "NYC Founders" → Manhattan skyline with recognizable towers, yellow taxi rectangle, grid streets
+- "London Tech" → Big Ben clock tower silhouette, Tower Bridge outline, double-decker bus
+- "Coffee & Startups" → coffee cup with steam spirals, chat bubble shapes, coffee bean ovals
+- "VC Network" → upward trend line/chart, bar chart columns, handshake arcs
+- "Biotech" → DNA double helix path, hexagonal cell, molecule nodes
+- "Crypto / Web3" → hexagonal blockchain chain, Ethereum diamond shape, binary dot patterns
+- "Design" → bezier curve handles, color palette circles, grid layout, pen tool shape
+- "Climate Tech" → wind turbine silhouette, solar panel grid, leaf/plant shape, sun rays
+- "Paris" → Eiffel Tower (iconic A-frame with lattice), Arc de Triomphe arch, croissant shape
 
-Examples of thematic illustrations:
-- "AI Builders" → circuit traces, neural network nodes, subtle tech grid patterns
-- "Ocean Lovers" → wave silhouettes, fish, ripple circles, moon reflection
-- "Coffee & Founders" → coffee cup steam swirls, chat bubbles, subtle bean shapes
-- "SFO → NYC Weekly" → airplane silhouette, city skyline silhouettes, flight arc path
-- "VC Summit" → mountain silhouettes, bar chart shapes, upward arrows
-- "Biotech Pioneers" → DNA double helix, molecule shapes, hexagonal cell patterns
-- "Crypto & Web3" → hexagonal blockchain nodes, chain links, binary-like dot patterns
-- "Design Thinkers" → geometric shapes, bezier curves, color swatches, grid layout
-
-Hard rules:
+STEP 2 — DRAW: Build the SVG with these hard rules:
 1. viewBox="0 0 400 160" exactly
-2. Pick 2 harmonious hex colors that authentically reflect the crew's theme (avoid generic blue/gray)
-3. Background: linear gradient from color1 to color2 (subtle, elegant, light-ish)
-4. Add 12–20 shapes that form recognizable thematic elements — NOT just random abstract shapes
-5. Shapes must use the 2 colors with fillOpacity between 0.06 and 0.28 and strokeOpacity between 0.10 and 0.25
-6. Absolutely NO <text> elements, NO <image>, NO <use>, NO external URLs
-7. All coordinates within x: 0–400 and y: 0–160
-8. Return ONLY the raw SVG markup — no markdown, no code fences, no explanation
+2. Choose 2 hex colors that feel authentic to the theme (warm colors for food/travel, blues for tech, greens for nature, etc.)
+3. Background: soft linear gradient with those 2 colors (light, elegant)
+4. The main illustration: draw 1–2 RECOGNIZABLE landmark/icon shapes as the hero element (centered or slightly off-center), built from geometric primitives (rect, path, circle, ellipse, polygon, line)
+5. Add supporting decorative elements: smaller repeated motifs, dots, arcs, streaks that reinforce the theme
+6. All shape opacities: fillOpacity 0.08–0.30, strokeOpacity 0.12–0.28 — keep it refined and subtle, not garish
+7. NO <text>, NO <image>, NO <use>, NO external URLs
+8. All coordinates strictly within x: 0–400, y: 0–160
+9. Return ONLY the raw SVG — no markdown fences, no explanation, no comments
 
-Format to follow exactly:
-<svg viewBox="0 0 400 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="160" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="COLOR1"/>
-      <stop offset="100%" stop-color="COLOR2"/>
-    </linearGradient>
-  </defs>
-  <rect width="400" height="160" fill="url(#bg)"/>
-  [12–20 thematic shapes specific to the crew concept]
-</svg>`,
+The output must start with <svg and end with </svg>.`,
         },
       ],
     });
