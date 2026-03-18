@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
+export const maxDuration = 60; // allow up to 60s for generation
+
 const client = new Anthropic();
 
 /** Strip anything dangerous from Claude-generated SVG */
@@ -24,9 +26,8 @@ export async function POST(req: Request) {
     }
 
     const msg = await client.messages.create({
-      model: "claude-opus-4-6",
+      model: "claude-sonnet-4-6",
       max_tokens: 4000,
-      thinking: { type: "adaptive" },
       messages: [
         {
           role: "user",
@@ -67,7 +68,12 @@ The output must start with <svg and end with </svg>.`,
       ],
     });
 
-    const raw = (msg.content[0] as { type: string; text: string }).text.trim();
+    // Find the text block (thinking blocks may appear first)
+    const textBlock = msg.content.find(b => b.type === "text") as { type: "text"; text: string } | undefined;
+    if (!textBlock) {
+      return NextResponse.json({ error: "No text in response" }, { status: 500 });
+    }
+    const raw = textBlock.text.trim();
 
     // Extract the SVG block (handle if model wraps in code fences)
     const match = raw.match(/<svg[\s\S]*?<\/svg>/i);
