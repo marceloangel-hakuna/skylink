@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { EmptyState } from "@/components/EmptyState";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const INTEREST_LABELS: Record<string, string> = {
@@ -15,17 +16,21 @@ const TAG_OPTIONS = ["Lead", "Partner", "Investor", "Friend"] as const;
 type Tag = typeof TAG_OPTIONS[number];
 
 const TAG_STYLES: Record<Tag, string> = {
-  Lead:     "bg-brand-100 text-brand-600 border-brand-200",
-  Partner:  "bg-violet-100 text-violet-600 border-violet-200",
-  Investor: "bg-amber-100 text-amber-600 border-amber-200",
-  Friend:   "bg-emerald-100 text-emerald-600 border-emerald-200",
+  Lead:     "bg-violet-100 text-violet-600 border-violet-200 dark:bg-violet-900/30 dark:text-violet-400 dark:border-violet-900/60",
+  Partner:  "bg-violet-100 text-violet-600 border-violet-200 dark:bg-violet-900/30 dark:text-violet-400 dark:border-violet-900/60",
+  Investor: "bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-900/60",
+  Friend:   "bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60",
 };
 
 const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700", "bg-pink-100 text-pink-700",
-  "bg-amber-100 text-amber-700",   "bg-emerald-100 text-emerald-700",
-  "bg-sky-100 text-sky-700",       "bg-rose-100 text-rose-700",
-  "bg-indigo-100 text-indigo-700", "bg-teal-100 text-teal-700",
+  "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+  "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
+  "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
+  "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
 ];
 
 const PLACEHOLDERS = [
@@ -101,9 +106,9 @@ function Avatar({ profile, size = 12 }: { profile: Profile; size?: number }) {
 }
 
 function MatchBadge({ pct }: { pct: number }) {
-  const cls = pct >= 85 ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-            : pct >= 70 ? "bg-amber-50 text-amber-600 border-amber-100"
-            :             "bg-zinc-100 text-zinc-500 border-zinc-200";
+  const cls = pct >= 85 ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60"
+            : pct >= 70 ? "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-900/60"
+            :             "bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-[var(--c-muted)] dark:text-[var(--c-text2)] dark:border-[var(--c-border)]";
   return <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 border ${cls}`}>{pct}%</span>;
 }
 
@@ -116,7 +121,7 @@ function TagPicker({ current, onChange }: { current: string[]; onChange: (t: str
           <button key={tag}
             onClick={() => onChange(on ? current.filter(t => t !== tag) : [...current, tag])}
             className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
-              on ? TAG_STYLES[tag] : "bg-zinc-50 text-zinc-400 border-zinc-200"
+              on ? TAG_STYLES[tag] : "bg-zinc-50 text-zinc-400 border-zinc-200 dark:bg-[var(--c-muted)] dark:text-[var(--c-text3)] dark:border-[var(--c-border)]"
             }`}>
             {tag}
           </button>
@@ -461,6 +466,13 @@ export default function NetworkPage() {
       ) : tab === "discover" ? (
         /* ── DISCOVER ─────────────────────────────────────────────────────── */
         <div className="px-4 flex flex-col gap-3">
+          {discoverUsers.length === 0 && (
+            <EmptyState
+              icon="🌍"
+              title="You've seen everyone"
+              body="Check back after your next flight — new professionals join every day."
+            />
+          )}
           {discoverUsers.map((u, i) => {
             const match       = calcMatch(myProfile?.interests ?? [], u.interests ?? [], u.match);
             const isConnected = connectedIds.has(u.id);
@@ -530,18 +542,20 @@ export default function NetworkPage() {
           </div>
 
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16">
-              <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl"
-                   style={{ background: "var(--c-muted)" }}>🤝</div>
-              <p className="text-sm font-medium text-center" style={{ color: "var(--c-text2)" }}>
-                {search ? "No connections match your search" : "No connections yet"}
-              </p>
-              {!search && (
-                <button onClick={() => setTab("discover")} className="text-brand text-sm font-semibold">
-                  Discover people →
-                </button>
-              )}
-            </div>
+            search ? (
+              <EmptyState
+                icon="🤝"
+                title="No results found"
+                body="Try a different name, role, or company to find your connections."
+              />
+            ) : (
+              <EmptyState
+                icon="🤝"
+                title="Your network starts here"
+                body="Connect with people on your flights to build a network that travels with you."
+                action={{ label: "Discover People", onClick: () => setTab("discover") }}
+              />
+            )
           ) : filtered.map(conn => {
             const p = conn.profile;
             if (!p) return null;
@@ -576,7 +590,7 @@ export default function NetworkPage() {
                           stroke="#4A27E8" strokeWidth="1.8" strokeLinejoin="round"/>
                       </svg>
                     </Link>
-                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1 rounded-full">
+                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1 rounded-full dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60">
                       Connected
                     </span>
                   </div>
@@ -610,7 +624,7 @@ export default function NetworkPage() {
                           Cancel
                         </button>
                         <button onClick={() => saveNotes(conn.id, editingNotes.notes)}
-                          className="text-xs text-brand font-semibold py-1.5 px-3 rounded-xl bg-brand-50 border border-brand/20">
+                          className="text-xs text-brand font-semibold py-1.5 px-3 rounded-xl bg-violet-50 border border-brand/20 dark:bg-violet-900/20 dark:border-brand/30">
                           Save
                         </button>
                       </div>

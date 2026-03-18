@@ -4,8 +4,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/home";
+  const code       = searchParams.get("code");
+  const tokenHash  = searchParams.get("token_hash");
+  const type       = searchParams.get("type") as "signup" | "recovery" | "email" | null;
+  const next       = searchParams.get("next") ?? "/home";
 
   // Resolve public-facing origin (Vercel proxies the request)
   const forwardedHost = request.headers.get("x-forwarded-host");
@@ -15,13 +17,11 @@ export async function GET(request: NextRequest) {
       ? "http://localhost:3000"
       : `${proto}://${forwardedHost}`;
 
-  if (!code) {
+  if (!code && !tokenHash) {
     return NextResponse.redirect(`${base}/login?error=no_code_returned`);
   }
 
   const cookieStore = cookies();
-
-  // Collect cookies that Supabase wants to set during the exchange
   const pendingCookies: Array<{ name: string; value: string; options: Record<string, unknown> }> = [];
 
   const supabase = createServerClient(
@@ -33,38 +33,59 @@ export async function GET(request: NextRequest) {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          // Buffer cookies — we'll attach them to the response below
           pendingCookies.push(...cookiesToSet);
         },
       },
     }
   );
 
-  const { error, data } = await supabase.auth.exchangeCodeForSession(code);
+  let authError: string | null = null;
+  let userId: string | null = null;
 
-  // Sync OAuth metadata (name, avatar) to profiles on every login
-  if (!error && data.session?.user) {
-    const u    = data.session.user;
-    const meta = u.user_metadata ?? {};
-    // Build update object — only include non-null LinkedIn fields so we
-    // don't overwrite user-edited data with nulls
-    const update: Record<string, string | null> = { id: u.id };
-    if (meta.full_name ?? meta.name)                             update.full_name  = meta.full_name ?? meta.name;
-    if (meta.avatar_url ?? meta.picture)                         update.avatar_url = meta.avatar_url ?? meta.picture;
-    if (meta.headline ?? meta.job_title ?? meta.title)           update.role       = meta.headline ?? meta.job_title ?? meta.title;
-    if (meta.company ?? meta.organization ?? meta.employer)      update.company    = meta.company ?? meta.organization ?? meta.employer;
-    await supabase.from("profiles").upsert(update, { onConflict: "id" });
+  if (code) {
+    // OAuth / PKCE flow (Google, LinkedIn, magic link)
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      authError = error.message;
+    } else {
+      userId = data.session?.user?.id ?? null;
+      // Sync OAuth metadata to profile
+      if (data.session?.user) {
+        const u    = data.session.user;
+        const meta = u.user_metadata ?? {};
+        const update: Record<string, string | null> = { id: u.id };
+        if (meta.full_name ?? meta.name)                        update.full_name  = meta.full_name ?? meta.name;
+        if (meta.avatar_url ?? meta.picture)                    update.avatar_url = meta.avatar_url ?? meta.picture;
+        if (meta.headline ?? meta.job_title ?? meta.title)      update.role       = meta.headline ?? meta.job_title ?? meta.title;
+        if (meta.company ?? meta.organization ?? meta.employer) update.company    = meta.company ?? meta.organization ?? meta.employer;
+        await supabase.from("profiles").upsert(update, { onConflict: "id" });
+      }
+    }
+  } else if (tokenHash && type) {
+    // Email confirmation flow (signup verify, password reset, etc.)
+    const { error, data } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    if (error) {
+      authError = error.message;
+    } else {
+      userId = data.session?.user?.id ?? null;
+    }
   }
 
+  if (authError) {
+    const response = NextResponse.redirect(`${base}/login?error=${encodeURIComponent(authError)}`);
+    for (const { name, value, options } of pendingCookies) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      response.cookies.set(name, value, options as any);
+    }
+    return response;
+  }
+
+  // Decide where to send the user
   let destination: string;
-  if (error) {
-    destination = `${base}/login?error=${encodeURIComponent(error.message)}`;
-  } else if (next !== "/home") {
-    // Explicit `next` param — honour it
+  if (next !== "/home") {
     destination = `${base}${next}`;
   } else {
     // Check whether this user has completed onboarding
-    const userId = data.session?.user?.id;
     let onboardingComplete = false;
     if (userId) {
       const { data: profile } = await supabase
@@ -78,13 +99,9 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(destination);
-
-  // Attach session cookies to the redirect response so the browser
-  // stores them before following the redirect to /home
   for (const { name, value, options } of pendingCookies) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     response.cookies.set(name, value, options as any);
   }
-
   return response;
 }

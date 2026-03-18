@@ -3,6 +3,7 @@ import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import { redirect } from "next/navigation";
 import NewConversationButton from "@/components/NewConversationButton";
+import { EmptyState } from "@/components/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +30,14 @@ function initials(name: string | null): string {
 }
 
 const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700",
-  "bg-pink-100   text-pink-700",
-  "bg-amber-100  text-amber-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-sky-100    text-sky-700",
-  "bg-rose-100   text-rose-700",
-  "bg-teal-100   text-teal-700",
-  "bg-indigo-100 text-indigo-700",
+  "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  "bg-pink-100   text-pink-700   dark:bg-pink-900/30   dark:text-pink-400",
+  "bg-amber-100  text-amber-700  dark:bg-amber-900/30  dark:text-amber-400",
+  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  "bg-sky-100    text-sky-700    dark:bg-sky-900/30    dark:text-sky-400",
+  "bg-rose-100   text-rose-700   dark:bg-rose-900/30   dark:text-rose-400",
+  "bg-teal-100   text-teal-700   dark:bg-teal-900/30   dark:text-teal-400",
+  "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
 ];
 
 function avatarColor(id: string): string {
@@ -122,23 +123,13 @@ export default async function ChatPage() {
 
         {/* Empty state */}
         {conversations.length === 0 && (
-          <div className="flex flex-col items-center gap-3 py-20 text-center">
-            <div className="w-16 h-16 rounded-3xl flex items-center justify-center bg-[#F5F3FF] dark:bg-[#1E1C35]">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
-                  stroke="#4A27E8" strokeWidth="1.8" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">No messages yet</p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Connect with people on your flight to start chatting</p>
-            </div>
-            <Link href="/network"
-              className="mt-1 text-xs font-semibold px-4 py-2 rounded-full text-white"
-              style={{ background: "#4A27E8" }}>
-              Browse Network
-            </Link>
-          </div>
+          <EmptyState
+            icon="💬"
+            title="No messages yet"
+            body="Connect with someone from your flight to start a conversation."
+            action={{ label: "Browse Network", href: "/network" }}
+            className="py-12"
+          />
         )}
 
         {/* Conversation rows */}
@@ -165,13 +156,13 @@ export default async function ChatPage() {
               {/* Content — tap to open chat */}
               <Link href={`/chat/${conv.partnerId}`} className="flex-1 min-w-0 active:opacity-70 transition-opacity">
                 <div className="flex items-center justify-between mb-0.5">
-                  <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-bold text-zinc-900 dark:text-zinc-50" : "font-semibold text-zinc-700 dark:text-zinc-200"}`}>
+                  <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-bold text-zinc-900 dark:text-[var(--c-text1)]" : "font-semibold text-zinc-700 dark:text-[var(--c-text2)]"}`}>
                     {name}
                   </p>
-                  <p className="text-[11px] text-zinc-400 dark:text-zinc-500 flex-shrink-0 ml-2">{formatTime(conv.lastTime)}</p>
+                  <p className="text-[11px] text-zinc-400 dark:text-[var(--c-text2)] flex-shrink-0 ml-2">{formatTime(conv.lastTime)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <p className={`text-xs truncate flex-1 ${conv.unreadCount > 0 ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-400 dark:text-zinc-500"}`}>
+                  <p className={`text-xs truncate flex-1 ${conv.unreadCount > 0 ? "text-zinc-700 dark:text-[var(--c-text2)]" : "text-zinc-400 dark:text-[var(--c-text3)]"}`}>
                     {conv.lastMessage}
                   </p>
                   {conv.unreadCount > 0 && (

@@ -32,16 +32,30 @@ export default function OnboardingPage() {
   const [saving,       setSaving]       = useState(false);
   const [error,        setError]        = useState<string | null>(null);
 
-  // Pre-populate professional fields from LinkedIn / OAuth metadata
+  // Guard: if already onboarded, skip straight to home
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { router.replace("/login"); return; }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_complete, role, company, bio")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.onboarding_complete) {
+        router.replace("/home");
+        return;
+      }
+
+      // Pre-populate from OAuth metadata or existing profile data
       const m = user.user_metadata ?? {};
-      setRole(m.headline ?? m.job_title ?? m.title ?? "");
-      setCompany(m.company ?? m.organization ?? m.employer ?? "");
-      setBio(m.bio ?? m.summary ?? m.description ?? "");
+      setRole(profile?.role ?? m.headline ?? m.job_title ?? m.title ?? "");
+      setCompany(profile?.company ?? m.company ?? m.organization ?? m.employer ?? "");
+      setBio(profile?.bio ?? m.bio ?? m.summary ?? m.description ?? "");
     });
-  }, [supabase]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function toggleInterest(id: string) {
     setInterests((prev) => {

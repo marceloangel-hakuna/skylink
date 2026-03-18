@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { EmptyState } from "@/components/EmptyState";
 
 type Crew = {
   id: string;
@@ -17,10 +18,14 @@ type Crew = {
 };
 
 const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700", "bg-pink-100 text-pink-700",
-  "bg-amber-100 text-amber-700",   "bg-emerald-100 text-emerald-700",
-  "bg-sky-100 text-sky-700",       "bg-rose-100 text-rose-700",
-  "bg-indigo-100 text-indigo-700", "bg-teal-100 text-teal-700",
+  "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+  "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
+  "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
+  "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
 ];
 
 function crewColor(name: string) {
@@ -139,18 +144,21 @@ export default function CrewsPage() {
                  style={{ background: "var(--c-card)", borderColor: "var(--c-border)", height: 100 }} />
           ))
         ) : displayed.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-20">
-            <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-3xl"
-                 style={{ background: "var(--c-muted)" }}>✈️</div>
-            <p className="text-sm font-medium text-center" style={{ color: "var(--c-text2)" }}>
-              {tab === "mine" ? "You haven't joined any crews yet" : "No crews available"}
-            </p>
-            {tab === "mine" && (
-              <button onClick={() => setTab("all")} className="text-brand text-sm font-semibold">
-                Browse crews →
-              </button>
-            )}
-          </div>
+          tab === "mine" ? (
+            <EmptyState
+              icon="🚀"
+              title="No crews yet"
+              body="Join a crew built around your interests, or create one for your community."
+              action={{ label: "Browse All Crews", onClick: () => setTab("all") }}
+            />
+          ) : (
+            <EmptyState
+              icon="🚀"
+              title="No crews available"
+              body="Be the first to create a crew and build your community of frequent flyers."
+              action={{ label: "Create a Crew", href: "/crews/create" }}
+            />
+          )
         ) : (
           displayed.map(crew => (
             <div key={crew.id}
@@ -174,7 +182,7 @@ export default function CrewsPage() {
                   </p>
                 </div>
                 {myCrews.has(crew.id) && (
-                  <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1 rounded-full flex-shrink-0">
+                  <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1 rounded-full flex-shrink-0 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60">
                     Joined ✓
                   </span>
                 )}

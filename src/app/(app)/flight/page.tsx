@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { createPortal } from "react-dom";
+import { EmptyState } from "@/components/EmptyState";
 
 // ── Types ─────────────────────────────────────────────────
 type UserFlight = {
@@ -24,10 +25,10 @@ const PAST_FLIGHTS = [
     id: "h1", number: "DL 455", from: "BOS", to: "JFK",
     date: "Mar 8, 2026", score: 82,
     people: [
-      { name: "Alex Kim",    role: "Designer",  initials: "AK", color: "bg-indigo-100 text-indigo-700" },
-      { name: "Nina Torres", role: "PM",        initials: "NT", color: "bg-rose-100 text-rose-700"     },
-      { name: "Carlos Wu",   role: "Engineer",  initials: "CW", color: "bg-teal-100 text-teal-700"     },
-      { name: "Lisa Park",   role: "Marketing", initials: "LP", color: "bg-orange-100 text-orange-700" },
+      { name: "Alex Kim",    role: "Designer",  initials: "AK", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" },
+      { name: "Nina Torres", role: "PM",        initials: "NT", color: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"         },
+      { name: "Carlos Wu",   role: "Engineer",  initials: "CW", color: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"         },
+      { name: "Lisa Park",   role: "Marketing", initials: "LP", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
     ],
     notes: "Met Alex before boarding — great conversation about design systems.",
     atlas: "You have a strong overlap with Nina Torres on product strategy. Consider following up about the Stripe redesign she mentioned.",
@@ -36,9 +37,9 @@ const PAST_FLIGHTS = [
     id: "h2", number: "AA 102", from: "ORD", to: "BOS",
     date: "Mar 2, 2026", score: 94,
     people: [
-      { name: "Jake Stone",  role: "Investor", initials: "JS", color: "bg-violet-100 text-violet-700"  },
-      { name: "Maya Lee",    role: "Founder",  initials: "ML", color: "bg-emerald-100 text-emerald-700"},
-      { name: "Ryan Gold",   role: "Advisor",  initials: "RG", color: "bg-amber-100 text-amber-700"   },
+      { name: "Jake Stone",  role: "Investor", initials: "JS", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"    },
+      { name: "Maya Lee",    role: "Founder",  initials: "ML", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+      { name: "Ryan Gold",   role: "Advisor",  initials: "RG", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"         },
     ],
     notes: "",
     atlas: "Jake Stone mentioned he's actively looking for seed-stage B2B SaaS. You should reach out with your deck.",
@@ -47,8 +48,8 @@ const PAST_FLIGHTS = [
     id: "h3", number: "UA 890", from: "LAX", to: "SFO",
     date: "Feb 24, 2026", score: 71,
     people: [
-      { name: "Iris Chang",  role: "Data Scientist", initials: "IC", color: "bg-indigo-100 text-indigo-700" },
-      { name: "Dave Mills",  role: "Product Lead",   initials: "DM", color: "bg-orange-100 text-orange-700" },
+      { name: "Iris Chang",  role: "Data Scientist", initials: "IC", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" },
+      { name: "Dave Mills",  role: "Product Lead",   initials: "DM", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
     ],
     notes: "Short flight, only managed to exchange cards.",
     atlas: "Dave Mills is at a company that uses your tech stack. A warm intro through Iris could be valuable.",
@@ -229,50 +230,82 @@ function AddFlightModal({ onClose, onAdd }: { onClose: () => void; onAdd: (f: Om
   return mounted ? createPortal(modal, document.body) : null;
 }
 
-// ── Flight row card (Upcoming) ─────────────────────────────
-function FlightCard({ flight }: { flight: UserFlight }) {
+// ── Section Header ─────────────────────────────────────────
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <p style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em",
+      textTransform: "uppercase", color: "var(--c-text3)", paddingLeft: "2px",
+      marginBottom: "6px", marginTop: "4px" }}>
+      {label}
+    </p>
+  );
+}
+
+// ── Active Flight Row ──────────────────────────────────────
+function ActiveFlightRow({ flight }: { flight: UserFlight }) {
   const slug = flight.flight_number.toLowerCase().replace(/\s+/g, "-");
   return (
     <Link href={`/flight/${slug}`} className="block active:scale-[0.98] transition-transform">
-      <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-black" style={{ color: "var(--c-text1)" }}>{flight.flight_number}</span>
-          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
-                style={flight.status === "active"
-                  ? { background: "#D1FAE5", color: "#059669" }
-                  : { background: "var(--c-muted)", color: "var(--c-text2)" }}>
-            {flight.status === "active" ? "● In Flight" : "Upcoming"}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div>
-            <p className="text-2xl font-black tracking-tight" style={{ color: "var(--c-text1)" }}>
-              {flight.origin ?? "—"}
-            </p>
-          </div>
-          <div className="flex-1 flex items-center justify-center px-2">
-            <div className="w-full flex items-center gap-1">
-              <div className="flex-1 border-t border-dashed" style={{ borderColor: "var(--c-border)" }} />
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"
-                  fill="var(--c-text3)"/>
-              </svg>
-              <div className="flex-1 border-t border-dashed" style={{ borderColor: "var(--c-border)" }} />
+      <div className="rounded-2xl overflow-hidden flex"
+           style={{ background: "var(--c-card)", border: "1px solid var(--c-border)", minHeight: "76px" }}>
+        {/* Green left accent */}
+        <div style={{ width: "3px", flexShrink: 0, background: "#34D399" }} />
+        <div className="flex-1 flex items-center px-4 py-3 gap-3">
+          {/* Flight info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-black" style={{ color: "var(--c-text1)" }}>{flight.flight_number}</span>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    style={{ background: "#D1FAE5", color: "#059669" }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block animate-pulse" />
+                In Flight
+              </span>
             </div>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-black tracking-tight" style={{ color: "var(--c-text1)" }}>
-              {flight.destination ?? "—"}
+            <p className="text-xs" style={{ color: "var(--c-text2)" }}>
+              {flight.origin ?? "—"} → {flight.destination ?? "—"}
+              {flight.departure_date ? ` · ${formatDate(flight.departure_date)}` : ""}
             </p>
           </div>
+          {/* Chevron */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)", flexShrink: 0 }}>
+            <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
         </div>
+      </div>
+    </Link>
+  );
+}
 
-        <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--c-border)" }}>
-          <p className="text-xs" style={{ color: "var(--c-text2)" }}>{formatDate(flight.departure_date)}</p>
-          <p className="text-xs font-semibold" style={{ color: "#4A27E8" }}>
-            View Dashboard →
-          </p>
+// ── Upcoming Flight Row ────────────────────────────────────
+function UpcomingFlightRow({ flight }: { flight: UserFlight }) {
+  const slug = flight.flight_number.toLowerCase().replace(/\s+/g, "-");
+  return (
+    <Link href={`/flight/${slug}`} className="block active:scale-[0.98] transition-transform">
+      <div className="rounded-2xl flex"
+           style={{ background: "var(--c-card)", border: "1px solid var(--c-border)", minHeight: "76px" }}>
+        <div className="flex-1 flex items-center px-4 py-3 gap-3">
+          {/* Plane icon */}
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+               style={{ background: "var(--c-muted)" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"
+                fill="#4A27E8"/>
+            </svg>
+          </div>
+          {/* Flight info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-black" style={{ color: "var(--c-text1)" }}>{flight.flight_number}</span>
+            </div>
+            <p className="text-xs" style={{ color: "var(--c-text2)" }}>
+              {flight.origin ?? "—"} → {flight.destination ?? "—"}
+              {flight.departure_date ? ` · ${formatDate(flight.departure_date)}` : ""}
+            </p>
+          </div>
+          {/* Chevron */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)", flexShrink: 0 }}>
+            <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
         </div>
       </div>
     </Link>
@@ -360,13 +393,12 @@ function HistoryCard({ flight }: { flight: typeof PAST_FLIGHTS[0] }) {
           )}
 
           {/* Atlas insight */}
-          <div className="mx-4 mb-4 px-3 py-2.5 rounded-xl border border-amber-200 dark:border-amber-900/40"
-               style={{ background: "linear-gradient(135deg, #FFFBEB, #FEF3C7)" }}>
+          <div className="mx-4 mb-4 px-3 py-2.5 rounded-xl border atlas-insight-card flight-atlas-insight">
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-amber-500 text-sm">✦</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Atlas Insight</span>
+              <span className="atlas-icon text-sm">✦</span>
+              <span className="text-[10px] font-black uppercase tracking-widest atlas-label">Atlas Insight</span>
             </div>
-            <p className="text-xs text-amber-800 leading-relaxed">{flight.atlas}</p>
+            <p className="text-xs atlas-text-primary leading-relaxed">{flight.atlas}</p>
           </div>
         </div>
       )}
@@ -421,13 +453,14 @@ export default function FlightPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-zinc-100 dark:bg-[#1A1829] rounded-2xl p-1 mx-4 mb-5">
+        <div className="flex rounded-2xl p-1 mx-4 mb-5" style={{ background: "var(--c-muted)" }}>
           {(["upcoming", "history"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex-1 py-2 text-sm font-semibold rounded-xl transition-all ${
-                tab === t ? "text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500"
-              }`}
-              style={tab === t ? { background: "var(--c-card)" } : {}}>
+              className={`flex-1 py-2 text-sm font-semibold rounded-xl transition-all ${tab === t ? "shadow-sm" : ""}`}
+              style={{
+                background: tab === t ? "var(--c-card)" : "transparent",
+                color: tab === t ? "var(--c-text1)" : "var(--c-text3)",
+              }}>
               {t === "upcoming" ? "Upcoming" : "History"}
             </button>
           ))}
@@ -435,96 +468,56 @@ export default function FlightPage() {
       </div>
 
       {/* ── Upcoming tab ──────────────────────────────── */}
-      {tab === "upcoming" && (
-        <div className="px-4 flex flex-col gap-4">
-          {/* Active flight hero */}
-          <div className="rounded-3xl p-5 text-white overflow-hidden relative"
-               style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
-            <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
-            <div className="absolute -bottom-12 -left-6 w-32 h-32 rounded-full bg-white/5" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">Active Flight</p>
-                  <p className="text-lg font-black mt-0.5">AA 2317</p>
-                </div>
-                <span className="bg-white/15 text-white text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  In Flight
-                </span>
-              </div>
-              <div className="flex items-end justify-between mb-1">
-                <div>
-                  <p className="text-4xl font-black tracking-tight">SFO</p>
-                  <p className="text-white/60 text-xs mt-0.5">San Francisco</p>
-                </div>
-                <div className="flex-1 mx-3 mb-3">
-                  <svg viewBox="0 0 160 50" fill="none" className="w-full">
-                    <path d="M8 42 Q80 4 152 42" stroke="white" strokeOpacity="0.25" strokeWidth="1.5" fill="none" strokeDasharray="4 3"/>
-                    <path d="M8 42 Q44 23 80 23" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
-                    <g transform="translate(80,23)">
-                      <path d="M-7 0 L3 -3 L5 0 L3 3 Z M-7 -1 L-3 -5 L-2 -1 Z M-7 1 L-3 5 L-2 1 Z" fill="white"/>
-                    </g>
-                    <circle cx="8" cy="42" r="3" fill="white" fillOpacity="0.6"/>
-                    <circle cx="152" cy="42" r="3" fill="white" fillOpacity="0.3"/>
-                  </svg>
-                </div>
-                <div className="text-right">
-                  <p className="text-4xl font-black tracking-tight">JFK</p>
-                  <p className="text-white/60 text-xs mt-0.5">New York</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between pt-3 border-t border-white/15 mt-1">
-                <div className="flex gap-5">
-                  <div>
-                    <p className="text-white/50 text-[10px] uppercase tracking-wider">ETA</p>
-                    <p className="text-sm font-bold">4:32 PM</p>
-                  </div>
-                  <div>
-                    <p className="text-white/50 text-[10px] uppercase tracking-wider">Remaining</p>
-                    <p className="text-sm font-bold">5h 12m</p>
-                  </div>
-                  <div>
-                    <p className="text-white/50 text-[10px] uppercase tracking-wider">On Board</p>
-                    <p className="text-sm font-bold">12 members</p>
-                  </div>
-                </div>
-                <Link href="/flight/aa-2317"
-                  className="bg-white/15 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1 active:scale-95 transition-transform">
-                  Dashboard
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
-                  </svg>
-                </Link>
-              </div>
-            </div>
-          </div>
+      {tab === "upcoming" && (() => {
+        const activeFlight  = flights.find(f => f.status === "active");
+        const upcomingList  = flights.filter(f => f.status === "upcoming");
+        const hasAnyFlight  = flights.length > 0;
 
-          {/* Upcoming flights list */}
-          {loading ? (
-            <div className="flex flex-col gap-3">
-              {[1,2].map(i => (
-                <div key={i} className="rounded-2xl p-4 animate-pulse h-28" style={{ background: "var(--c-muted)" }} />
+        if (loading) {
+          return (
+            <div className="px-4 flex flex-col gap-3">
+              {[1, 2].map(i => (
+                <div key={i} className="rounded-2xl animate-pulse" style={{ background: "var(--c-muted)", height: "76px" }} />
               ))}
             </div>
-          ) : flights.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-10 text-center">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-                   style={{ background: "var(--c-muted)" }}>✈️</div>
-              <p className="text-sm font-semibold" style={{ color: "var(--c-text2)" }}>No upcoming flights</p>
-              <button onClick={() => setShowModal(true)}
-                className="text-xs font-bold px-4 py-2 rounded-full text-white"
-                style={{ background: "#4A27E8" }}>
-                Add your first flight
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {flights.map(f => <FlightCard key={f.id} flight={f} />)}
-            </div>
-          )}
-        </div>
-      )}
+          );
+        }
+
+        if (!hasAnyFlight) {
+          return (
+            <EmptyState
+              icon="✈️"
+              title="Your runway is clear"
+              body="Add your next flight to discover who's onboard and make every trip count."
+              action={{ label: "Add Your First Flight", onClick: () => setShowModal(true) }}
+            />
+          );
+        }
+
+        return (
+          <div className="px-4 flex flex-col gap-1">
+            {activeFlight && (
+              <>
+                <SectionHeader label="In Flight Now" />
+                <div className="mb-3">
+                  <ActiveFlightRow flight={activeFlight} />
+                </div>
+              </>
+            )}
+
+            <SectionHeader label="Upcoming" />
+            {upcomingList.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {upcomingList.map(f => <UpcomingFlightRow key={f.id} flight={f} />)}
+              </div>
+            ) : (
+              <p className="text-xs py-6 text-center" style={{ color: "var(--c-text3)" }}>
+                No upcoming flights scheduled
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── History tab ───────────────────────────────── */}
       {tab === "history" && (

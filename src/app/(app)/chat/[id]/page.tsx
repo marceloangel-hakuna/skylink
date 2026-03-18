@@ -263,7 +263,7 @@ export default function ConversationPage() {
               <img src={otherProfile.avatar_url} alt={otherName}
                 className="w-9 h-9 rounded-full object-cover" />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center font-bold text-sm">
+              <div className="w-9 h-9 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 flex items-center justify-center font-bold text-sm">
                 {loading ? "…" : otherInits}
               </div>
             )}
@@ -318,7 +318,7 @@ export default function ConversationPage() {
               <img src={otherProfile.avatar_url} alt={otherName}
                 className="w-20 h-20 rounded-3xl object-cover shadow-sm" />
             ) : (
-              <div className="w-20 h-20 rounded-3xl bg-violet-100 text-violet-700 flex items-center justify-center text-2xl font-black">
+              <div className="w-20 h-20 rounded-3xl bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 flex items-center justify-center text-2xl font-black">
                 {otherInits}
               </div>
             )}

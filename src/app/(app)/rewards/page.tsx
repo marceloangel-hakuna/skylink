@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import PageHeader from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
 
 // ── Tiers ────────────────────────────────────────────────
 const TIERS = [
@@ -307,23 +308,23 @@ export default function RewardsPage() {
       <PageHeader title="Rewards" />
 
       {/* ── Balance header ─────────────────────────────── */}
-      <div className="mx-4 rounded-3xl overflow-hidden mb-5"
+      <div className="mx-4 rounded-3xl overflow-hidden mb-5 rewards-balance-card"
            style={{ background: "linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)", border: "1px solid #FBCFE8" }}>
         <div className="p-5">
           <div className="flex items-start justify-between mb-5">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#DB2777" }}>SkyPoints Balance</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest dark:text-pink-400" style={{ color: "#DB2777" }}>SkyPoints Balance</p>
               {balance === null ? (
-                <div className="h-10 w-28 rounded-xl mt-1 animate-pulse" style={{ background: "#FBCFE8" }} />
+                <div className="h-10 w-28 rounded-xl mt-1 animate-pulse dark:bg-pink-900/30" style={{ background: "#FBCFE8" }} />
               ) : (
-                <p className="text-5xl font-black mt-0.5 leading-none" style={{ color: "#9D174D" }}>
+                <p className="text-5xl font-black mt-0.5 leading-none dark:text-pink-300" style={{ color: "#9D174D" }}>
                   {pts.toLocaleString()}
                 </p>
               )}
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="text-3xl">{tier.icon}</span>
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full" style={{ background: "#FCE7F3", color: "#BE185D" }}>
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full dark:bg-pink-900/40 dark:text-pink-300" style={{ background: "#FCE7F3", color: "#BE185D" }}>
                 {tier.name}
               </span>
             </div>
@@ -331,11 +332,11 @@ export default function RewardsPage() {
 
           {next && (
             <div>
-              <div className="flex justify-between text-[11px] mb-1.5" style={{ color: "#DB2777" }}>
+              <div className="flex justify-between text-[11px] mb-1.5 dark:text-pink-400" style={{ color: "#DB2777" }}>
                 <span>{tier.name}</span>
                 <span>{next.name} · {next.needed.toLocaleString()} pts away</span>
               </div>
-              <div className="w-full h-2 rounded-full" style={{ background: "#FBCFE8" }}>
+              <div className="w-full h-2 rounded-full dark:bg-pink-900/40" style={{ background: "#FBCFE8" }}>
                 <div className="h-2 rounded-full transition-all duration-700"
                      style={{ width: `${next.progress}%`, background: "#F73D8A" }} />
               </div>
@@ -344,10 +345,10 @@ export default function RewardsPage() {
         </div>
 
         {/* Earn more strip */}
-        <div className="px-5 py-3" style={{ borderTop: "1px solid #FBCFE8", background: "#FDF2F8" }}>
-          <p className="text-xs leading-relaxed" style={{ color: "#BE185D" }}>
+        <div className="px-5 py-3 rewards-earn-strip" style={{ borderTop: "1px solid #FBCFE8", background: "#FDF2F8" }}>
+          <p className="text-xs leading-relaxed dark:text-pink-400" style={{ color: "#BE185D" }}>
             Earn points by flying, connecting, and engaging.{" "}
-            <span className="font-semibold" style={{ color: "#9D174D" }}>Redeem for lounges, food, upgrades, and perks.</span>
+            <span className="font-semibold dark:text-pink-300" style={{ color: "#9D174D" }}>Redeem for lounges, food, upgrades, and perks.</span>
           </p>
         </div>
       </div>
@@ -406,8 +407,13 @@ export default function RewardsPage() {
         <div>
           <h3 className="text-[15px] font-bold mb-3" style={{ color: "var(--c-text1)" }}>Points History</h3>
           {history.length === 0 ? (
-            <div className="rounded-2xl p-6 text-center" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-              <p className="text-sm" style={{ color: "var(--c-text3)" }}>No points yet — start flying and connecting!</p>
+            <div className="rounded-2xl overflow-hidden" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+              <EmptyState
+                icon="⭐"
+                title="Start earning points"
+                body="Connect with people, join crews, and complete flights to earn SkyPoints."
+                className="py-10"
+              />
             </div>
           ) : (
             <div className="rounded-2xl overflow-hidden" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>

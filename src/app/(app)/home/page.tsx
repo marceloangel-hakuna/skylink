@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AtlasHomeSuggestion from "@/components/AtlasHomeSuggestion";
+import { Reveal } from "@/components/Reveal";
+import { EmptyState } from "@/components/EmptyState";
+import PullToRefresh from "@/components/PullToRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +17,11 @@ const CREW_ICON_BG: Record<string, string> = {
 };
 
 const PEOPLE_NEARBY = [
-  { name: "Sarah Chen",    role: "CTO",             match: 94, initials: "SC", color: "bg-violet-100 text-violet-700"  },
-  { name: "Marcus Rivera", role: "VC Partner",      match: 88, initials: "MR", color: "bg-pink-100   text-pink-700"    },
-  { name: "Priya Patel",   role: "Founder",         match: 82, initials: "PP", color: "bg-amber-100  text-amber-700"   },
-  { name: "James Liu",     role: "Head of Product", match: 76, initials: "JL", color: "bg-emerald-100 text-emerald-700"},
-  { name: "Aisha Okonkwo", role: "Angel Investor",  match: 71, initials: "AO", color: "bg-sky-100    text-sky-700"     },
+  { name: "Sarah Chen",    role: "CTO",             match: 94, initials: "SC", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"  },
+  { name: "Marcus Rivera", role: "VC Partner",      match: 88, initials: "MR", color: "bg-pink-100   text-pink-700   dark:bg-pink-900/30   dark:text-pink-400"    },
+  { name: "Priya Patel",   role: "Founder",         match: 82, initials: "PP", color: "bg-amber-100  text-amber-700  dark:bg-amber-900/30  dark:text-amber-400"   },
+  { name: "James Liu",     role: "Head of Product", match: 76, initials: "JL", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"},
+  { name: "Aisha Okonkwo", role: "Angel Investor",  match: 71, initials: "AO", color: "bg-sky-100    text-sky-700    dark:bg-sky-900/30    dark:text-sky-400"     },
 ];
 
 export default async function HomePage() {
@@ -36,7 +39,7 @@ export default async function HomePage() {
 
   const uid = user?.id ?? "";
   const [{ data: flights }, { count: unreadCount }, { data: viewerProfileRow }, { data: pointsRows }] = await Promise.all([
-    supabase.from("flights").select("flight_number").eq("user_id", uid).limit(1),
+    supabase.from("flights").select("flight_number, origin, destination, departure_date").eq("user_id", uid).order("departure_date", { ascending: true }).limit(1),
     supabase.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", uid).is("read_at", null),
     supabase.from("profiles").select("id, full_name, role, company, bio, interests").eq("id", uid).single(),
     supabase.from("points").select("amount").eq("user_id", uid),
@@ -46,7 +49,7 @@ export default async function HomePage() {
   const { data: featuredCrews } = await supabase
     .from("crews")
     .select("id, name, icon")
-    .limit(3);
+    .limit(4);
 
   const { data: crewMemberships } = (featuredCrews ?? []).length > 0
     ? await supabase.from("crew_members").select("crew_id, user_id").in("crew_id", (featuredCrews ?? []).map(c => c.id))
@@ -65,8 +68,12 @@ export default async function HomePage() {
     is_member: joinedCrewIds.has(c.id),
   }));
 
-  // Fall back to demo data when no real flight exists in DB yet
-  const flightNumber = flights?.[0]?.flight_number ?? "AA 2317";
+  const hasActiveFlight = (flights?.length ?? 0) > 0;
+  const activeFlight   = flights?.[0] ?? null;
+  const flightNumber   = activeFlight?.flight_number ?? "AA 2317";
+  const flightOrigin   = activeFlight?.origin ?? null;
+  const flightDest     = activeFlight?.destination ?? null;
+  const flightDate     = activeFlight?.departure_date ?? null;
 
   const totalPoints = (pointsRows ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0);
   const tierName    = totalPoints >= 5000 ? "Platinum" : totalPoints >= 1500 ? "Gold" : totalPoints >= 500 ? "Silver" : "Bronze";
@@ -101,12 +108,13 @@ export default async function HomePage() {
   const avatarUrl = meta.avatar_url ?? meta.picture ?? null;
 
   return (
+    <PullToRefresh>
     <div className="animate-fade-in pb-6">
 
       {/* ── Top bar ──────────────────────────────────────── */}
       <div className="flex items-center px-4 pb-3 gap-3"
            style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
-        <Link href="/profile" className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm active:scale-90 transition-transform">
+        <Link href="/profile" className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white dark:ring-white/20 shadow-sm active:scale-90 transition-transform">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
@@ -118,10 +126,19 @@ export default async function HomePage() {
         </Link>
 
         <div className="flex-1 min-w-0">
-          <p className="text-[17px] font-bold text-zinc-900 dark:text-zinc-50 leading-tight">Hey, {firstName} 👋</p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0 animate-pulse" />
-            {`${flightNumber} · SFO → JFK · In flight`}
+          <p className="text-[17px] font-bold text-zinc-900 dark:text-[var(--c-text1)] leading-tight">Hey, {firstName} 👋</p>
+          <p className="text-xs text-zinc-500 dark:text-[var(--c-text2)] mt-0.5 flex items-center gap-1.5">
+            {hasActiveFlight ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0 animate-pulse" />
+                {flightNumber}{flightOrigin && flightDest ? ` · ${flightOrigin} → ${flightDest}` : ""}
+              </>
+            ) : (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600 flex-shrink-0" />
+                No active flight
+              </>
+            )}
           </p>
         </div>
 
@@ -145,110 +162,125 @@ export default async function HomePage() {
       <div className="px-4 flex flex-col gap-5">
 
         {/* ── Flight Card ───────────────────────────────── */}
-        <Link href="/flight/aa-2317" className="block active:scale-[0.98] transition-transform">
-          <div className="rounded-3xl p-5 text-white overflow-hidden relative"
-               style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
-            <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
-            <div className="absolute -bottom-12 -left-6 w-32 h-32 rounded-full bg-white/5" />
+        <div className="stagger-1">
+        {hasActiveFlight ? (
+          <Link href={`/flight/${flightNumber.toLowerCase().replace(/\s+/g, "-")}`} className="block active:scale-[0.98] transition-transform">
+            <div className="rounded-3xl p-5 text-white overflow-hidden relative"
+                 style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
+              <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
+              <div className="absolute -bottom-12 -left-6 w-32 h-32 rounded-full bg-white/5" />
 
-            <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">Active Flight</p>
-                  <p className="text-lg font-black mt-0.5">{flightNumber ?? "AA 2317"}</p>
-                </div>
-                <span className="bg-white/15 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
-                  Business
-                </span>
-              </div>
-
-              <div className="flex items-end justify-between mb-1">
-                <div>
-                  <p className="text-4xl font-black tracking-tight">SFO</p>
-                  <p className="text-white/60 text-xs mt-0.5">San Francisco</p>
-                </div>
-                <div className="flex-1 mx-3 mb-3">
-                  <svg viewBox="0 0 160 50" fill="none" className="w-full">
-                    {/* Full route arc — dashed */}
-                    <path d="M8 42 Q80 4 152 42" stroke="white" strokeOpacity="0.25"
-                          strokeWidth="1.5" fill="none" strokeDasharray="4 3"/>
-                    {/* Progress arc — first half of same bezier (De Casteljau t=0.5):
-                        control pt = lerp(P0,P1,0.5) = (44,23), end = (80,23) */}
-                    <path d="M8 42 Q44 23 80 23" stroke="white" strokeWidth="2"
-                          fill="none" strokeLinecap="round"/>
-                    {/* Plane at midpoint (80,23) — tangent is horizontal at t=0.5 */}
-                    <g transform="translate(80,23)">
-                      <path d="M-7 0 L3 -3 L5 0 L3 3 Z
-                               M-7 -1 L-3 -5 L-2 -1 Z
-                               M-7  1 L-3  5 L-2  1 Z" fill="white"/>
-                    </g>
-                    <circle cx="8"   cy="42" r="3" fill="white" fillOpacity="0.6"/>
-                    <circle cx="152" cy="42" r="3" fill="white" fillOpacity="0.3"/>
-                  </svg>
-                </div>
-                <div className="text-right">
-                  <p className="text-4xl font-black tracking-tight">JFK</p>
-                  <p className="text-white/60 text-xs mt-0.5">New York</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-white/15 mt-1">
-                <div className="flex gap-5">
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-white/50 text-[10px] uppercase tracking-wider">ETA</p>
-                    <p className="text-sm font-bold">4:32 PM</p>
+                    <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">Upcoming Flight</p>
+                    <p className="text-lg font-black mt-0.5">{flightNumber}</p>
                   </div>
+                  {flightDate && (
+                    <span className="bg-white/15 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
+                      {new Date(flightDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-end justify-between mb-1">
                   <div>
-                    <p className="text-white/50 text-[10px] uppercase tracking-wider">Remaining</p>
-                    <p className="text-sm font-bold">5h 12m</p>
+                    <p className="text-4xl font-black tracking-tight">{flightOrigin ?? "—"}</p>
+                    <p className="text-white/60 text-xs mt-0.5">Origin</p>
+                  </div>
+                  <div className="flex-1 mx-3 mb-3">
+                    <svg viewBox="0 0 160 50" fill="none" className="w-full">
+                      <path d="M8 42 Q80 4 152 42" stroke="white" strokeOpacity="0.25"
+                            strokeWidth="1.5" fill="none" strokeDasharray="4 3"/>
+                      <path d="M8 42 Q80 16 152 42" stroke="white" strokeWidth="2"
+                            fill="none" strokeLinecap="round" strokeDasharray="0"/>
+                      <g transform="translate(80,20)">
+                        <path d="M-7 0 L3 -3 L5 0 L3 3 Z
+                                 M-7 -1 L-3 -5 L-2 -1 Z
+                                 M-7  1 L-3  5 L-2  1 Z" fill="white"/>
+                      </g>
+                      <circle cx="8"   cy="42" r="3" fill="white" fillOpacity="0.6"/>
+                      <circle cx="152" cy="42" r="3" fill="white" fillOpacity="0.3"/>
+                    </svg>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-4xl font-black tracking-tight">{flightDest ?? "—"}</p>
+                    <p className="text-white/60 text-xs mt-0.5">Destination</p>
                   </div>
                 </div>
-                <span className="bg-white/15 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1">
-                  Flight Dashboard
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
-                  </svg>
-                </span>
+
+                <div className="flex items-center justify-between pt-3 border-t border-white/15 mt-1">
+                  <p className="text-white/60 text-xs">Tap to see who&apos;s onboard</p>
+                  <span className="bg-white/15 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1">
+                    Flight Dashboard
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+                    </svg>
+                  </span>
+                </div>
               </div>
             </div>
+          </Link>
+        ) : (
+          <div className="rounded-3xl overflow-hidden" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+            <EmptyState
+              icon="✈️"
+              title="No active flight"
+              body="Add your flight to discover professionals onboard and start networking at 35,000 ft."
+              action={{ label: "Add a Flight", href: "/flight" }}
+              className="py-10"
+            />
           </div>
-        </Link>
+        )}
+        </div>
 
         {/* ── Atlas AI Card ─────────────────────────────── */}
+        <div className="stagger-2">
         <AtlasHomeSuggestion
           viewerProfile={viewerForAtlas}
           candidates={flightmateProfiles ?? []}
         />
+        </div>
 
         {/* ── People Near You ───────────────────────────── */}
-        <div>
+        <Reveal delay={40}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="section-title">People Near You</h3>
             <Link href="/network" className="text-xs text-brand font-semibold">See all</Link>
           </div>
-          <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-            {PEOPLE_NEARBY.map((p) => (
-              <div key={p.name} className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px]">
-                <div className="relative">
-                  <div className={`w-14 h-14 rounded-2xl ${p.color} flex items-center justify-center text-sm font-black shadow-sm`}>
-                    {p.initials}
+          {PEOPLE_NEARBY.length === 0 ? (
+            <EmptyState
+              icon="👥"
+              title="No one nearby yet"
+              body="Add your flight and connect with fellow professionals onboard."
+              className="py-8"
+            />
+          ) : (
+            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+              {PEOPLE_NEARBY.map((p) => (
+                <div key={p.name} className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px]">
+                  <div className="relative">
+                    <div className={`w-14 h-14 rounded-2xl ${p.color} flex items-center justify-center text-sm font-black shadow-sm`}>
+                      {p.initials}
+                    </div>
+                    <span className="absolute -bottom-1 -right-1 text-[9px] bg-emerald-400 text-white font-bold rounded-full px-1 py-px leading-tight shadow-sm">
+                      {p.match}%
+                    </span>
                   </div>
-                  <span className="absolute -bottom-1 -right-1 text-[9px] bg-emerald-400 text-white font-bold rounded-full px-1 py-px leading-tight shadow-sm">
-                    {p.match}%
-                  </span>
+                  <p className="text-[11px] font-semibold text-zinc-800 dark:text-[var(--c-text1)] text-center leading-tight">
+                    {p.name.split(" ")[0]}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 dark:text-[var(--c-text2)] text-center leading-tight">{p.role}</p>
                 </div>
-                <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-100 text-center leading-tight">
-                  {p.name.split(" ")[0]}
-                </p>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center leading-tight">{p.role}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          )}
+        </Reveal>
 
         {/* ── SkyPoints ─────────────────────────────────── */}
+        <Reveal delay={60} variant="scale">
         <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
-          <div className="rounded-2xl p-4 flex items-center gap-4"
+          <div className="rounded-2xl p-4 flex items-center gap-4 skypoints-mini-card"
                style={{ background: "linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)", border: "1px solid #FBCFE8" }}>
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                  style={{ background: "#FCE7F3" }}>
@@ -258,47 +290,63 @@ export default async function HomePage() {
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "#DB2777" }}>SkyPoints</p>
-              <p className="text-2xl font-black leading-none" style={{ color: "#9D174D" }}>{totalPoints.toLocaleString()}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide dark:text-pink-400" style={{ color: "#DB2777" }}>SkyPoints</p>
+              <p className="text-2xl font-black leading-none dark:text-pink-300" style={{ color: "#9D174D" }}>{totalPoints.toLocaleString()}</p>
             </div>
             <div className="text-right">
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: "#FCE7F3", color: "#BE185D" }}>{tierName}</span>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full dark:bg-pink-900/40 dark:text-pink-300" style={{ background: "#FCE7F3", color: "#BE185D" }}>{tierName}</span>
               {ptsToNext && (
-                <p className="text-[10px] mt-1" style={{ color: "#DB2777" }}>{ptsToNext.toLocaleString()} to next tier</p>
+                <p className="text-[10px] mt-1 dark:text-pink-400" style={{ color: "#DB2777" }}>{ptsToNext.toLocaleString()} to next tier</p>
               )}
             </div>
           </div>
         </Link>
+        </Reveal>
 
         {/* ── Sky Crews ─────────────────────────────────── */}
+        <Reveal delay={80}>
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="section-title">Sky Crews</h3>
             <Link href="/crews" className="text-xs text-brand font-semibold">Browse all</Link>
           </div>
-          <div className="flex flex-col gap-3">
-            {featuredCrewsWithMeta.map((crew) => (
-              <Link key={crew.id} href={`/crews/${crew.id}`}
-                className="card flex items-center gap-3 active:scale-[0.98] transition-transform">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                     style={{ background: CREW_ICON_BG[crew.id] ?? "#EDE9FE" }}>
-                  {crew.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">{crew.name}</p>
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500">{crew.member_count} member{crew.member_count !== 1 ? "s" : ""}</p>
-                </div>
-                {crew.is_member ? (
-                  <span className="text-[10px] font-bold text-emerald-600 border border-emerald-200 bg-emerald-50 rounded-full px-2.5 py-1 flex-shrink-0">Joined</span>
-                ) : (
-                  <span className="text-xs font-semibold text-brand border border-brand/30 rounded-full px-3 py-1.5 flex-shrink-0">Join</span>
-                )}
-              </Link>
-            ))}
-          </div>
+          {featuredCrewsWithMeta.length === 0 ? (
+            <EmptyState
+              icon="🚀"
+              title="No crews yet"
+              body="Join a crew built around your interests, or create one for your community."
+              action={{ label: "Browse Crews", href: "/crews" }}
+              className="py-8"
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {featuredCrewsWithMeta.map((crew, i) => (
+                <Reveal key={crew.id} delay={i * 60}>
+                <Link href={`/crews/${crew.id}`}
+                  className="card flex items-center gap-3 active:scale-[0.98] transition-transform">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 crew-icon-bg"
+                       style={{ background: CREW_ICON_BG[crew.id] ?? "#EDE9FE" }}>
+                    {crew.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-zinc-800 dark:text-[var(--c-text1)]">{crew.name}</p>
+                    <p className="text-xs text-zinc-400 dark:text-[var(--c-text2)]">{crew.member_count} member{crew.member_count !== 1 ? "s" : ""}</p>
+                  </div>
+                  {crew.is_member ? (
+                    <span className="text-[10px] font-bold text-emerald-600 border border-emerald-200 bg-emerald-50 rounded-full px-2.5 py-1 flex-shrink-0 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60">Joined</span>
+                  ) : (
+                    <span className="text-xs font-semibold text-brand border border-brand/30 rounded-full px-3 py-1.5 flex-shrink-0">Join</span>
+                  )}
+                </Link>
+                </Reveal>
+              ))}
+            </div>
+          )}
         </div>
+        </Reveal>
 
       </div>
     </div>
+    </PullToRefresh>
   );
 }

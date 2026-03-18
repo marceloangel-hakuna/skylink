@@ -28,7 +28,8 @@ export default function PageHeader({
       {showBack && (
         <button
           onClick={() => router.back()}
-          className="p-2 -ml-2 rounded-full text-navy-700 active:bg-surface-muted transition"
+          className="p-2 -ml-2 rounded-full active:opacity-70 transition"
+          style={{ color: "var(--c-text1)" }}
           aria-label="Go back"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -38,9 +39,9 @@ export default function PageHeader({
       )}
 
       <div className="flex-1 min-w-0">
-        <h1 className="text-base font-bold text-navy-900 truncate">{title}</h1>
+        <h1 className="text-base font-bold truncate" style={{ color: "var(--c-text1)" }}>{title}</h1>
         {subtitle && (
-          <p className="text-xs text-slate-500 truncate">{subtitle}</p>
+          <p className="text-xs truncate" style={{ color: "var(--c-text2)" }}>{subtitle}</p>
         )}
       </div>
 

@@ -78,31 +78,22 @@ export default function AtlasHomeSuggestion({
   if (!loading && !best) return null;
 
   return (
-    <div
-      className="rounded-2xl p-4 border"
-      style={{
-        background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
-        borderColor: "#EAB308",
-      }}
-    >
+    <div className="rounded-2xl p-4 border atlas-suggestion-card">
       <div className="flex items-center gap-2 mb-2.5">
-        <span className="text-amber-500 text-base leading-none font-black">✦</span>
-        <span className="text-[13px] font-black tracking-wide" style={{ color: "#92400E" }}>Atlas</span>
-        <span
-          className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
-          style={{ background: "#FEF08A", color: "#713F12", border: "1px solid #EAB308" }}
-        >
+        <span className="atlas-icon text-base leading-none font-black">✦</span>
+        <span className="atlas-label text-[13px] font-black tracking-wide">Atlas</span>
+        <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full atlas-badge">
           AI Match
         </span>
       </div>
 
       {loading ? (
         <div className="flex flex-col gap-2 animate-pulse">
-          <div className="h-3.5 rounded-full bg-amber-200/60 w-3/4" />
-          <div className="h-2.5 rounded-full bg-amber-200/60 w-1/2" />
+          <div className="h-3.5 rounded-full atlas-skeleton w-3/4" />
+          <div className="h-2.5 rounded-full atlas-skeleton w-1/2" />
           <div className="flex gap-2 mt-2">
-            <div className="flex-1 h-9 rounded-full bg-amber-200/60" />
-            <div className="flex-1 h-9 rounded-full bg-amber-200/60" />
+            <div className="flex-1 h-9 rounded-full atlas-skeleton" />
+            <div className="flex-1 h-9 rounded-full atlas-skeleton" />
           </div>
         </div>
       ) : best ? (
@@ -117,15 +108,15 @@ export default function AtlasHomeSuggestion({
                 className="w-9 h-9 rounded-full object-cover flex-shrink-0"
               />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center font-bold text-sm flex-shrink-0">
+              <div className="w-9 h-9 rounded-full atlas-avatar flex items-center justify-center font-bold text-sm flex-shrink-0">
                 {initials(best.profile.full_name)}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold truncate" style={{ color: "#92400E" }}>
+              <p className="text-[13px] font-bold truncate atlas-text-primary">
                 {best.profile.full_name ?? "Unknown"} · {best.match_percentage}% match
               </p>
-              <p className="text-xs truncate" style={{ color: "#78350F" }}>
+              <p className="text-xs truncate atlas-text-secondary">
                 {best.match_reason}
               </p>
             </div>
@@ -134,15 +125,13 @@ export default function AtlasHomeSuggestion({
           <div className="flex gap-2">
             <button
               onClick={() => router.push(`/profile/${best.profile.id}`)}
-              className="flex-1 text-white text-xs font-semibold py-2.5 rounded-full active:scale-95 transition-transform"
-              style={{ background: "#EAB308" }}
+              className="flex-1 text-white text-xs font-semibold py-2.5 rounded-full active:scale-95 transition-transform atlas-btn-primary"
             >
               View Profile
             </button>
             <button
               onClick={() => setHidden(true)}
-              className="flex-1 text-xs font-semibold py-2.5 rounded-full active:scale-95 transition-transform border"
-              style={{ borderColor: "#EAB308", color: "#92400E", background: "white" }}
+              className="flex-1 text-xs font-semibold py-2.5 rounded-full active:scale-95 transition-transform border atlas-btn-secondary"
             >
               Later
             </button>

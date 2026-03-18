@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -32,20 +31,20 @@ const FLIGHT = {
 };
 
 const PEOPLE = [
-  { id: "1", name: "Sarah Chen",    role: "CTO",             company: "Finbridge",    initials: "SC", color: "bg-violet-100 text-violet-700",  match: 94, seat: "3A",  connected: false, mutual: 2 },
-  { id: "2", name: "Marcus Rivera", role: "VC Partner",      company: "Sequoia",      initials: "MR", color: "bg-pink-100   text-pink-700",    match: 88, seat: "5C",  connected: false, mutual: 4 },
-  { id: "3", name: "Priya Patel",   role: "Founder",         company: "Nexa AI",      initials: "PP", color: "bg-amber-100  text-amber-700",   match: 82, seat: "8B",  connected: true,  mutual: 1 },
-  { id: "4", name: "James Liu",     role: "Head of Product", company: "Stripe",       initials: "JL", color: "bg-emerald-100 text-emerald-700",match: 76, seat: "12D", connected: false, mutual: 3 },
-  { id: "5", name: "Aisha Okonkwo", role: "Angel Investor",  company: "Independent",  initials: "AO", color: "bg-sky-100    text-sky-700",     match: 71, seat: "15A", connected: false, mutual: 0 },
-  { id: "6", name: "Tom Bradley",   role: "Software Eng.",   company: "Figma",        initials: "TB", color: "bg-rose-100   text-rose-700",    match: 65, seat: "18C", connected: false, mutual: 1 },
+  { id: "1", name: "Sarah Chen",    role: "CTO",             company: "Finbridge",    initials: "SC", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",  match: 94, seat: "3A",  connected: false, mutual: 2 },
+  { id: "2", name: "Marcus Rivera", role: "VC Partner",      company: "Sequoia",      initials: "MR", color: "bg-pink-100   text-pink-700   dark:bg-pink-900/30   dark:text-pink-400",    match: 88, seat: "5C",  connected: false, mutual: 4 },
+  { id: "3", name: "Priya Patel",   role: "Founder",         company: "Nexa AI",      initials: "PP", color: "bg-amber-100  text-amber-700  dark:bg-amber-900/30  dark:text-amber-400",   match: 82, seat: "8B",  connected: true,  mutual: 1 },
+  { id: "4", name: "James Liu",     role: "Head of Product", company: "Stripe",       initials: "JL", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",match: 76, seat: "12D", connected: false, mutual: 3 },
+  { id: "5", name: "Aisha Okonkwo", role: "Angel Investor",  company: "Independent",  initials: "AO", color: "bg-sky-100    text-sky-700    dark:bg-sky-900/30    dark:text-sky-400",     match: 71, seat: "15A", connected: false, mutual: 0 },
+  { id: "6", name: "Tom Bradley",   role: "Software Eng.",   company: "Figma",        initials: "TB", color: "bg-rose-100   text-rose-700   dark:bg-rose-900/30   dark:text-rose-400",    match: 65, seat: "18C", connected: false, mutual: 1 },
 ];
 
 const INITIAL_MESSAGES = [
-  { id: "1", author: "Sarah Chen",    initials: "SC", color: "bg-violet-100 text-violet-700", text: "Hey everyone! Anyone heading to the TechCrunch conference?",         time: "10:32 AM", isMe: false },
-  { id: "2", author: "Marcus Rivera", initials: "MR", color: "bg-pink-100 text-pink-700",     text: "Yes! First time there — any tips on sessions to catch?",              time: "10:34 AM", isMe: false },
-  { id: "3", author: "Me",            initials: "ME", color: "bg-brand text-white",           text: "Definitely the AI panel at 2pm, it's always packed 🔥",              time: "10:36 AM", isMe: true  },
-  { id: "4", author: "Priya Patel",   initials: "PP", color: "bg-amber-100 text-amber-700",   text: "Great tip! The founder speed networking at 5pm is also 🙌",         time: "10:40 AM", isMe: false },
-  { id: "5", author: "Sarah Chen",    initials: "SC", color: "bg-violet-100 text-violet-700", text: "Anyone want to grab coffee at the lounge before we land?",            time: "10:43 AM", isMe: false },
+  { id: "1", author: "Sarah Chen",    initials: "SC", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400", text: "Hey everyone! Anyone heading to the TechCrunch conference?",         time: "10:32 AM", isMe: false },
+  { id: "2", author: "Marcus Rivera", initials: "MR", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",         text: "Yes! First time there — any tips on sessions to catch?",              time: "10:34 AM", isMe: false },
+  { id: "3", author: "Me",            initials: "ME", color: "bg-brand text-white",                                                       text: "Definitely the AI panel at 2pm, it's always packed 🔥",              time: "10:36 AM", isMe: true  },
+  { id: "4", author: "Priya Patel",   initials: "PP", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",     text: "Great tip! The founder speed networking at 5pm is also 🙌",         time: "10:40 AM", isMe: false },
+  { id: "5", author: "Sarah Chen",    initials: "SC", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400", text: "Anyone want to grab coffee at the lounge before we land?",            time: "10:43 AM", isMe: false },
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -169,39 +168,38 @@ function OverviewTab() {
         ))}
       </div>
 
-      {/* ── Networking Score (AI / Gold) ─────────── */}
-      <div className="card border border-amber-200"
-           style={{ background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" }}>
+      {/* ── Networking Score (AI / Atlas) ─────────── */}
+      <div className="card atlas-insight-card">
         <div className="flex items-center gap-4">
           {/* Donut */}
           <div className="relative flex-shrink-0">
             <svg width="76" height="76" viewBox="0 0 76 76">
-              <circle cx="38" cy="38" r={r} stroke="#FDE68A" strokeWidth="7" fill="none"/>
-              <circle cx="38" cy="38" r={r} stroke="#EAB308" strokeWidth="7" fill="none"
+              <circle cx="38" cy="38" r={r} className="atlas-donut-track" strokeWidth="7" fill="none"/>
+              <circle cx="38" cy="38" r={r} className="atlas-donut-fill" strokeWidth="7" fill="none"
                 strokeDasharray={`${dash} ${circ - dash}`}
                 strokeLinecap="round"
                 transform="rotate(-90 38 38)"/>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-black text-amber-600 leading-none">{FLIGHT.networkingScore}</span>
-              <span className="text-[8px] text-amber-500 font-semibold">/ 100</span>
+              <span className="text-xl font-black atlas-text-primary leading-none">{FLIGHT.networkingScore}</span>
+              <span className="text-[8px] atlas-text-secondary font-semibold">/ 100</span>
             </div>
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1.5">
-              <span className="text-amber-500 text-sm leading-none">✦</span>
-              <span className="text-sm font-black text-amber-700">Networking Score</span>
-              <span className="ml-auto text-[10px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full border border-amber-200 flex-shrink-0">
+              <span className="atlas-icon text-sm leading-none">✦</span>
+              <span className="text-sm font-black atlas-label">Networking Score</span>
+              <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 atlas-badge">
                 AI
               </span>
             </div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-2.5 leading-relaxed">
+            <p className="text-xs atlas-text-secondary mb-2.5 leading-relaxed">
               High-value flight — {FLIGHT.peopleCount} professionals onboard, 6 strong matches
             </p>
             <div className="flex gap-1.5 flex-wrap">
               {["Fintech", "Venture", "AI / ML"].map(tag => (
-                <span key={tag} className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200/60">
+                <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full atlas-badge">
                   {tag}
                 </span>
               ))}
@@ -232,8 +230,91 @@ function OverviewTab() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+function PersonSheet({ person, onClose, onConnect }: { person: Person; onClose: () => void; onConnect: (id: string) => void }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const matchCls = person.match >= 85
+    ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+    : person.match >= 70
+    ? "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+    : "bg-zinc-100 text-zinc-500 dark:bg-[var(--c-muted)] dark:text-[var(--c-text2)]";
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl"
+           style={{
+             background: "var(--background)",
+             boxShadow: "0 -8px 40px rgba(0,0,0,0.2)",
+             paddingBottom: "max(88px, calc(64px + env(safe-area-inset-bottom)))",
+           }}>
+        {/* Drag handle */}
+        <div className="pt-3 pb-1 flex justify-center">
+          <div className="w-10 h-1 rounded-full" style={{ background: "var(--c-border)" }} />
+        </div>
+
+        <div className="px-5 pt-4 pb-2 flex flex-col gap-4">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <div className={`w-16 h-16 rounded-2xl ${person.color} flex items-center justify-center text-xl font-black flex-shrink-0`}>
+              {person.initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-lg font-black" style={{ color: "var(--c-text1)" }}>{person.name}</p>
+              <p className="text-sm" style={{ color: "var(--c-text2)" }}>{person.role} · {person.company}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${matchCls}`}>
+                  {person.match}% match
+                </span>
+                <span className="text-[11px]" style={{ color: "var(--c-text3)" }}>Seat {person.seat}</span>
+                {person.mutual > 0 && (
+                  <span className="text-[11px]" style={{ color: "var(--c-text3)" }}>· {person.mutual} mutual</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Atlas insight strip */}
+          <div className="rounded-xl px-3 py-2.5 atlas-insight-card">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="atlas-icon text-sm">✦</span>
+              <span className="text-[10px] font-black uppercase tracking-widest atlas-label">Atlas Match</span>
+            </div>
+            <p className="text-xs atlas-text-primary leading-relaxed">
+              Strong overlap in fintech and venture — great conversation starter about their recent work at {person.company}.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => { onConnect(person.id); onClose(); }}
+              className="flex-1 py-3 rounded-2xl text-sm font-bold text-white active:scale-95 transition-transform"
+              style={{ background: person.connected ? "var(--c-muted)" : "var(--color-brand)", color: person.connected ? "var(--c-text2)" : "white" }}
+            >
+              {person.connected ? "Connected ✓" : "Connect"}
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-2xl text-sm font-bold border active:scale-95 transition-transform"
+              style={{ borderColor: "var(--c-border)", color: "var(--c-text2)", background: "var(--c-muted)" }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function PeopleTab({ people, onConnect }: { people: Person[]; onConnect: (id: string) => void }) {
   const [filter, setFilter] = useState("Best Match");
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const connectedCount = people.filter(p => p.connected).length;
 
   return (
@@ -275,30 +356,35 @@ function PeopleTab({ people, onConnect }: { people: Person[]; onConnect: (id: st
       {/* People list */}
       {people.map(person => {
         const matchCls = person.match >= 85
-          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+          ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60"
           : person.match >= 70
-          ? "bg-amber-50 text-amber-600 border-amber-100"
-          : "bg-zinc-100 text-zinc-500 border-zinc-200";
+          ? "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-900/60"
+          : "bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-[var(--c-muted)] dark:text-[var(--c-text2)] dark:border-[var(--c-border)]";
 
         return (
           <div key={person.id} className="card flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-2xl ${person.color} flex items-center justify-center text-sm font-black flex-shrink-0`}>
-              {person.initials}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">{person.name}</p>
-                <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${matchCls}`}>
-                  {person.match}%
-                </span>
+            <button
+              onClick={() => setSelectedPerson(person)}
+              className="flex items-center gap-3 flex-1 min-w-0 text-left active:opacity-70 transition-opacity"
+            >
+              <div className={`w-12 h-12 rounded-2xl ${person.color} flex items-center justify-center text-sm font-black flex-shrink-0`}>
+                {person.initials}
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{person.role} · {person.company}</p>
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
-                Seat {person.seat}
-                {person.mutual > 0 && ` · ${person.mutual} mutual`}
-              </p>
-            </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">{person.name}</p>
+                  <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${matchCls}`}>
+                    {person.match}%
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{person.role} · {person.company}</p>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                  Seat {person.seat}
+                  {person.mutual > 0 && ` · ${person.mutual} mutual`}
+                </p>
+              </div>
+            </button>
 
             <button
               onClick={() => onConnect(person.id)}
@@ -314,6 +400,15 @@ function PeopleTab({ people, onConnect }: { people: Person[]; onConnect: (id: st
           </div>
         );
       })}
+
+      {/* Person profile sheet */}
+      {selectedPerson && (
+        <PersonSheet
+          person={selectedPerson}
+          onClose={() => setSelectedPerson(null)}
+          onConnect={onConnect}
+        />
+      )}
 
     </div>
   );
@@ -403,6 +498,7 @@ function ChatTab({
 
 export default function FlightDashboardPage() {
   const params = useParams();
+  const router = useRouter();
   const flightId = (params.id as string) ?? "unknown";
 
   const [activeTab, setActiveTab] = useState<Tab>("overview");
@@ -491,14 +587,14 @@ export default function FlightDashboardPage() {
       <div className="sticky top-0 z-30 border-b border-[var(--c-border)]" style={{ background: "var(--c-card)" }}>
         {/* Flight info bar */}
         <div className="flex items-center gap-3 px-4 pt-3 pb-2.5">
-          <Link
-            href="/flight"
+          <button
+            onClick={() => router.back()}
             className="w-8 h-8 rounded-full bg-[#F5F3FF] dark:bg-[#1E1C35] flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M15 18L9 12L15 6" stroke="#4A27E8" strokeWidth="2.2" strokeLinecap="round"/>
             </svg>
-          </Link>
+          </button>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">

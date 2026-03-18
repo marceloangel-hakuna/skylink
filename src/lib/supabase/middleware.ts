@@ -25,7 +25,6 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session — keeps it alive
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -36,16 +35,39 @@ export async function updateSession(request: NextRequest) {
   const publicRoutes = ["/login", "/onboarding", "/auth"];
   const isPublicRoute = publicRoutes.some((r) => pathname.startsWith(r));
 
+  // Not logged in → send to login
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicRoute && pathname !== "/onboarding") {
+  // Logged in + on login page → send to home (or onboarding if not complete)
+  if (user && pathname === "/login") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_complete")
+      .eq("id", user.id)
+      .single();
+
     const url = request.nextUrl.clone();
-    url.pathname = "/home";
+    url.pathname = profile?.onboarding_complete ? "/home" : "/onboarding";
     return NextResponse.redirect(url);
+  }
+
+  // Logged in + on onboarding + already completed → send to home
+  if (user && pathname === "/onboarding") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_complete")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.onboarding_complete) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/home";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

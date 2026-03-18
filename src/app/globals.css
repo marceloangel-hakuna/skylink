@@ -30,15 +30,16 @@
 }
 
 html.dark {
-  --background:  #0D0C18;
-  --foreground:  #F0EFFF;
-  --c-card:      #18172A;
-  --c-muted:     #211F35;
-  --c-border:    #2E2C4A;
-  --c-text1:     #F0EFFF;
-  --c-text2:     #8685A8;
-  --c-text3:     #5C5A80;
-  --glass-bg:    rgba(18,16,42,0.92);
+  /* ── Whoop × Apple iOS dark — ultra-deep with purple brand undertone ── */
+  --background:  #09090F;               /* Near-black, barely perceptible purple */
+  --foreground:  #F2F1FF;
+  --c-card:      #111120;               /* Cards: one level above background     */
+  --c-muted:     #18182A;               /* Input fills, chips, muted surfaces    */
+  --c-border:    rgba(255,255,255,0.08);/* iOS-style barely-there white border   */
+  --c-text1:     #F2F1FF;               /* Primary — near-white, slight warmth   */
+  --c-text2:     #9C9BB8;               /* Secondary — good contrast, muted      */
+  --c-text3:     #56557A;               /* Tertiary — subtle placeholders        */
+  --glass-bg:    rgba(9,9,15,0.97);     /* Frosted glass for nav/sheets          */
   color-scheme: dark;
 }
 
@@ -51,6 +52,11 @@ html {
   height: 100%;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  background: #FAFAFA; /* First-paint background before JS runs */
+}
+
+html.dark {
+  background: #09090F; /* First-paint dark background */
 }
 
 body {
@@ -153,10 +159,160 @@ body {
   background: linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%);
 }
 
+/* ── Dark-mode overrides for hardcoded light gradients ─── */
+html.dark .rewards-balance-card {
+  background: linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(219,39,119,0.08) 100%) !important;
+  border-color: rgba(236,72,153,0.2) !important;
+}
+html.dark .rewards-balance-card .rewards-earn-strip {
+  background: rgba(236,72,153,0.06) !important;
+  border-top-color: rgba(236,72,153,0.15) !important;
+}
+/* ── Atlas card — light mode (soft indigo / AI premium) ────── */
+.atlas-suggestion-card,
+.atlas-insight-card {
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+  border-color: rgba(99,102,241,0.35);
+  box-shadow: 0 0 0 1px rgba(99,102,241,0.12), 0 4px 24px rgba(99,102,241,0.18), 0 1px 4px rgba(99,102,241,0.1);
+  animation: atlasGlow 3s ease-in-out infinite;
+}
+.atlas-icon           { color: #6366F1; }
+.atlas-label          { color: #3730A3; }
+.atlas-badge          { background: #C7D2FE; color: #3730A3; border: 1px solid rgba(99,102,241,0.3); }
+.atlas-text-primary   { color: #312E81; }
+.atlas-text-secondary { color: #4338CA; }
+.atlas-skeleton       { background: rgba(99,102,241,0.15); }
+.atlas-avatar         { background: #C7D2FE; color: #3730A3; }
+.atlas-btn-primary    { background: linear-gradient(135deg, #4F46E5, #6366F1); }
+.atlas-btn-secondary  { background: white; color: #4338CA; border-color: rgba(99,102,241,0.35); }
+.atlas-progress-track { background: #C7D2FE; }
+.atlas-progress-fill  { background: linear-gradient(90deg, #6366F1, #818CF8); }
+.atlas-score-badge    { background: linear-gradient(135deg, #4F46E5, #6366F1); color: #fff; }
+.atlas-icebreaker     { background: #EEF2FF; border: 1px solid rgba(99,102,241,0.25); }
+.atlas-donut-track    { stroke: #C7D2FE; }
+.atlas-donut-fill     { stroke: #6366F1; }
+
+/* ── Atlas glow keyframe ─────────────────────────────────── */
+@keyframes atlasGlow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(99,102,241,0.12), 0 4px 24px rgba(99,102,241,0.18), 0 1px 4px rgba(99,102,241,0.1); }
+  50%       { box-shadow: 0 0 0 1px rgba(99,102,241,0.20), 0 4px 32px rgba(99,102,241,0.32), 0 1px 8px rgba(99,102,241,0.18); }
+}
+@keyframes atlasGlowDark {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(107,74,240,0.2), 0 4px 28px rgba(107,74,240,0.25), 0 1px 6px rgba(107,74,240,0.15); }
+  50%       { box-shadow: 0 0 0 1px rgba(107,74,240,0.35), 0 4px 40px rgba(107,74,240,0.42), 0 1px 10px rgba(107,74,240,0.25); }
+}
+
+/* ── Atlas card — dark mode (brand purple / cosmic AI) ────── */
+html.dark .atlas-suggestion-card,
+html.dark .atlas-insight-card {
+  background: linear-gradient(135deg, rgba(74,39,232,0.14) 0%, rgba(107,74,240,0.08) 100%) !important;
+  border-color: rgba(107,74,240,0.35) !important;
+  box-shadow: 0 0 0 1px rgba(107,74,240,0.2), 0 4px 28px rgba(107,74,240,0.25), 0 1px 6px rgba(107,74,240,0.15) !important;
+  animation: atlasGlowDark 3s ease-in-out infinite !important;
+}
+html.dark .atlas-icon        { color: #A78BFA; }
+html.dark .atlas-label       { color: #C4B5FD; }
+html.dark .atlas-badge       { background: rgba(107,74,240,0.2); color: #C4B5FD; border: 1px solid rgba(107,74,240,0.4); }
+html.dark .atlas-text-primary   { color: #DDD6FE; }
+html.dark .atlas-text-secondary { color: #A78BFA; }
+html.dark .atlas-skeleton    { background: rgba(107,74,240,0.15); }
+html.dark .atlas-avatar      { background: rgba(107,74,240,0.2); color: #C4B5FD; }
+html.dark .atlas-btn-primary { background: linear-gradient(135deg, #4A27E8, #6B4AF0); }
+html.dark .atlas-btn-secondary { background: rgba(107,74,240,0.1); color: #C4B5FD; border-color: rgba(107,74,240,0.35); }
+html.dark .atlas-progress-track { background: rgba(107,74,240,0.2); }
+html.dark .atlas-progress-fill  { background: linear-gradient(90deg, #6B4AF0, #8B5CF6); }
+html.dark .atlas-score-badge { background: linear-gradient(135deg, #4A27E8, #6B4AF0); color: #fff; }
+html.dark .atlas-icebreaker  { background: rgba(74,39,232,0.1); border: 1px solid rgba(107,74,240,0.25); }
+html.dark .atlas-donut-track { stroke: rgba(107,74,240,0.2); }
+html.dark .atlas-donut-fill  { stroke: url(#atlasGrad); stroke: #6B4AF0; }
+html.dark .flight-atlas-insight { background: rgba(74,39,232,0.1) !important; }
+html.dark .skypoints-mini-card {
+  background: linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(219,39,119,0.08) 100%) !important;
+  border-color: rgba(236,72,153,0.2) !important;
+}
+html.dark .crew-icon-bg {
+  background: var(--c-muted) !important;
+}
+
 /* ── iOS-style frosted glass ────────────────────────────── */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-color: var(--c-border);
+}
+
+/* ── Dark mode card elevation (iOS-style inner highlight) ── */
+html.dark .card {
+  /* Very subtle top-edge inner highlight — gives "floating" feel in dark */
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 2px 20px rgba(0,0,0,0.35);
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* ── Motion system ──────────────────────────────────────── */
+
+/* Keyframes */
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes revealScale {
+  from { opacity: 0; transform: scale(0.97) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+
+/* Stagger classes — for above-fold content animated on page load.
+   Use animate-fade-in on root then stagger-N on each section. */
+.stagger-1 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both; }
+.stagger-2 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.11s both; }
+.stagger-3 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.19s both; }
+.stagger-4 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both; }
+.stagger-5 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both; }
+
+/* Reveal wrapper — used by <Reveal> client component.
+   IntersectionObserver adds .is-revealed when element enters viewport. */
+.reveal-wrap {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity  0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-wrap.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card scale-in variant */
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.97) translateY(10px);
+  transition:
+    opacity   0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-scale.is-revealed {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Respect user's motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .stagger-1, .stagger-2, .stagger-3, .stagger-4, .stagger-5 {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .reveal-wrap, .reveal-scale {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .atlas-suggestion-card,
+  .atlas-insight-card {
+    animation: none !important;
+  }
 }

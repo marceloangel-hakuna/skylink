@@ -53,6 +53,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
+      <head>
+        {/*
+          Inline script runs synchronously before any paint — reads saved theme
+          from localStorage and applies .dark class to <html> before React
+          hydrates, eliminating the white flash / wrong-theme flash.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var saved = localStorage.getItem('skylink-theme');
+                var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                var theme = saved || preferred;
+                if (theme === 'dark') document.documentElement.classList.add('dark');
+              } catch(e) {}
+            `,
+          }}
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`} suppressHydrationWarning>
         <ThemeProvider>
           <div id="app-root">
