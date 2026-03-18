@@ -503,19 +503,7 @@ function EditSheet({
 
   async function deleteCrew() {
     setDeleting(true);
-    // Delete leaf tables first (FK order matters)
-    const postIds = await supabase.from("crew_posts").select("id").eq("crew_id", crew.id);
-    if ((postIds.data ?? []).length > 0) {
-      await supabase.from("crew_post_likes").delete().in("post_id", postIds.data!.map(p => p.id));
-    }
-    const eventIds = await supabase.from("crew_events").select("id").eq("crew_id", crew.id);
-    if ((eventIds.data ?? []).length > 0) {
-      await supabase.from("crew_event_rsvps").delete().in("event_id", eventIds.data!.map(e => e.id));
-    }
-    await supabase.from("crew_posts").delete().eq("crew_id", crew.id);
-    await supabase.from("crew_events").delete().eq("crew_id", crew.id);
-    await supabase.from("crew_members").delete().eq("crew_id", crew.id);
-    const { error } = await supabase.from("crews").delete().eq("id", crew.id);
+    const { error } = await supabase.rpc("delete_crew", { p_crew_id: crew.id });
     if (error) {
       console.error("Delete crew error:", error.message);
       setDeleting(false);
