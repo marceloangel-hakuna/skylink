@@ -63,19 +63,21 @@ export default function PullToRefresh({ children }: { children: React.ReactNode 
     };
   }, [onTouchStart, onTouchMove, onTouchEnd]);
 
-  const indicatorY = pullY - 52; // starts above viewport, slides in
+  // Centre indicator in the pulled gap, below the status-bar safe area.
+  // pullY/2 puts it at the midpoint of the revealed space; −26 for half the indicator height.
+  const indicatorY = pullY / 2 - 26;
   const isRefreshing = phase === "refreshing";
 
   return (
     <div ref={containerRef} className="relative">
-      {/* Pull indicator */}
+      {/* Pull indicator — sits inside the gap opened by the pulled content */}
       <div
         className="absolute left-0 right-0 flex justify-center z-50 pointer-events-none"
         style={{
-          top: 0,
+          top: "env(safe-area-inset-top, 0px)",
           transform: `translateY(${indicatorY}px)`,
           transition: phase === "pulling" ? "none" : "transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-          opacity: Math.max(0, progress),
+          opacity: Math.max(0, progress * 1.5 - 0.1),
         }}
       >
         <div
