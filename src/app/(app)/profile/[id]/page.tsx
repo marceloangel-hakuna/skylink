@@ -33,7 +33,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
     { data: targetConns },
   ] = await Promise.all([
     supabase.from("profiles")
-      .select("id, full_name, avatar_url, role, company, bio, interests, linkedin_url")
+      .select("id, full_name, avatar_url, role, company, bio, interests")
       .eq("id", params.id).single(),
     supabase.from("profiles")
       .select("id, full_name, role, company, bio, interests")
@@ -93,11 +93,9 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   const sub         = [profile.role, profile.company].filter(Boolean).join(" @ ") || "SkyLink Member";
   const inits       = initials(profile.full_name);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const linkedinUrl = (profile as any).linkedin_url as string | null ?? null;
-  const websiteUrl: string | null = null; // add website_url column to profiles table to enable
-  const hasLinks    = !!(linkedinUrl || websiteUrl);
+  // Links — add linkedin_url / website_url columns to profiles table to enable
+  const linkedinUrl: string | null = null;
+  const hasLinks = false;
 
   return (
     <div className="animate-fade-in pb-[110px]">
@@ -188,34 +186,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
           </div>
         )}
 
-        {/* ── Links ── */}
-        {hasLinks && (
-          <div className="card flex flex-col">
-            <p className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--c-text3)" }}>Links</p>
-
-            {linkedinUrl && (
-              <a href={linkedinUrl.startsWith("http") ? linkedinUrl : `https://${linkedinUrl}`}
-                 target="_blank" rel="noopener noreferrer"
-                 className="flex items-center gap-3 py-2.5 active:opacity-70 transition-opacity">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                     style={{ background: "#EBF4FF" }}>
-                  <span className="text-sm font-black" style={{ color: "#0A66C2", fontFamily: "Georgia, serif" }}>in</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: "var(--c-text1)" }}>LinkedIn</p>
-                  <p className="text-xs truncate" style={{ color: "var(--color-brand-fg)" }}>
-                    {linkedinUrl.replace(/^https?:\/\//, "")}
-                  </p>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)" }}>
-                  <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </a>
-            )}
-
-            {/* Website row: add website_url column to profiles table to enable */}
-          </div>
-        )}
+        {/* ── Links — add linkedin_url / website_url columns to profiles table to enable ── */}
 
         {/* ── Stats ── */}
         <div className="grid grid-cols-3 gap-3">
