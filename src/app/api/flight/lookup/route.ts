@@ -75,7 +75,7 @@ export async function GET(req: Request) {
   }
 
   if (!flight?.dep_iata) {
-    return NextResponse.json({ found: false, _debug: { liveKeys: liveData ? Object.keys(liveData) : null } });
+    return NextResponse.json({ found: false, _debug: liveData });
   }
 
   return NextResponse.json({
