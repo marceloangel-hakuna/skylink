@@ -39,9 +39,8 @@ export default async function HomePage() {
   }
 
   const uid = user?.id ?? "";
-  const [{ data: flights }, { count: unreadCount }, { data: viewerProfileRow }, { data: pointsRows }] = await Promise.all([
+  const [{ data: flights }, { data: viewerProfileRow }, { data: pointsRows }] = await Promise.all([
     supabase.from("user_flights").select("flight_number, origin, destination, departure_date").eq("user_id", uid).in("status", ["upcoming", "active"]).order("departure_date", { ascending: true, nullsFirst: false }).limit(1),
-    supabase.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", uid).is("read_at", null),
     supabase.from("profiles").select("id, full_name, role, company, bio, interests").eq("id", uid).single(),
     supabase.from("points").select("amount").eq("user_id", uid),
   ]);
