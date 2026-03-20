@@ -456,6 +456,7 @@ function EditSheet({
   const [customSvg, setCustomSvg] = useState<string | null>(crew.header_svg ?? null);
   const [saving, setSaving]     = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [generating, setGenerating]       = useState(false);
 
@@ -503,6 +504,7 @@ function EditSheet({
 
   async function deleteCrew() {
     setDeleting(true);
+    setDeleteError(null);
     try {
       // Delete likes on posts in this crew
       const { data: posts } = await supabase.from("crew_posts").select("id").eq("crew_id", crew.id);
@@ -519,11 +521,14 @@ function EditSheet({
       await supabase.from("crew_posts").delete().eq("crew_id", crew.id);
       await supabase.from("crew_events").delete().eq("crew_id", crew.id);
       await supabase.from("crew_members").delete().eq("crew_id", crew.id);
-      const { error } = await supabase.from("crews").delete().eq("id", crew.id);
+      // Use .select() to get deleted rows — if RLS blocks it, 0 rows come back (no error thrown)
+      const { data: deleted, error } = await supabase.from("crews").delete().eq("id", crew.id).select("id");
       if (error) throw error;
+      if (!deleted || deleted.length === 0) throw new Error("Could not delete this crew. You may not have permission.");
       router.replace("/crews");
     } catch (err) {
       console.error("Delete crew error:", err);
+      setDeleteError(err instanceof Error ? err.message : "Delete failed. Please try again.");
       setDeleting(false);
     }
   }
@@ -545,6 +550,11 @@ function EditSheet({
                 This will permanently delete <strong>{crew.name}</strong> and all its posts and members. This cannot be undone.
               </p>
             </div>
+            {deleteError && (
+              <p className="text-xs text-center px-2 py-2 rounded-xl" style={{ background: "rgba(239,68,68,0.08)", color: "#DC2626" }}>
+                {deleteError}
+              </p>
+            )}
             <button
               onClick={deleteCrew}
               disabled={deleting}
@@ -559,7 +569,7 @@ function EditSheet({
               {deleting ? "Deleting…" : "Yes, Delete Crew"}
             </button>
             <button
-              onClick={() => setConfirmDelete(false)}
+              onClick={() => { setConfirmDelete(false); setDeleteError(null); }}
               className="w-full py-3.5 rounded-2xl text-sm font-semibold"
               style={{ background: "var(--c-muted)", color: "var(--c-text1)" }}>
               Cancel
