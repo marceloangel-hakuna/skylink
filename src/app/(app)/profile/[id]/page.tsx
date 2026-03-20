@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import ConnectButton from "@/components/ConnectButton";
-import AtlasInsightCard from "@/components/AtlasInsightCard";
+import AtlasIcebreakerCard from "@/components/AtlasIcebreakerCard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,43 +23,66 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: profile }, { data: viewerProfile }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id, full_name, avatar_url, role, company, bio, interests")
-      .eq("id", params.id)
-      .single(),
-    supabase
-      .from("profiles")
+  const [
+    { data: profile },
+    { data: viewerProfile },
+    { data: conns },
+    { count: targetConnCount },
+    { count: flightCount },
+    { data: viewerConns },
+    { data: targetConns },
+  ] = await Promise.all([
+    supabase.from("profiles")
+      .select("id, full_name, avatar_url, role, company, bio, interests, linkedin_url, website_url")
+      .eq("id", params.id).single(),
+    supabase.from("profiles")
       .select("id, full_name, role, company, bio, interests")
-      .eq("id", user.id)
-      .single(),
+      .eq("id", user.id).single(),
+    supabase.from("connections")
+      .select("status, requester_id, receiver_id")
+      .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`),
+    supabase.from("connections")
+      .select("id", { count: "exact", head: true })
+      .or(`requester_id.eq.${params.id},receiver_id.eq.${params.id}`)
+      .eq("status", "accepted"),
+    supabase.from("flights")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", params.id),
+    supabase.from("connections")
+      .select("requester_id, receiver_id")
+      .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      .eq("status", "accepted"),
+    supabase.from("connections")
+      .select("requester_id, receiver_id")
+      .or(`requester_id.eq.${params.id},receiver_id.eq.${params.id}`)
+      .eq("status", "accepted"),
   ]);
 
-  // Don't hard-redirect if profile row missing — show what we have
-  if (!profile && user.id !== params.id) {
-    // Return a minimal "not found" state rather than bouncing to /network
+  if (!profile) {
     return (
-      <div className="animate-fade-in pb-[100px]">
+      <div className="animate-fade-in pb-[110px]">
         <PageHeader title="Profile" />
         <div className="px-4 pt-8 flex flex-col items-center gap-3 text-center">
-          <div className="w-20 h-20 rounded-3xl bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 flex items-center justify-center font-black text-3xl">?</div>
+          <div className="w-20 h-20 rounded-3xl flex items-center justify-center font-black text-3xl"
+               style={{ background: "var(--c-muted)", color: "var(--c-text3)" }}>?</div>
           <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>Profile not available</p>
           <p className="text-xs" style={{ color: "var(--c-text3)" }}>This user hasn&apos;t set up their profile yet</p>
         </div>
       </div>
     );
   }
-  if (!profile) redirect("/profile");
 
-  // Check connection status — fetch all connections involving this user and
-  // filter client-side to avoid PostgREST nested-and() parsing issues
-  const { data: conns } = await supabase
-    .from("connections")
-    .select("status, requester_id, receiver_id")
-    .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`);
+  // Mutual connections
+  const viewerIds = new Set((viewerConns ?? []).map(c =>
+    c.requester_id === user.id ? c.receiver_id : c.requester_id
+  ));
+  const mutualCount = (targetConns ?? []).filter(c => {
+    const partnerId = c.requester_id === params.id ? c.receiver_id : c.requester_id;
+    return viewerIds.has(partnerId);
+  }).length;
 
-  const conn = conns?.find(c =>
+  // Connection status with viewer
+  const conn = (conns ?? []).find(c =>
     (c.requester_id === user.id && c.receiver_id === params.id) ||
     (c.requester_id === params.id && c.receiver_id === user.id)
   ) ?? null;
@@ -70,38 +93,178 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   const sub         = [profile.role, profile.company].filter(Boolean).join(" @ ") || "SkyLink Member";
   const inits       = initials(profile.full_name);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const p = profile as any;
+  const linkedinUrl = p.linkedin_url as string | null ?? null;
+  const websiteUrl  = p.website_url  as string | null ?? null;
+  const hasLinks    = !!(linkedinUrl || websiteUrl);
+
   return (
-    <div className="animate-fade-in pb-[100px]">
+    <div className="animate-fade-in pb-[110px]">
       <PageHeader title="Profile" />
 
-      <div className="px-4 pt-2 flex flex-col gap-4">
-        {/* Hero */}
-        <div className="card flex flex-col items-center text-center gap-3 py-8">
-          {profile.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatar_url} alt={profile.full_name ?? ""} className="w-20 h-20 rounded-3xl object-cover" />
-          ) : (
-            <div className="w-20 h-20 rounded-3xl bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 flex items-center justify-center font-black text-3xl">
-              {inits}
-            </div>
-          )}
-          <div>
-            <h2 className="text-xl font-black" style={{ color: "var(--c-text1)" }}>{profile.full_name ?? "Unknown"}</h2>
-            <p className="text-sm mt-0.5" style={{ color: "var(--c-text2)" }}>{sub}</p>
-            {profile.bio && (
-              <p className="text-sm mt-3 leading-relaxed max-w-[260px] mx-auto" style={{ color: "var(--c-text2)" }}>{profile.bio}</p>
+      <div className="px-4 pt-4 flex flex-col gap-4">
+
+        {/* ── Hero ── */}
+        <div className="flex flex-col items-center gap-2 pt-2">
+          <div className="relative">
+            {profile.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.avatar_url} alt={profile.full_name ?? ""}
+                   className="w-24 h-24 rounded-3xl object-cover" />
+            ) : (
+              <div className="w-24 h-24 rounded-3xl flex items-center justify-center font-black text-3xl"
+                   style={{ background: "var(--c-muted)", color: "var(--color-brand-fg)" }}>
+                {inits}
+              </div>
             )}
+            {/* Verified badge */}
+            <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
+                 style={{ background: "#4A27E8" }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div className="text-center mt-1">
+            <h2 className="text-[22px] font-black leading-tight" style={{ color: "var(--c-text1)" }}>
+              {profile.full_name ?? "Unknown"}
+            </h2>
+            <p className="text-sm mt-0.5" style={{ color: "var(--c-text2)" }}>{sub}</p>
           </div>
         </div>
 
-        {/* Interests */}
+        {/* ── Action buttons ── */}
+        {!isMe && (
+          <div className="flex gap-2.5">
+            {isConnected ? (
+              <>
+                <button disabled
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-1.5"
+                  style={{ background: "rgba(16,185,129,0.1)", color: "#059669", border: "1.5px solid rgba(16,185,129,0.4)" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Connected
+                </button>
+                <Link href={`/chat/${params.id}`}
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center flex items-center justify-center"
+                  style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1.5px solid var(--c-border)" }}>
+                  Message
+                </Link>
+              </>
+            ) : isSent ? (
+              <>
+                <button disabled
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold opacity-60"
+                  style={{ background: "var(--c-muted)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}>
+                  Request Sent
+                </button>
+                <Link href={`/chat/${params.id}`}
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center flex items-center justify-center"
+                  style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1.5px solid var(--c-border)" }}>
+                  Message
+                </Link>
+              </>
+            ) : (
+              <>
+                <ConnectButton targetId={params.id} targetName={profile.full_name ?? "them"} />
+                <Link href={`/chat/${params.id}`}
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center flex items-center justify-center"
+                  style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1.5px solid var(--c-border)" }}>
+                  Message
+                </Link>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── About ── */}
+        {profile.bio && (
+          <div className="card flex flex-col gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--c-text3)" }}>About</p>
+            <p className="text-[15px] leading-relaxed" style={{ color: "var(--c-text1)" }}>{profile.bio}</p>
+          </div>
+        )}
+
+        {/* ── Links ── */}
+        {hasLinks && (
+          <div className="card flex flex-col">
+            <p className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--c-text3)" }}>Links</p>
+
+            {linkedinUrl && (
+              <a href={linkedinUrl.startsWith("http") ? linkedinUrl : `https://${linkedinUrl}`}
+                 target="_blank" rel="noopener noreferrer"
+                 className="flex items-center gap-3 py-2.5 active:opacity-70 transition-opacity">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                     style={{ background: "#EBF4FF" }}>
+                  <span className="text-sm font-black" style={{ color: "#0A66C2", fontFamily: "Georgia, serif" }}>in</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: "var(--c-text1)" }}>LinkedIn</p>
+                  <p className="text-xs truncate" style={{ color: "var(--color-brand-fg)" }}>
+                    {linkedinUrl.replace(/^https?:\/\//, "")}
+                  </p>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)" }}>
+                  <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </a>
+            )}
+
+            {linkedinUrl && websiteUrl && (
+              <div style={{ height: "1px", background: "var(--c-border)", marginLeft: "48px" }} />
+            )}
+
+            {websiteUrl && (
+              <a href={websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`}
+                 target="_blank" rel="noopener noreferrer"
+                 className="flex items-center gap-3 py-2.5 active:opacity-70 transition-opacity">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                     style={{ background: "#EFF6FF" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ color: "#3B82F6" }}>
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
+                    <path d="M12 3C12 3 8 7 8 12s4 9 4 9M12 3c0 0 4 4 4 9s-4 9-4 9M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: "var(--c-text1)" }}>Website</p>
+                  <p className="text-xs truncate" style={{ color: "var(--color-brand-fg)" }}>
+                    {websiteUrl.replace(/^https?:\/\//, "")}
+                  </p>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)" }}>
+                  <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* ── Stats ── */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "CONNECTIONS", value: (targetConnCount ?? 0).toLocaleString() },
+            { label: "FLIGHTS",     value: (flightCount ?? 0).toLocaleString() },
+            { label: "MUTUAL",      value: mutualCount.toLocaleString() },
+          ].map(({ label, value }) => (
+            <div key={label} className="card text-center py-4">
+              <p className="text-xl font-black" style={{ color: "var(--c-text1)" }}>{value}</p>
+              <p className="text-[10px] font-semibold tracking-widest mt-0.5" style={{ color: "var(--c-text3)" }}>{label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Interests ── */}
         {(profile.interests?.length ?? 0) > 0 && (
           <div className="card flex flex-col gap-3">
             <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--c-text3)" }}>Interests</p>
             <div className="flex flex-wrap gap-2">
-              {profile.interests.map((k: string) => (
-                <span key={k} className="text-xs font-medium px-3 py-1.5 rounded-full"
-                      style={{ background: "var(--c-muted)", color: "var(--c-text2)" }}>
+              {(profile.interests ?? []).map((k: string) => (
+                <span key={k}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full"
+                  style={{ background: "rgba(74,39,232,0.08)", color: "var(--color-brand-fg)", border: "1px solid rgba(74,39,232,0.15)" }}>
                   {INTEREST_LABELS[k] ?? k}
                 </span>
               ))}
@@ -109,41 +272,14 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
           </div>
         )}
 
-        {/* Atlas Insight */}
+        {/* ── Atlas Icebreaker ── */}
         {!isMe && viewerProfile && (
-          <AtlasInsightCard
+          <AtlasIcebreakerCard
             viewerProfile={viewerProfile}
             targetProfile={profile}
           />
         )}
 
-        {/* CTA */}
-        {!isMe && (
-          <div className="flex flex-col gap-2.5">
-            {isConnected ? (
-              <div className="flex gap-2.5">
-                <Link href={`/chat/${params.id}`}
-                  className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold text-center"
-                  style={{ background: "#4A27E8" }}>
-                  Message
-                </Link>
-                <button disabled
-                  className="flex-1 py-3 rounded-2xl text-sm font-semibold border"
-                  style={{ borderColor: "#34D399", color: "#059669" }}>
-                  Connected ✓
-                </button>
-              </div>
-            ) : isSent ? (
-              <button disabled
-                className="w-full py-3 rounded-2xl text-sm font-semibold border opacity-70"
-                style={{ borderColor: "#34D399", color: "#059669" }}>
-                Request Sent ✓
-              </button>
-            ) : (
-              <ConnectButton targetId={params.id} targetName={profile.full_name ?? "them"} />
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
