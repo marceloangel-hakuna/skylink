@@ -479,10 +479,10 @@ export default function NetworkPage() {
             const isSent      = sentIds.has(u.id);
 
             return (
-              /* Whole card is tappable → opens profile sheet */
-              <button
+              /* Whole card is tappable → opens full profile page */
+              <Link
                 key={u.id ?? i}
-                onClick={() => setProfileSheet(u)}
+                href={`/profile/${u.id}`}
                 className="rounded-2xl p-4 flex items-center gap-3 w-full text-left active:scale-[0.98] transition-transform shadow-card border"
                 style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}
               >
@@ -521,7 +521,7 @@ export default function NetworkPage() {
                 >
                   {isConnected ? "Connected" : isSent ? "Sent ✓" : "Connect"}
                 </div>
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -566,7 +566,7 @@ export default function NetworkPage() {
                 <div className="flex items-center gap-3">
                   <button
                     className="flex items-center gap-3 flex-1 min-w-0 text-left active:opacity-70 transition-opacity"
-                    onClick={() => p && setProfileSheet({ id: p.id, full_name: p.full_name, avatar_url: p.avatar_url, role: p.role, company: p.company, interests: p.interests ?? [] })}
+                    onClick={() => p && (window.location.href = `/profile/${p.id}`)}
                   >
                     <Avatar profile={p} size={12} />
                     <div className="flex-1 min-w-0">

@@ -33,7 +33,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
     { data: targetConns },
   ] = await Promise.all([
     supabase.from("profiles")
-      .select("id, full_name, avatar_url, role, company, bio, interests, linkedin_url, website_url")
+      .select("id, full_name, avatar_url, role, company, bio, interests, linkedin_url")
       .eq("id", params.id).single(),
     supabase.from("profiles")
       .select("id, full_name, role, company, bio, interests")
@@ -94,9 +94,9 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   const inits       = initials(profile.full_name);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const p = profile as any;
-  const linkedinUrl = p.linkedin_url as string | null ?? null;
-  const websiteUrl  = p.website_url  as string | null ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const linkedinUrl = (profile as any).linkedin_url as string | null ?? null;
+  const websiteUrl: string | null = null; // add website_url column to profiles table to enable
   const hasLinks    = !!(linkedinUrl || websiteUrl);
 
   return (
@@ -213,32 +213,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
               </a>
             )}
 
-            {linkedinUrl && websiteUrl && (
-              <div style={{ height: "1px", background: "var(--c-border)", marginLeft: "48px" }} />
-            )}
-
-            {websiteUrl && (
-              <a href={websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`}
-                 target="_blank" rel="noopener noreferrer"
-                 className="flex items-center gap-3 py-2.5 active:opacity-70 transition-opacity">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                     style={{ background: "#EFF6FF" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ color: "#3B82F6" }}>
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
-                    <path d="M12 3C12 3 8 7 8 12s4 9 4 9M12 3c0 0 4 4 4 9s-4 9-4 9M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: "var(--c-text1)" }}>Website</p>
-                  <p className="text-xs truncate" style={{ color: "var(--color-brand-fg)" }}>
-                    {websiteUrl.replace(/^https?:\/\//, "")}
-                  </p>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)" }}>
-                  <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </a>
-            )}
+            {/* Website row: add website_url column to profiles table to enable */}
           </div>
         )}
 
