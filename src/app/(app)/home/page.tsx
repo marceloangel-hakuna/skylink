@@ -336,33 +336,42 @@ export default async function HomePage() {
 
         {/* ── People Near You ───────────────────────────── */}
         <div className="stagger-3">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 px-0">
             <h2 className="text-base font-black" style={{ color: "var(--c-text1)" }}>People Near You</h2>
             <Link href="/network" className="text-xs font-semibold" style={{ color: "#4A27E8" }}>See all</Link>
           </div>
-          <div className="flex flex-col gap-3">
-            {([
-              { name: "Sarah Chen",    role: "Product Designer",  company: "Figma",  img: "https://randomuser.me/api/portraits/women/44.jpg", status: "available" },
-              { name: "Marcus Rivera", role: "Software Engineer", company: "Stripe", img: "https://randomuser.me/api/portraits/men/32.jpg",   status: "available" },
-              { name: "Aisha Johnson", role: "VC Partner",        company: "a16z",   img: "https://randomuser.me/api/portraits/women/68.jpg", status: "not_available" },
-            ] as { name: string; role: string; company: string; img: string; status: string }[]).map((person) => (
-              <div key={person.name}
-                className="flex items-center gap-3 p-3 rounded-[18px]"
-                style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-                <div className="relative flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={person.img} alt={person.name} className="w-12 h-12 object-cover" style={{ borderRadius: "14px" }} />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2"
-                    style={{ background: person.status === "available" ? "#10B981" : "#EAB308", borderColor: "var(--c-card)" }} />
+          {/* Horizontal scroll — bleeds to screen edge like Instagram stories */}
+          <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            {[
+              { name: "Sarah",   role: "Designer",  img: "https://randomuser.me/api/portraits/women/44.jpg", status: "available" },
+              { name: "Marcus",  role: "Engineer",  img: "https://randomuser.me/api/portraits/men/32.jpg",   status: "available" },
+              { name: "Aisha",   role: "VC Partner",img: "https://randomuser.me/api/portraits/women/68.jpg", status: "not_available" },
+              { name: "James",   role: "Founder",   img: "https://randomuser.me/api/portraits/men/75.jpg",   status: "available" },
+              { name: "Priya",   role: "PM",        img: "https://randomuser.me/api/portraits/women/90.jpg", status: "available" },
+              { name: "Luca",    role: "Designer",  img: "https://randomuser.me/api/portraits/men/46.jpg",   status: "not_available" },
+            ].map((person) => (
+              <div key={person.name} className="flex flex-col items-center gap-2 flex-shrink-0 active:opacity-70 transition-opacity cursor-pointer" style={{ width: "64px" }}>
+                {/* Avatar with status ring */}
+                <div className="relative">
+                  <div
+                    className="p-[2.5px] rounded-[18px]"
+                    style={{
+                      background: person.status === "available"
+                        ? "linear-gradient(135deg, #10B981, #34D399)"
+                        : "linear-gradient(135deg, #EAB308, #FCD34D)",
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={person.img}
+                      alt={person.name}
+                      className="w-14 h-14 object-cover block"
+                      style={{ borderRadius: "15px", border: "2px solid var(--c-card)" }}
+                    />
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate" style={{ color: "var(--c-text1)" }}>{person.name}</p>
-                  <p className="text-xs truncate" style={{ color: "var(--c-text3)" }}>{person.role} · {person.company}</p>
-                </div>
-                <button className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full active:scale-95 transition-transform"
-                  style={{ border: "1.5px solid #4A27E8", color: "#4A27E8", background: "transparent" }}>
-                  Connect
-                </button>
+                <p className="text-[11px] font-semibold text-center leading-none" style={{ color: "var(--c-text2)" }}>{person.name}</p>
+                <p className="text-[9px] text-center leading-none" style={{ color: "var(--c-text3)" }}>{person.role}</p>
               </div>
             ))}
           </div>
