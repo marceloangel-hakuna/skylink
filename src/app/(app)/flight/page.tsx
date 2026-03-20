@@ -330,25 +330,8 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
-// ── Trash button (shared) ──────────────────────────────────
-function TrashBtn({ onDelete }: { onDelete: () => void }) {
-  return (
-    <button
-      onClick={e => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
-      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform"
-      style={{ background: "rgba(239, 68, 68, 0.08)" }}
-      aria-label="Delete flight"
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path d="M3 6H5H21M8 6V4C8 3.45 8.45 3 9 3H15C15.55 3 16 3.45 16 4V6M19 6L18 20C18 20.55 17.55 21 17 21H7C6.45 21 6 20.55 6 20L5 6H19Z"
-          stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
-  );
-}
-
 // ── Active Flight Row ──────────────────────────────────────
-function ActiveFlightRow({ flight, onDelete }: { flight: UserFlight; onDelete: (id: string) => void }) {
+function ActiveFlightRow({ flight }: { flight: UserFlight }) {
   const slug = flight.flight_number.toLowerCase().replace(/\s+/g, "-");
   return (
     <Link href={`/flight/${slug}`} className="block active:scale-[0.98] transition-transform">
@@ -372,7 +355,9 @@ function ActiveFlightRow({ flight, onDelete }: { flight: UserFlight; onDelete: (
               {flight.departure_date ? ` · ${formatDate(flight.departure_date)}` : ""}
             </p>
           </div>
-          <TrashBtn onDelete={() => onDelete(flight.id)} />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)", flexShrink: 0 }}>
+            <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
         </div>
       </div>
     </Link>
@@ -380,7 +365,7 @@ function ActiveFlightRow({ flight, onDelete }: { flight: UserFlight; onDelete: (
 }
 
 // ── Upcoming Flight Row ────────────────────────────────────
-function UpcomingFlightRow({ flight, onDelete }: { flight: UserFlight; onDelete: (id: string) => void }) {
+function UpcomingFlightRow({ flight }: { flight: UserFlight }) {
   const slug = flight.flight_number.toLowerCase().replace(/\s+/g, "-");
   return (
     <Link href={`/flight/${slug}`} className="block active:scale-[0.98] transition-transform">
@@ -403,7 +388,9 @@ function UpcomingFlightRow({ flight, onDelete }: { flight: UserFlight; onDelete:
               {flight.departure_date ? ` · ${formatDate(flight.departure_date)}` : ""}
             </p>
           </div>
-          <TrashBtn onDelete={() => onDelete(flight.id)} />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)", flexShrink: 0 }}>
+            <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
         </div>
       </div>
     </Link>
@@ -445,8 +432,6 @@ export default function FlightPage() {
   const [flights, setFlights]           = useState<UserFlight[]>([]);
   const [loading, setLoading]           = useState(true);
   const [showModal, setShowModal]       = useState(false);
-  const [flightToDelete, setFlightToDelete] = useState<UserFlight | null>(null);
-  const [deleting, setDeleting]         = useState(false);
   const [historyFlights, setHistoryFlights] = useState<UserFlight[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -485,16 +470,6 @@ export default function FlightPage() {
 
   const handleAdd = (f: Omit<UserFlight, "id" | "created_at">) => {
     setFlights(prev => [...prev, { ...f, id: Math.random().toString(), created_at: new Date().toISOString() }]);
-  };
-
-  const handleDeleteFlight = async () => {
-    if (!flightToDelete) return;
-    setDeleting(true);
-    const sb = createClient();
-    await sb.from("user_flights").delete().eq("id", flightToDelete.id);
-    setFlights(prev => prev.filter(f => f.id !== flightToDelete.id));
-    setFlightToDelete(null);
-    setDeleting(false);
   };
 
   return (
@@ -563,7 +538,7 @@ export default function FlightPage() {
               <>
                 <SectionHeader label="In Flight Now" />
                 <div className="mb-3">
-                  <ActiveFlightRow flight={activeFlight} onDelete={id => setFlightToDelete(flights.find(f => f.id === id) ?? null)} />
+                  <ActiveFlightRow flight={activeFlight} />
                 </div>
               </>
             )}
@@ -571,7 +546,7 @@ export default function FlightPage() {
             <SectionHeader label="Upcoming" />
             {upcomingList.length > 0 ? (
               <div className="flex flex-col gap-3">
-                {upcomingList.map(f => <UpcomingFlightRow key={f.id} flight={f} onDelete={id => setFlightToDelete(flights.find(x => x.id === id) ?? null)} />)}
+                {upcomingList.map(f => <UpcomingFlightRow key={f.id} flight={f} />)}
               </div>
             ) : (
               <p className="text-xs py-6 text-center" style={{ color: "var(--c-text3)" }}>
@@ -606,55 +581,6 @@ export default function FlightPage() {
         <AddFlightModal onClose={() => setShowModal(false)} onAdd={handleAdd} />
       )}
 
-      {/* ── Delete Confirmation Sheet ──────────── */}
-      {flightToDelete && (
-        <>
-          <div
-            className="fixed inset-0 z-[55] bg-black/50"
-            onClick={() => !deleting && setFlightToDelete(null)}
-          />
-          <div
-            className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-3xl max-w-[430px] mx-auto"
-            style={{
-              background: "var(--c-card)",
-              paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 16px)",
-            }}
-          >
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full" style={{ background: "var(--c-border)" }} />
-            </div>
-            <div className="px-5 pt-3 pb-2 text-center">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
-                   style={{ background: "#FEF2F2" }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 6H5H21M8 6V4C8 3.45 8.45 3 9 3H15C15.55 3 16 3.45 16 4V6M19 6L18 20C18 20.55 17.55 21 17 21H7C6.45 21 6 20.55 6 20L5 6H19Z"
-                    stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <h2 className="text-base font-bold mb-1" style={{ color: "var(--c-text1)" }}>Remove Flight?</h2>
-              <p className="text-sm mb-5" style={{ color: "var(--c-text2)" }}>
-                <strong>{flightToDelete.flight_number}</strong> will be removed from your trips. This cannot be undone.
-              </p>
-              <button
-                onClick={handleDeleteFlight}
-                disabled={deleting}
-                className="w-full py-3.5 rounded-2xl font-bold text-white mb-2 disabled:opacity-60 active:scale-[0.98] transition-all"
-                style={{ background: "#EF4444" }}
-              >
-                {deleting ? "Removing…" : "Remove Flight"}
-              </button>
-              <button
-                onClick={() => setFlightToDelete(null)}
-                disabled={deleting}
-                className="w-full py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all"
-                style={{ background: "var(--c-muted)", color: "var(--c-text2)" }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

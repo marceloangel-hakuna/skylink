@@ -49,14 +49,33 @@ type Message = {
   text: string; time: string; isMe: boolean;
 };
 
-// ─── Placeholder people (until real passenger discovery is built) ──────────────
+// ─── Real person type ─────────────────────────────────────────────────────────
 
-const PLACEHOLDER_PEOPLE = [
-  { id: "1", name: "Sarah Chen",    role: "CTO",             company: "Finbridge",   initials: "SC", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",   match: 94, seat: "3A",  connected: false, mutual: 2 },
-  { id: "2", name: "Marcus Rivera", role: "VC Partner",      company: "Sequoia",     initials: "MR", color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",           match: 88, seat: "5C",  connected: false, mutual: 4 },
-  { id: "3", name: "Priya Patel",   role: "Founder",         company: "Nexa AI",     initials: "PP", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",       match: 82, seat: "8B",  connected: true,  mutual: 1 },
-  { id: "4", name: "James Liu",     role: "Head of Product", company: "Stripe",      initials: "JL", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", match: 76, seat: "12D", connected: false, mutual: 3 },
+type Person = {
+  id: string;
+  name: string;
+  role: string | null;
+  company: string | null;
+  avatar_url: string | null;
+  networking_status: NetworkingStatus;
+  connected: boolean;
+  isMe?: boolean;
+};
+
+const PEOPLE_AVATAR_COLORS = [
+  "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+  "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
 ];
+function personAvatarColor(id: string) {
+  return PEOPLE_AVATAR_COLORS[(id.charCodeAt(0) + id.charCodeAt(id.length - 1)) % PEOPLE_AVATAR_COLORS.length];
+}
+function personInitials(name: string) {
+  return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
+}
 
 const INITIAL_MESSAGES: Message[] = [
   { id: "1", author: "Sarah Chen",    initials: "SC", color: "bg-violet-100 text-violet-700", text: "Hey everyone! Anyone heading to the TechCrunch conference?", time: "10:32 AM", isMe: false },
@@ -241,13 +260,14 @@ function StatusCard({
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({
-  userFlight, flightData, networkingStatus, onStatusUpdate, updatingStatus,
+  userFlight, flightData, networkingStatus, onStatusUpdate, updatingStatus, onDelete,
 }: {
   userFlight: UserFlight | null;
   flightData: FlightData | null;
   networkingStatus: NetworkingStatus;
   onStatusUpdate: (s: NetworkingStatus) => void;
   updatingStatus: boolean;
+  onDelete: () => void;
 }) {
   const origin      = flightData?.origin      ?? userFlight?.origin      ?? "—";
   const destination = flightData?.destination  ?? userFlight?.destination  ?? "—";
@@ -394,34 +414,45 @@ function OverviewTab({
         </p>
       </div>
 
+      {/* ── Delete Flight ─────────────────────── */}
+      <button
+        onClick={onDelete}
+        className="w-full py-3 text-sm font-medium rounded-2xl active:scale-[0.98] transition-all mt-2"
+        style={{ color: "#EF4444", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.14)" }}
+      >
+        Delete Flight
+      </button>
+
     </div>
   );
 }
 
 // ─── People Tab ───────────────────────────────────────────────────────────────
 
-type Person = typeof PLACEHOLDER_PEOPLE[number];
-
 function PeopleTab({
-  people, networkingStatus, onConnect,
+  people, loading, networkingStatus, onConnect,
 }: {
   people: Person[];
+  loading: boolean;
   networkingStatus: NetworkingStatus;
   onConnect: (id: string) => void;
 }) {
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 
+  // Your own visibility banner
+  const visibilityBanner = {
+    available:    { dot: "#10B981", label: "You're visible as Available", bg: "rgba(16,185,129,0.07)", border: "rgba(16,185,129,0.25)" },
+    not_available:{ dot: "#EAB308", label: "You're visible as Busy",      bg: "rgba(234,179,8,0.07)",  border: "rgba(234,179,8,0.25)"  },
+    invisible:    { dot: "#94A3B8", label: "You're invisible to others",   bg: "var(--c-muted)",        border: "var(--c-border)"       },
+  }[networkingStatus];
+
   if (networkingStatus === "invisible") {
     return (
       <div className="px-4 py-10 flex flex-col items-center text-center gap-4">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-             style={{ background: "var(--c-muted)" }}>
-          👻
-        </div>
+             style={{ background: "var(--c-muted)" }}>👻</div>
         <div>
-          <p className="text-base font-black mb-1" style={{ color: "var(--c-text1)" }}>
-            You&apos;re in Private Mode
-          </p>
+          <p className="text-base font-black mb-1" style={{ color: "var(--c-text1)" }}>You&apos;re in Private Mode</p>
           <p className="text-sm leading-relaxed" style={{ color: "var(--c-text2)", maxWidth: "260px" }}>
             Set your status to <strong>Available</strong> on the Overview tab to see and be seen by SkyLink members on this flight.
           </p>
@@ -432,75 +463,108 @@ function PeopleTab({
 
   return (
     <div className="px-4 py-5 flex flex-col gap-4">
-      {/* Stats */}
-      <div className="flex gap-3">
-        <div className="rounded-2xl flex-1 text-center py-3" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-          <p className="text-2xl font-black" style={{ color: "#34D399" }}>{people.filter(p => p.connected).length}</p>
-          <p className="text-[10px] font-semibold mt-0.5" style={{ color: "var(--c-text3)" }}>Connected</p>
-        </div>
-        <div className="rounded-2xl flex-1 text-center py-3" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-          <p className="text-2xl font-black" style={{ color: "#4A27E8" }}>{people.length}</p>
-          <p className="text-[10px] font-semibold mt-0.5" style={{ color: "var(--c-text3)" }}>Available</p>
-        </div>
-        <div className="rounded-2xl flex-1 text-center py-3" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-          <p className="text-2xl font-black" style={{ color: "#EAB308" }}>6</p>
-          <p className="text-[10px] font-semibold mt-0.5" style={{ color: "var(--c-text3)" }}>Top Matches</p>
-        </div>
+
+      {/* Your visibility banner */}
+      <div className="rounded-xl px-3 py-2.5 flex items-center gap-2.5"
+           style={{ background: visibilityBanner.bg, border: `1px solid ${visibilityBanner.border}` }}>
+        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: visibilityBanner.dot }} />
+        <p className="text-xs font-medium" style={{ color: "var(--c-text2)" }}>{visibilityBanner.label}</p>
       </div>
 
-      {/* Notice */}
-      <div className="rounded-xl px-3 py-2.5" style={{ background: "var(--c-muted)" }}>
-        <p className="text-xs" style={{ color: "var(--c-text3)" }}>
-          Showing SkyLink members who set themselves as <strong>Available</strong> on this flight.
-        </p>
-      </div>
+      {/* Loading */}
+      {loading && (
+        <div className="flex flex-col gap-3">
+          {[1,2,3].map(i => (
+            <div key={i} className="rounded-2xl h-[72px] animate-pulse" style={{ background: "var(--c-muted)" }} />
+          ))}
+        </div>
+      )}
+
+      {/* Empty */}
+      {!loading && people.length === 0 && (
+        <div className="py-10 flex flex-col items-center text-center gap-3">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ background: "var(--c-muted)" }}>✈️</div>
+          <p className="text-sm font-black" style={{ color: "var(--c-text1)" }}>No one visible yet</p>
+          <p className="text-xs" style={{ color: "var(--c-text2)", maxWidth: "240px" }}>
+            Other SkyLink members will appear here once they set themselves as Available on this flight.
+          </p>
+        </div>
+      )}
 
       {/* People list */}
-      {people.map(person => {
-        const matchCls = person.match >= 85
-          ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400"
-          : person.match >= 70
-          ? "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/30 dark:text-amber-400"
-          : "bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-[var(--c-muted)] dark:text-[var(--c-text2)]";
+      {!loading && people.map(person => {
+        const color     = personAvatarColor(person.id);
+        const ini       = personInitials(person.name);
+        const statusDot = person.networking_status === "available" ? "#10B981" : "#EAB308";
+        const statusTip = person.networking_status === "available" ? "Available" : "Busy";
 
         return (
           <div key={person.id} className="rounded-2xl flex items-center gap-3 p-3.5"
-               style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+               style={{
+                 background: "var(--c-card)",
+                 border: person.isMe ? "1.5px solid #4A27E8" : "1px solid var(--c-border)",
+               }}>
             <button
-              onClick={() => setSelectedPerson(person)}
-              className="flex items-center gap-3 flex-1 min-w-0 text-left active:opacity-70 transition-opacity"
+              onClick={() => !person.isMe && setSelectedPerson(person)}
+              className={`flex items-center gap-3 flex-1 min-w-0 text-left ${!person.isMe ? "active:opacity-70 transition-opacity" : ""}`}
             >
-              <div className={`w-12 h-12 rounded-2xl ${person.color} flex items-center justify-center text-sm font-black flex-shrink-0`}>
-                {person.initials}
+              {/* Avatar with status dot */}
+              <div className="relative flex-shrink-0">
+                {person.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={person.avatar_url} alt={person.name}
+                       className="w-12 h-12 rounded-2xl object-cover" />
+                ) : (
+                  <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-sm font-black`}>
+                    {ini}
+                  </div>
+                )}
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--c-card)]"
+                      style={{ background: statusDot }} />
               </div>
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <p className="text-sm font-bold truncate" style={{ color: "var(--c-text1)" }}>{person.name}</p>
-                  <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${matchCls}`}>
-                    {person.match}%
+                  <p className="text-sm font-bold truncate" style={{ color: "var(--c-text1)" }}>
+                    {person.name}{person.isMe ? " (You)" : ""}
+                  </p>
+                  <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{
+                          background: person.networking_status === "available" ? "rgba(16,185,129,0.1)" : "rgba(234,179,8,0.1)",
+                          color:      person.networking_status === "available" ? "#059669" : "#B45309",
+                        }}>
+                    {statusTip}
                   </span>
                 </div>
-                <p className="text-xs truncate" style={{ color: "var(--c-text2)" }}>{person.role} · {person.company}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>
-                  Seat {person.seat}{person.mutual > 0 ? ` · ${person.mutual} mutual` : ""}
-                </p>
+                {(person.role || person.company) && (
+                  <p className="text-xs truncate" style={{ color: "var(--c-text2)" }}>
+                    {[person.role, person.company].filter(Boolean).join(" · ")}
+                  </p>
+                )}
               </div>
             </button>
 
-            <button
-              onClick={() => onConnect(person.id)}
-              className="flex-shrink-0 text-xs font-semibold px-3 py-2 rounded-full transition-all active:scale-95"
-              style={person.connected
-                ? { border: "1px solid #34D399", color: "#059669", background: "rgba(52,211,153,0.1)" }
-                : { background: "#4A27E8", color: "white" }}
-            >
-              {person.connected ? "Connected ✓" : "Connect"}
-            </button>
+            {person.isMe ? (
+              <span className="flex-shrink-0 text-[10px] font-semibold px-3 py-1.5 rounded-full"
+                    style={{ background: "rgba(74,39,232,0.08)", color: "#4A27E8" }}>
+                You
+              </span>
+            ) : (
+              <button
+                onClick={() => onConnect(person.id)}
+                className="flex-shrink-0 text-xs font-semibold px-3 py-2 rounded-full transition-all active:scale-95"
+                style={person.connected
+                  ? { border: "1px solid #34D399", color: "#059669", background: "rgba(52,211,153,0.1)" }
+                  : { background: "#4A27E8", color: "white" }}
+              >
+                {person.connected ? "Connected ✓" : "Connect"}
+              </button>
+            )}
           </div>
         );
       })}
 
-      {/* Person sheet */}
+      {/* Person detail sheet */}
       {selectedPerson && (
         <>
           <div className="fixed inset-0 bg-black/50 z-[55] backdrop-blur-sm" onClick={() => setSelectedPerson(null)} />
@@ -511,33 +575,39 @@ function PeopleTab({
             </div>
             <div className="px-5 pt-4 pb-2 flex flex-col gap-4">
               <div className="flex items-center gap-4">
-                <div className={`w-16 h-16 rounded-2xl ${selectedPerson.color} flex items-center justify-center text-xl font-black flex-shrink-0`}>
-                  {selectedPerson.initials}
+                <div className="relative flex-shrink-0">
+                  {selectedPerson.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={selectedPerson.avatar_url} alt={selectedPerson.name}
+                         className="w-16 h-16 rounded-2xl object-cover" />
+                  ) : (
+                    <div className={`w-16 h-16 rounded-2xl ${personAvatarColor(selectedPerson.id)} flex items-center justify-center text-xl font-black`}>
+                      {personInitials(selectedPerson.name)}
+                    </div>
+                  )}
+                  <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-[var(--c-card)]"
+                        style={{ background: selectedPerson.networking_status === "available" ? "#10B981" : "#EAB308" }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-lg font-black" style={{ color: "var(--c-text1)" }}>{selectedPerson.name}</p>
-                  <p className="text-sm" style={{ color: "var(--c-text2)" }}>{selectedPerson.role} · {selectedPerson.company}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
-                      {selectedPerson.match}% match
-                    </span>
-                    <span className="text-[11px]" style={{ color: "var(--c-text3)" }}>Seat {selectedPerson.seat}</span>
-                  </div>
+                  {(selectedPerson.role || selectedPerson.company) && (
+                    <p className="text-sm" style={{ color: "var(--c-text2)" }}>
+                      {[selectedPerson.role, selectedPerson.company].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                  <span className="inline-block mt-1 text-[11px] font-bold px-2 py-0.5 rounded-full"
+                        style={{
+                          background: selectedPerson.networking_status === "available" ? "rgba(16,185,129,0.1)" : "rgba(234,179,8,0.1)",
+                          color: selectedPerson.networking_status === "available" ? "#059669" : "#B45309",
+                        }}>
+                    {selectedPerson.networking_status === "available" ? "🟢 Available" : "🟡 Busy"}
+                  </span>
                 </div>
-              </div>
-              <div className="rounded-xl px-3 py-2.5 atlas-insight-card">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="atlas-icon text-sm">✦</span>
-                  <span className="text-[10px] font-black uppercase tracking-widest atlas-label">Atlas Match</span>
-                </div>
-                <p className="text-xs atlas-text-primary leading-relaxed">
-                  Strong overlap in fintech and venture — great conversation starter about their recent work at {selectedPerson.company}.
-                </p>
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => { onConnect(selectedPerson.id); setSelectedPerson(null); }}
-                  className="flex-1 py-3 rounded-2xl text-sm font-bold text-white active:scale-95 transition-transform"
+                  className="flex-1 py-3 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
                   style={{ background: selectedPerson.connected ? "var(--c-muted)" : "#4A27E8", color: selectedPerson.connected ? "var(--c-text2)" : "white" }}
                 >
                   {selectedPerson.connected ? "Connected ✓" : "Connect"}
@@ -637,18 +707,20 @@ export default function FlightDashboardPage() {
   const rawSlug = (params.id as string) ?? "";
 
   // ── State ──────────────────────────────────────────────────────────────────
-  const [userFlight,      setUserFlight]      = useState<UserFlight | null>(null);
-  const [flightData,      setFlightData]      = useState<FlightData | null>(null);
-  const [loading,         setLoading]         = useState(true);
+  const [userFlight,       setUserFlight]       = useState<UserFlight | null>(null);
+  const [flightData,       setFlightData]       = useState<FlightData | null>(null);
+  const [loading,          setLoading]          = useState(true);
   const [networkingStatus, setNetworkingStatus] = useState<NetworkingStatus>("invisible");
-  const [updatingStatus,  setUpdatingStatus]  = useState(false);
-  const [showPrompt,      setShowPrompt]      = useState(false);
-  const [showDelete,      setShowDelete]      = useState(false);
-  const [deleting,        setDeleting]        = useState(false);
-  const [activeTab,       setActiveTab]       = useState<Tab>("overview");
-  const [people,          setPeople]          = useState(PLACEHOLDER_PEOPLE);
-  const [messages,        setMessages]        = useState<Message[]>(INITIAL_MESSAGES);
-  const [inputText,       setInputText]       = useState("");
+  const [updatingStatus,   setUpdatingStatus]   = useState(false);
+  const [showPrompt,       setShowPrompt]       = useState(false);
+  const [showDelete,       setShowDelete]       = useState(false);
+  const [deleting,         setDeleting]         = useState(false);
+  const [activeTab,        setActiveTab]        = useState<Tab>("overview");
+  const [people,           setPeople]           = useState<Person[]>([]);
+  const [peopleLoading,    setPeopleLoading]    = useState(false);
+  const [userId,           setUserId]           = useState<string>("");
+  const [messages,         setMessages]         = useState<Message[]>(INITIAL_MESSAGES);
+  const [inputText,        setInputText]        = useState("");
 
   const supabase      = useRef(createClient());
   const channelRef    = useRef<RealtimeChannel | null>(null);
@@ -659,6 +731,7 @@ export default function FlightDashboardPage() {
     const sb = supabase.current;
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
+    setUserId(user.id);
 
     // Find matching flight by normalizing slug → flight number
     const normalized = rawSlug.replace(/-/g, "").toUpperCase();
@@ -666,7 +739,7 @@ export default function FlightDashboardPage() {
       .from("user_flights")
       .select("*")
       .eq("user_id", user.id)
-      .in("status", ["upcoming", "active"]);
+      .in("status", ["upcoming", "active", "completed"]);
 
     const match = (flights ?? []).find((f: UserFlight) =>
       f.flight_number.replace(/[\s-]/g, "").toUpperCase() === normalized
@@ -674,7 +747,8 @@ export default function FlightDashboardPage() {
 
     if (match) {
       setUserFlight(match);
-      const ns = (match.networking_status ?? "invisible") as NetworkingStatus;
+      const stored = localStorage.getItem(`skylink_nstatus_${match.id}`) as NetworkingStatus | null;
+      const ns = (match.networking_status ?? stored ?? "invisible") as NetworkingStatus;
       setNetworkingStatus(ns);
 
       // Show boarding prompt if still invisible and not dismissed
@@ -689,7 +763,13 @@ export default function FlightDashboardPage() {
         const res = await fetch(`/api/flight/lookup?flight=${encodeURIComponent(flightNum)}`);
         if (res.ok) {
           const fd: FlightData = await res.json();
-          if (fd.found) setFlightData(fd);
+          if (fd.found) {
+            setFlightData(fd);
+            // Auto-complete the flight when AirLabs confirms it has landed
+            if (fd.status === "landed" && match.status !== "completed") {
+              await sb.from("user_flights").update({ status: "completed" }).eq("id", match.id);
+            }
+          }
         }
       } catch {
         // non-critical — show what we have from Supabase
@@ -700,6 +780,69 @@ export default function FlightDashboardPage() {
   }, [rawSlug]);
 
   useEffect(() => { load(); }, [load]);
+
+  // ── Load real people on this flight ───────────────────────────────────────
+  const loadPeople = useCallback(async () => {
+    if (!userFlight || !userId) return;
+    setPeopleLoading(true);
+    const sb = supabase.current;
+
+    // Fetch all users on same flight; filter invisible ones out client-side (but always include self)
+    const { data: flightmates } = await sb
+      .from("user_flights")
+      .select("user_id, networking_status")
+      .eq("flight_number", userFlight.flight_number)
+      .in("status", ["upcoming", "active", "completed"]);
+
+    // Always include self, exclude others who are invisible
+    const visible = (flightmates ?? []).filter(
+      f => f.user_id === userId || f.networking_status !== "invisible"
+    );
+
+    if (!visible.length) { setPeople([]); setPeopleLoading(false); return; }
+
+    const ids       = visible.map(f => f.user_id);
+    const statusMap = Object.fromEntries(visible.map(f => [f.user_id, f.networking_status as NetworkingStatus]));
+
+    const [{ data: profiles }, { data: conns }] = await Promise.all([
+      sb.from("profiles").select("id, full_name, avatar_url, role, company").in("id", ids),
+      sb.from("connections")
+        .select("requester_id, receiver_id")
+        .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
+        .eq("status", "accepted"),
+    ]);
+
+    const connectedIds = new Set((conns ?? []).map((c: { requester_id: string; receiver_id: string }) =>
+      c.requester_id === userId ? c.receiver_id : c.requester_id
+    ));
+
+    const all = (profiles ?? []).map((p: { id: string; full_name: string | null; avatar_url: string | null; role: string | null; company: string | null }) => ({
+      id:                p.id,
+      name:              p.full_name ?? "Traveler",
+      role:              p.role,
+      company:           p.company,
+      avatar_url:        p.avatar_url,
+      networking_status: (p.id === userId ? networkingStatus : statusMap[p.id]) ?? "available" as NetworkingStatus,
+      connected:         connectedIds.has(p.id),
+      isMe:              p.id === userId,
+    }));
+
+    // Put self first, then others
+    all.sort((a, b) => (a.isMe ? -1 : b.isMe ? 1 : 0));
+    setPeople(all);
+    setPeopleLoading(false);
+  }, [userFlight, userId, networkingStatus]);
+
+  // Load people when switching to people tab
+  useEffect(() => {
+    if (activeTab === "people") loadPeople();
+  }, [activeTab, loadPeople]);
+
+  // Reload people list when OUR status changes (so list updates immediately if we become invisible)
+  useEffect(() => {
+    if (activeTab === "people") loadPeople();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [networkingStatus]);
 
   // ── Realtime chat ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -723,12 +866,14 @@ export default function FlightDashboardPage() {
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleStatusUpdate = useCallback(async (s: NetworkingStatus) => {
     if (!userFlight) return;
+    // Optimistic update so UI responds immediately
+    setNetworkingStatus(s);
+    localStorage.setItem(`skylink_nstatus_${userFlight.id}`, s);
     setUpdatingStatus(true);
-    const { error } = await supabase.current
+    await supabase.current
       .from("user_flights")
       .update({ networking_status: s })
       .eq("id", userFlight.id);
-    if (!error) setNetworkingStatus(s);
     setUpdatingStatus(false);
   }, [userFlight]);
 
@@ -750,8 +895,18 @@ export default function FlightDashboardPage() {
     router.replace("/flight");
   }, [userFlight, router]);
 
-  const handleConnect = (id: string) => {
+  const handleConnect = async (id: string) => {
+    const person = people.find(p => p.id === id);
+    if (!person || !userId) return;
+    // Optimistic toggle
     setPeople(prev => prev.map(p => p.id === id ? { ...p, connected: !p.connected } : p));
+    if (!person.connected) {
+      await supabase.current.from("connections").upsert({
+        requester_id: userId,
+        receiver_id:  id,
+        status:       "accepted",
+      }, { onConflict: "requester_id,receiver_id" });
+    }
   };
 
   const handleSend = async () => {
@@ -790,9 +945,9 @@ export default function FlightDashboardPage() {
   }[airStatus] ?? { bg: "#EEF2FF", text: "#4338CA", label: "Scheduled" };
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "overview", label: "Overview"             },
-    { id: "people",   label: `People ${people.length}` },
-    { id: "chat",     label: "Chat"                 },
+    { id: "overview", label: "Overview" },
+    { id: "people",   label: people.length > 0 ? `People (${people.length})` : "People" },
+    { id: "chat",     label: "Chat" },
   ];
 
   const flightLabel = `${flightNumber} · ${fromCode} → ${toCode}`;
@@ -839,22 +994,9 @@ export default function FlightDashboardPage() {
             <p className="text-xs truncate" style={{ color: "var(--c-text3)" }}>{fromCity} → {toCity}</p>
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--c-text3)" }}>ETA</p>
-              <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{arrTime}</p>
-            </div>
-            <button
-              onClick={() => setShowDelete(true)}
-              className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-              style={{ background: "rgba(239, 68, 68, 0.08)" }}
-              aria-label="Delete flight"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M3 6H5H21M8 6V4C8 3.45 8.45 3 9 3H15C15.55 3 16 3.45 16 4V6M19 6L18 20C18 20.55 17.55 21 17 21H7C6.45 21 6 20.55 6 20L5 6H19Z"
-                  stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
+          <div className="text-right flex-shrink-0">
+            <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--c-text3)" }}>ETA</p>
+            <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{arrTime}</p>
           </div>
         </div>
 
@@ -884,11 +1026,13 @@ export default function FlightDashboardPage() {
           networkingStatus={networkingStatus}
           onStatusUpdate={handleStatusUpdate}
           updatingStatus={updatingStatus}
+          onDelete={() => setShowDelete(true)}
         />
       )}
       {activeTab === "people" && (
         <PeopleTab
           people={people}
+          loading={peopleLoading}
           networkingStatus={networkingStatus}
           onConnect={handleConnect}
         />

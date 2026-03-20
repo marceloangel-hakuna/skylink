@@ -503,13 +503,29 @@ function EditSheet({
 
   async function deleteCrew() {
     setDeleting(true);
-    const { error } = await supabase.rpc("delete_crew", { p_crew_id: crew.id });
-    if (error) {
-      console.error("Delete crew error:", error.message);
+    try {
+      // Delete likes on posts in this crew
+      const { data: posts } = await supabase.from("crew_posts").select("id").eq("crew_id", crew.id);
+      const postIds = (posts ?? []).map((p: { id: string }) => p.id);
+      if (postIds.length > 0) {
+        await supabase.from("crew_post_likes").delete().in("post_id", postIds);
+      }
+      // Delete RSVPs on events in this crew
+      const { data: events } = await supabase.from("crew_events").select("id").eq("crew_id", crew.id);
+      const eventIds = (events ?? []).map((e: { id: string }) => e.id);
+      if (eventIds.length > 0) {
+        await supabase.from("crew_event_rsvps").delete().in("event_id", eventIds);
+      }
+      await supabase.from("crew_posts").delete().eq("crew_id", crew.id);
+      await supabase.from("crew_events").delete().eq("crew_id", crew.id);
+      await supabase.from("crew_members").delete().eq("crew_id", crew.id);
+      const { error } = await supabase.from("crews").delete().eq("id", crew.id);
+      if (error) throw error;
+      router.replace("/crews");
+    } catch (err) {
+      console.error("Delete crew error:", err);
       setDeleting(false);
-      return;
     }
-    router.replace("/crews");
   }
 
   return (

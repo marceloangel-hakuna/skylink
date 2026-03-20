@@ -40,7 +40,7 @@ export default async function HomePage() {
 
   const uid = user?.id ?? "";
   const [{ data: flights }, { count: unreadCount }, { data: viewerProfileRow }, { data: pointsRows }] = await Promise.all([
-    supabase.from("user_flights").select("flight_number, origin, destination, departure_date").eq("user_id", uid).in("status", ["upcoming", "active"]).order("departure_date", { ascending: true }).limit(1),
+    supabase.from("user_flights").select("flight_number, origin, destination, departure_date").eq("user_id", uid).in("status", ["upcoming", "active"]).order("departure_date", { ascending: true, nullsFirst: false }).limit(1),
     supabase.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", uid).is("read_at", null),
     supabase.from("profiles").select("id, full_name, role, company, bio, interests").eq("id", uid).single(),
     supabase.from("points").select("amount").eq("user_id", uid),
@@ -71,10 +71,58 @@ export default async function HomePage() {
 
   const hasActiveFlight = (flights?.length ?? 0) > 0;
   const activeFlight   = flights?.[0] ?? null;
-  const flightNumber   = activeFlight?.flight_number ?? "AA 2317";
-  const flightOrigin   = activeFlight?.origin ?? null;
-  const flightDest     = activeFlight?.destination ?? null;
-  const flightDate     = activeFlight?.departure_date ?? null;
+  const flightNumber   = activeFlight?.flight_number ?? null;
+
+  // Enrich with live AirLabs data so we always show real origin/destination
+  let flightOrigin = activeFlight?.origin ?? null;
+  let flightDest   = activeFlight?.destination ?? null;
+  let flightDate   = activeFlight?.departure_date ?? null;
+
+  if (flightNumber) {
+    try {
+      const airLabsKey = process.env.AIRLABS_API_KEY;
+      if (airLabsKey) {
+        const fn = flightNumber.replace(/\s+/g, "");
+        let airData: { dep_iata?: string; arr_iata?: string; dep_time?: string } | null = null;
+
+        // Try real-time first, then schedules
+        const liveRes = await fetch(
+          `https://airlabs.co/api/v9/flight?api_key=${airLabsKey}&flight_iata=${fn}`,
+          { cache: "no-store" },
+        );
+        if (liveRes.ok) {
+          const liveJson = await liveRes.json();
+          if (liveJson?.response?.dep_iata) airData = liveJson.response;
+        }
+        if (!airData) {
+          const schedRes = await fetch(
+            `https://airlabs.co/api/v9/schedules?api_key=${airLabsKey}&flight_iata=${fn}`,
+            { cache: "no-store" },
+          );
+          if (schedRes.ok) {
+            const schedJson = await schedRes.json();
+            if (schedJson?.response?.[0]?.dep_iata) airData = schedJson.response[0];
+          }
+        }
+
+        if (airData?.dep_iata) {
+          flightOrigin = airData.dep_iata;
+          flightDest   = airData.arr_iata ?? flightDest;
+          if (airData.dep_time) flightDate = airData.dep_time.split(" ")[0] ?? flightDate;
+
+          // Silently update the DB record so the flight list also shows correct data
+          supabase
+            .from("user_flights")
+            .update({ origin: flightOrigin, destination: flightDest, ...(airData.dep_time ? { departure_date: flightDate } : {}) })
+            .eq("flight_number", flightNumber)
+            .eq("user_id", uid)
+            .then(() => {});
+        }
+      }
+    } catch {
+      // AirLabs unavailable — fall back to stored values
+    }
+  }
 
   const totalPoints = (pointsRows ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0);
   const tierName    = totalPoints >= 5000 ? "Platinum" : totalPoints >= 1500 ? "Gold" : totalPoints >= 500 ? "Silver" : "Bronze";
@@ -82,12 +130,14 @@ export default async function HomePage() {
   const ptsToNext   = nextTierPts ? nextTierPts - totalPoints : null;
 
   // Find other users on the same flight for Atlas matching
-  const { data: flightmates } = await supabase
-    .from("user_flights")
-    .select("user_id")
-    .eq("flight_number", flightNumber)
-    .neq("user_id", uid)
-    .limit(5);
+  const { data: flightmates } = flightNumber
+    ? await supabase
+        .from("user_flights")
+        .select("user_id")
+        .eq("flight_number", flightNumber)
+        .neq("user_id", uid)
+        .limit(5)
+    : { data: [] };
 
   const flightmateIds = (flightmates ?? []).map(f => f.user_id);
   const { data: flightmateProfiles } = flightmateIds.length > 0
@@ -132,7 +182,7 @@ export default async function HomePage() {
             {hasActiveFlight ? (
               <>
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0 animate-pulse" />
-                {flightNumber}{flightOrigin && flightDest ? ` · ${flightOrigin} → ${flightDest}` : ""}
+                {flightNumber ?? ""}{flightOrigin && flightDest ? ` · ${flightOrigin} → ${flightDest}` : ""}
               </>
             ) : (
               <>
@@ -165,7 +215,7 @@ export default async function HomePage() {
         {/* ── Flight Card ───────────────────────────────── */}
         <div className="stagger-1">
         {hasActiveFlight ? (
-          <Link href={`/flight/${flightNumber.toLowerCase().replace(/\s+/g, "-")}`} className="block active:scale-[0.98] transition-transform">
+          <Link href={`/flight/${(flightNumber ?? "").toLowerCase().replace(/\s+/g, "-")}`} className="block active:scale-[0.98] transition-transform">
             <div className="rounded-3xl p-5 text-white overflow-hidden relative"
                  style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
               <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />

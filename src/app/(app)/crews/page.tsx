@@ -11,25 +11,35 @@ type Crew = {
   name: string;
   description: string | null;
   icon: string;
+  header_style: string | null;
   created_by: string | null;
   created_at: string;
   member_count?: number;
   is_member?: boolean;
 };
 
-const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
-  "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
-  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
-  "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
-  "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-  "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
-];
+// Matches the solid icon bg color used in the crew detail page header
+const THEME_ICON_BG: Record<string, string> = {
+  city:    "#FFEDD5",
+  tech:    "#DBEAFE",
+  globe:   "#D1FAE5",
+  valley:  "#FEF9C3",
+  vibrant: "#FFE4E6",
+  ocean:   "#CCFBF1",
+};
+const CREW_ID_TO_STYLE: Record<string, string> = {
+  "11111111-0000-0000-0000-000000000001": "city",
+  "11111111-0000-0000-0000-000000000002": "tech",
+  "11111111-0000-0000-0000-000000000003": "globe",
+  "11111111-0000-0000-0000-000000000004": "valley",
+};
 
-function crewColor(name: string) {
-  return AVATAR_COLORS[(name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % AVATAR_COLORS.length];
+function crewIconBg(crewId: string, headerStyle?: string | null): string {
+  const style =
+    (headerStyle && headerStyle !== "auto" && headerStyle !== "custom" && THEME_ICON_BG[headerStyle])
+      ? headerStyle
+      : CREW_ID_TO_STYLE[crewId];
+  return style ? (THEME_ICON_BG[style] ?? "#EDE9FE") : "#EDE9FE";
 }
 
 export default function CrewsPage() {
@@ -52,7 +62,7 @@ export default function CrewsPage() {
       // Fetch all crews
       const { data: crewsData } = await supabase
         .from("crews")
-        .select("id, name, description, icon, created_by, created_at")
+        .select("id, name, description, icon, header_style, created_by, created_at")
         .order("created_at", { ascending: false });
 
       // Fetch member counts and membership status
@@ -167,7 +177,8 @@ export default function CrewsPage() {
 
               {/* Tappable area → detail page */}
               <Link href={`/crews/${crew.id}`} className="flex items-start gap-3 p-4 active:opacity-80 transition-opacity">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 ${crewColor(crew.name)}`}>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                     style={{ background: crewIconBg(crew.id, crew.header_style) }}>
                   {crew.icon}
                 </div>
                 <div className="flex-1 min-w-0">
