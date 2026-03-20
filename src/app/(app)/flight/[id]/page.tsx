@@ -643,6 +643,8 @@ export default function FlightDashboardPage() {
   const [networkingStatus, setNetworkingStatus] = useState<NetworkingStatus>("invisible");
   const [updatingStatus,  setUpdatingStatus]  = useState(false);
   const [showPrompt,      setShowPrompt]      = useState(false);
+  const [showDelete,      setShowDelete]      = useState(false);
+  const [deleting,        setDeleting]        = useState(false);
   const [activeTab,       setActiveTab]       = useState<Tab>("overview");
   const [people,          setPeople]          = useState(PLACEHOLDER_PEOPLE);
   const [messages,        setMessages]        = useState<Message[]>(INITIAL_MESSAGES);
@@ -741,6 +743,13 @@ export default function FlightDashboardPage() {
     if (userFlight) localStorage.setItem(`skylink_prompt_${userFlight.id}`, "1");
   }, [userFlight]);
 
+  const handleDelete = useCallback(async () => {
+    if (!userFlight) return;
+    setDeleting(true);
+    await supabase.current.from("user_flights").delete().eq("id", userFlight.id);
+    router.replace("/flight");
+  }, [userFlight, router]);
+
   const handleConnect = (id: string) => {
     setPeople(prev => prev.map(p => p.id === id ? { ...p, connected: !p.connected } : p));
   };
@@ -805,7 +814,10 @@ export default function FlightDashboardPage() {
 
       {/* ── Sticky header ──────────────────────── */}
       <div className="sticky top-0 z-30 border-b" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
-        <div className="flex items-center gap-3 px-4 pt-3 pb-2.5">
+        {/* Status-bar spacer */}
+        <div style={{ height: "max(20px, env(safe-area-inset-top, 20px))" }} />
+
+        <div className="flex items-center gap-3 px-4 pb-2.5">
           <button
             onClick={() => router.back()}
             className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
@@ -827,9 +839,22 @@ export default function FlightDashboardPage() {
             <p className="text-xs truncate" style={{ color: "var(--c-text3)" }}>{fromCity} → {toCity}</p>
           </div>
 
-          <div className="text-right flex-shrink-0">
-            <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--c-text3)" }}>ETA</p>
-            <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{arrTime}</p>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wide" style={{ color: "var(--c-text3)" }}>ETA</p>
+              <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{arrTime}</p>
+            </div>
+            <button
+              onClick={() => setShowDelete(true)}
+              className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+              style={{ background: "rgba(239, 68, 68, 0.08)" }}
+              aria-label="Delete flight"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6H5H21M8 6V4C8 3.45 8.45 3 9 3H15C15.55 3 16 3.45 16 4V6M19 6L18 20C18 20.55 17.55 21 17 21H7C6.45 21 6 20.55 6 20L5 6H19Z"
+                  stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -885,6 +910,56 @@ export default function FlightDashboardPage() {
           onChoose={handlePromptChoose}
           onDismiss={handlePromptDismiss}
         />
+      )}
+
+      {/* ── Delete Confirmation Sheet ────────────── */}
+      {showDelete && (
+        <>
+          <div
+            className="fixed inset-0 z-[55] bg-black/50"
+            onClick={() => !deleting && setShowDelete(false)}
+          />
+          <div
+            className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-3xl max-w-[430px] mx-auto"
+            style={{
+              background: "var(--c-card)",
+              paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 16px)",
+            }}
+          >
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full" style={{ background: "var(--c-border)" }} />
+            </div>
+            <div className="px-5 pt-3 pb-2 text-center">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
+                   style={{ background: "#FEF2F2" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 6H5H21M8 6V4C8 3.45 8.45 3 9 3H15C15.55 3 16 3.45 16 4V6M19 6L18 20C18 20.55 17.55 21 17 21H7C6.45 21 6 20.55 6 20L5 6H19Z"
+                    stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h2 className="text-base font-bold mb-1" style={{ color: "var(--c-text1)" }}>Remove Flight?</h2>
+              <p className="text-sm mb-5" style={{ color: "var(--c-text2)" }}>
+                <strong>{flightLabel}</strong> will be removed from your trips. This cannot be undone.
+              </p>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full py-3.5 rounded-2xl font-bold text-white mb-2 disabled:opacity-60 active:scale-[0.98] transition-all"
+                style={{ background: "#EF4444" }}
+              >
+                {deleting ? "Removing…" : "Remove Flight"}
+              </button>
+              <button
+                onClick={() => setShowDelete(false)}
+                disabled={deleting}
+                className="w-full py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-60 active:scale-[0.98] transition-all"
+                style={{ background: "var(--c-muted)", color: "var(--c-text2)" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
