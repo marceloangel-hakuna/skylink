@@ -39,12 +39,16 @@ function parseTime(dt?: string): string | null {
 
 async function queryAirLabs(endpoint: string, params: Record<string, string>) {
   const key = process.env.AIRLABS_API_KEY;
+  if (!key) { console.error("AIRLABS_API_KEY not set"); return null; }
   const url = new URL(`https://airlabs.co/api/v9/${endpoint}`);
-  url.searchParams.set("api_key", key ?? "");
+  url.searchParams.set("api_key", key);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
+  // AirLabs always returns HTTP 200 — check for error field in body
+  const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) return null;
-  return res.json();
+  const data = await res.json();
+  if (data?.error) { console.error("AirLabs error:", data.error); return null; }
+  return data;
 }
 
 export async function GET(req: Request) {
