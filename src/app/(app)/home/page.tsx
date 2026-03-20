@@ -16,12 +16,13 @@ const CREW_ICON_BG: Record<string, string> = {
   "11111111-0000-0000-0000-000000000004": "#FEF9C3", // Silicon Valley — golden
 };
 
-const PEOPLE_NEARBY = [
-  { name: "Sarah Chen",    role: "CTO",             match: 94, initials: "SC", color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400"  },
-  { name: "Marcus Rivera", role: "VC Partner",      match: 88, initials: "MR", color: "bg-pink-100   text-pink-700   dark:bg-pink-900/30   dark:text-pink-400"    },
-  { name: "Priya Patel",   role: "Founder",         match: 82, initials: "PP", color: "bg-amber-100  text-amber-700  dark:bg-amber-900/30  dark:text-amber-400"   },
-  { name: "James Liu",     role: "Head of Product", match: 76, initials: "JL", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"},
-  { name: "Aisha Okonkwo", role: "Angel Investor",  match: 71, initials: "AO", color: "bg-sky-100    text-sky-700    dark:bg-sky-900/30    dark:text-sky-400"     },
+const AVATAR_COLORS = [
+  "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+  "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
 ];
 
 export default async function HomePage() {
@@ -242,40 +243,36 @@ export default async function HomePage() {
         />
         </div>
 
-        {/* ── People Near You ───────────────────────────── */}
+        {/* ── People on Your Flight ─────────────────────── */}
+        {(flightmateProfiles ?? []).length > 0 && (
         <Reveal delay={40}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="section-title">People Near You</h3>
+            <h3 className="section-title">People on Your Flight</h3>
             <Link href="/network" className="text-xs text-brand font-semibold">See all</Link>
           </div>
-          {PEOPLE_NEARBY.length === 0 ? (
-            <EmptyState
-              icon="👥"
-              title="No one nearby yet"
-              body="Add your flight and connect with fellow professionals onboard."
-              className="py-8"
-            />
-          ) : (
-            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-              {PEOPLE_NEARBY.map((p) => (
-                <div key={p.name} className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px]">
-                  <div className="relative">
-                    <div className={`w-14 h-14 rounded-2xl ${p.color} flex items-center justify-center text-sm font-black shadow-sm`}>
-                      {p.initials}
-                    </div>
-                    <span className="absolute -bottom-1 -right-1 text-[9px] bg-emerald-400 text-white font-bold rounded-full px-1 py-px leading-tight shadow-sm">
-                      {p.match}%
-                    </span>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+            {(flightmateProfiles ?? []).map((p, i) => {
+              const name = p.full_name ?? "Traveler";
+              const initials = name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase();
+              const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+              return (
+                <Link key={p.id} href={`/profile/${p.id}`}
+                  className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px] active:opacity-70 transition-opacity">
+                  <div className={`w-14 h-14 rounded-2xl ${color} flex items-center justify-center text-sm font-black shadow-sm`}>
+                    {p.avatar_url
+                      ? <img src={p.avatar_url} alt={name} className="w-full h-full rounded-2xl object-cover" />
+                      : initials}
                   </div>
                   <p className="text-[11px] font-semibold text-zinc-800 dark:text-[var(--c-text1)] text-center leading-tight">
-                    {p.name.split(" ")[0]}
+                    {name.split(" ")[0]}
                   </p>
-                  <p className="text-[10px] text-zinc-400 dark:text-[var(--c-text2)] text-center leading-tight">{p.role}</p>
-                </div>
-              ))}
-            </div>
-          )}
+                  <p className="text-[10px] text-zinc-400 dark:text-[var(--c-text2)] text-center leading-tight">{p.role ?? ""}</p>
+                </Link>
+              );
+            })}
+          </div>
         </Reveal>
+        )}
 
         {/* ── SkyPoints ─────────────────────────────────── */}
         <Reveal delay={60} variant="scale">
