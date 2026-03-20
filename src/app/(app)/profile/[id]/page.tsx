@@ -199,7 +199,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
               xHandle     && { icon: <span className="text-sm font-black" style={{ color: "#000" }}>𝕏</span>, bg: "#F4F4F5", label: "X / Twitter", url: `https://x.com/${xHandle}`, display: `@${xHandle}` },
               websiteUrl  && { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "#3B82F6" }}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/><path d="M12 3C12 3 8 7 8 12s4 9 4 9M12 3c0 0 4 4 4 9s-4 9-4 9M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, bg: "#EFF6FF", label: "Website", url: websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`, display: websiteUrl.replace(/^https?:\/\//, "") },
               otherUrl    && { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "#6B7280" }}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, bg: "#F3F4F6", label: "Link", url: otherUrl.startsWith("http") ? otherUrl : `https://${otherUrl}`, display: otherUrl.replace(/^https?:\/\//, "") },
-            ].filter(Boolean).map((item, i, arr) => item && (
+            ].filter(Boolean).map((item, i) => item && (
               <div key={i}>
                 {i > 0 && <div style={{ height: "1px", background: "var(--c-border)", marginLeft: "48px" }} />}
                 <a href={item.url} target="_blank" rel="noopener noreferrer"
