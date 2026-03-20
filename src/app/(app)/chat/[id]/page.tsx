@@ -243,7 +243,7 @@ export default function ConversationPage() {
         style={{
           background:   "var(--c-card)",
           borderBottom: "1px solid var(--c-border)",
-          paddingTop:   "env(safe-area-inset-top, 0px)",
+          paddingTop:   "max(20px, env(safe-area-inset-top, 20px))",
         }}
       >
         <div className="flex items-center gap-3 px-4 py-3">

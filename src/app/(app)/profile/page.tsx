@@ -42,10 +42,10 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in pb-[80px]">
       <PageHeader title="Profile" />
 
-      <div className="px-4 pt-2 pb-6 flex flex-col gap-5">
+      <div className="px-4 pt-2 pb-4 flex flex-col gap-5">
         {/* Profile hero */}
         <div className="card flex flex-col items-center text-center gap-3 py-6">
           <div className="relative">

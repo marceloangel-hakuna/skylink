@@ -104,14 +104,14 @@ export default async function ChatPage() {
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in pb-[80px]">
       <PageHeader
         title="Messages"
         subtitle={totalUnread > 0 ? `${totalUnread} unread` : undefined}
         action={<NewConversationButton />}
       />
 
-      <div className="px-4 pt-2 pb-6 flex flex-col gap-2">
+      <div className="px-4 pt-2 pb-4 flex flex-col gap-2">
         {/* Search */}
         <div className="relative mb-2">
           <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" width="16" height="16" viewBox="0 0 24 24" fill="none">

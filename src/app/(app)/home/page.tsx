@@ -109,7 +109,7 @@ export default async function HomePage() {
 
   return (
     <PullToRefresh>
-    <div className="animate-fade-in pb-6">
+    <div className="animate-fade-in pb-[80px]">
 
       {/* ── Top bar ──────────────────────────────────────── */}
       <div className="flex items-center px-4 pb-3 gap-3"
