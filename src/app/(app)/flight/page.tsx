@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { createPortal } from "react-dom";
@@ -17,6 +17,26 @@ type UserFlight = {
   networking_score: number;
   notes: string | null;
   created_at: string;
+};
+
+type FlightInfo = {
+  found: boolean;
+  flight_iata?: string;
+  origin?: string;
+  destination?: string;
+  dep_city?: string;
+  arr_city?: string;
+  departure_date?: string;
+  departure_time?: string;
+  arrival_time?: string;
+  status?: string;
+  airline?: string;
+  duration?: number;
+  delayed?: number;
+  dep_terminal?: string;
+  dep_gate?: string;
+  arr_terminal?: string;
+  arr_gate?: string;
 };
 
 // ── Placeholder history data ───────────────────────────────
@@ -75,14 +95,49 @@ function ScoreBadge({ score }: { score: number }) {
 
 // ── Add Flight Modal ───────────────────────────────────────
 function AddFlightModal({ onClose, onAdd }: { onClose: () => void; onAdd: (f: Omit<UserFlight, "id" | "created_at">) => void }) {
-  const [flightNum, setFlightNum] = useState("");
-  const [origin, setOrigin]       = useState("");
-  const [dest, setDest]           = useState("");
-  const [date, setDate]           = useState("");
-  const [saving, setSaving]       = useState(false);
-  const [error, setError]         = useState<string | null>(null);
-  const [mounted, setMounted]     = useState(false);
+  const [flightNum, setFlightNum]   = useState("");
+  const [origin, setOrigin]         = useState("");
+  const [dest, setDest]             = useState("");
+  const [date, setDate]             = useState("");
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+  const [mounted, setMounted]       = useState(false);
+  const [looking, setLooking]       = useState(false);
+  const [flightInfo, setFlightInfo] = useState<FlightInfo | null>(null);
+  const lookupTimer                 = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => setMounted(true), []);
+
+  const handleFlightNumChange = (val: string) => {
+    const upper = val.toUpperCase().replace(/\s+/g, "");
+    setFlightNum(val.toUpperCase());
+    setFlightInfo(null);
+
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+
+    if (upper.length >= 4) {
+      setLooking(true);
+      lookupTimer.current = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/flight/lookup?flight=${encodeURIComponent(upper)}`);
+          const data: FlightInfo = await res.json();
+          if (data.found) {
+            setFlightInfo(data);
+            if (data.origin)         setOrigin(data.origin);
+            if (data.destination)    setDest(data.destination);
+            if (data.departure_date) setDate(data.departure_date);
+          } else {
+            setFlightInfo({ found: false });
+          }
+        } catch {
+          // silently fail — user can still fill in manually
+        } finally {
+          setLooking(false);
+        }
+      }, 700);
+    } else {
+      setLooking(false);
+    }
+  };
 
   const submit = async () => {
     if (!flightNum.trim()) { setError("Flight number is required"); return; }
@@ -93,20 +148,19 @@ function AddFlightModal({ onClose, onAdd }: { onClose: () => void; onAdd: (f: Om
     if (!user) { setSaving(false); return; }
 
     const row = {
-      user_id:         user.id,
-      flight_number:   flightNum.trim().toUpperCase(),
-      origin:          origin.trim().toUpperCase() || null,
-      destination:     dest.trim().toUpperCase() || null,
-      departure_date:  date || null,
-      status:          "upcoming" as const,
+      user_id:          user.id,
+      flight_number:    flightNum.trim().toUpperCase(),
+      origin:           origin.trim().toUpperCase() || null,
+      destination:      dest.trim().toUpperCase() || null,
+      departure_date:   date || null,
+      status:           "upcoming" as const,
       networking_score: 0,
-      notes:           null,
+      notes:            null,
     };
 
     const { error: dbErr } = await sb.from("user_flights").insert(row);
     if (dbErr) { setError(dbErr.message); setSaving(false); return; }
 
-    // Award +200 points for adding a flight
     await sb.from("points").insert({ user_id: user.id, amount: 200, reason: `Added flight ${row.flight_number}` });
 
     onAdd({ ...row });
@@ -143,17 +197,87 @@ function AddFlightModal({ onClose, onAdd }: { onClose: () => void; onAdd: (f: Om
             <label className="text-[11px] font-semibold uppercase tracking-widest mb-1.5 block" style={{ color: "var(--c-text3)" }}>
               Flight Number *
             </label>
-            <input
-              type="text"
-              value={flightNum}
-              onChange={e => setFlightNum(e.target.value.toUpperCase())}
-              placeholder="e.g. AA 2317"
-              maxLength={8}
-              autoFocus
-              className="w-full px-4 py-3 rounded-2xl text-sm font-mono tracking-widest focus:outline-none focus:ring-2"
-              style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1px solid var(--c-border)", ["--tw-ring-color" as string]: "#4A27E8" }}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={flightNum}
+                onChange={e => handleFlightNumChange(e.target.value)}
+                placeholder="e.g. AA2317"
+                maxLength={8}
+                autoFocus
+                className="w-full px-4 py-3 rounded-2xl text-sm font-mono tracking-widest focus:outline-none focus:ring-2 pr-10"
+                style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1px solid var(--c-border)", ["--tw-ring-color" as string]: "#4A27E8" }}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {looking && (
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="#4A27E8" strokeWidth="3" strokeOpacity="0.3"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="#4A27E8" strokeWidth="3" strokeLinecap="round"/>
+                  </svg>
+                )}
+                {!looking && flightInfo?.found && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" fill="#10B981"/>
+                    <path d="M8 12L11 15L16 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Flight found card */}
+          {flightInfo?.found && (
+            <div className="rounded-2xl p-3.5 flex flex-col gap-2"
+                 style={{ background: "rgba(74, 39, 232, 0.07)", border: "1px solid rgba(74, 39, 232, 0.2)" }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black" style={{ color: "#4A27E8" }}>
+                    {flightInfo.origin} → {flightInfo.destination}
+                  </span>
+                  {flightInfo.status && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize"
+                          style={{
+                            background: flightInfo.status === "scheduled" ? "#EEF2FF" : "#D1FAE5",
+                            color:      flightInfo.status === "scheduled" ? "#4338CA" : "#059669",
+                          }}>
+                      {flightInfo.status}
+                    </span>
+                  )}
+                </div>
+                {flightInfo.airline && (
+                  <span className="text-[11px] font-mono font-bold" style={{ color: "var(--c-text3)" }}>
+                    {flightInfo.airline}
+                  </span>
+                )}
+              </div>
+              {(flightInfo.dep_city || flightInfo.arr_city) && (
+                <p className="text-xs" style={{ color: "var(--c-text2)" }}>
+                  {flightInfo.dep_city}{flightInfo.dep_city && flightInfo.arr_city ? " → " : ""}{flightInfo.arr_city}
+                </p>
+              )}
+              <div className="flex items-center gap-4 text-xs" style={{ color: "var(--c-text2)" }}>
+                {flightInfo.departure_time && <span>Dep {flightInfo.departure_time}</span>}
+                {flightInfo.arrival_time   && <span>Arr {flightInfo.arrival_time}</span>}
+                {flightInfo.duration       && <span>{Math.floor(flightInfo.duration / 60)}h {flightInfo.duration % 60}m</span>}
+                {(flightInfo.delayed ?? 0) > 0 && (
+                  <span style={{ color: "#EF4444" }}>+{flightInfo.delayed}m delay</span>
+                )}
+              </div>
+              {(flightInfo.dep_terminal || flightInfo.dep_gate) && (
+                <div className="flex gap-3 text-xs" style={{ color: "var(--c-text3)" }}>
+                  {flightInfo.dep_terminal && <span>Terminal {flightInfo.dep_terminal}</span>}
+                  {flightInfo.dep_gate     && <span>Gate {flightInfo.dep_gate}</span>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Not found hint */}
+          {flightInfo && !flightInfo.found && (
+            <p className="text-xs px-3 py-2 rounded-xl" style={{ background: "var(--c-muted)", color: "var(--c-text3)" }}>
+              Flight not found — fill in details manually.
+            </p>
+          )}
 
           {/* Route */}
           <div className="flex gap-3">
@@ -408,9 +532,9 @@ function HistoryCard({ flight }: { flight: typeof PAST_FLIGHTS[0] }) {
 
 // ── Main Page ──────────────────────────────────────────────
 export default function FlightPage() {
-  const [tab, setTab]           = useState<"upcoming" | "history">("upcoming");
-  const [flights, setFlights]   = useState<UserFlight[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [tab, setTab]             = useState<"upcoming" | "history">("upcoming");
+  const [flights, setFlights]     = useState<UserFlight[]>([]);
+  const [loading, setLoading]     = useState(true);
   const [showModal, setShowModal] = useState(false);
 
   const load = useCallback(async () => {
@@ -439,7 +563,6 @@ export default function FlightPage() {
       <div style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
         <div className="flex items-center justify-between px-4 pb-3">
           <h1 className="text-2xl font-black" style={{ color: "var(--c-text1)" }}>My Flights</h1>
-          {/* + FAB — same pattern as Chat's NewConversationButton */}
           <button
             onClick={() => setShowModal(true)}
             className="w-9 h-9 rounded-full flex items-center justify-center text-white active:scale-90 transition-transform shadow-sm"
