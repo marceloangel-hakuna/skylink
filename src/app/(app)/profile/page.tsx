@@ -1,30 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
-import LogoutButton from "@/components/auth/LogoutButton";
 import Link from "next/link";
-import { AppearanceRow } from "@/components/AppearanceRow";
 import EditProfileSheet from "@/components/EditProfileSheet";
-import { EmptyState } from "@/components/EmptyState";
+import { ProfileSettingsCard } from "@/components/ProfileSettingsCard";
 
 export default async function ProfilePage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   const meta  = user?.user_metadata ?? {};
-  const email = user?.email ?? null;
+  const uid   = user?.id ?? "";
 
-  const uid = user?.id ?? "";
-
-  const [{ data: profileRow }, { count: flightCount }, { count: connCount }, { data: pointsRows }, { data: recentFlights }] = await Promise.all([
+  const [{ data: profileRow }, { count: flightCount }, { count: connCount }, { data: pointsRows }] = await Promise.all([
     supabase.from("profiles").select("full_name, role, company, bio, interests, avatar_url").eq("id", uid).single(),
     supabase.from("flights").select("id", { count: "exact", head: true }).eq("user_id", uid),
     supabase.from("connections").select("id", { count: "exact", head: true })
       .or(`requester_id.eq.${uid},receiver_id.eq.${uid}`)
       .eq("status", "accepted"),
     supabase.from("points").select("amount").eq("user_id", uid),
-    supabase.from("flights").select("flight_number, origin, destination, departure_date").eq("user_id", uid).order("departure_date", { ascending: false }).limit(3),
   ]);
 
-  // Prefer profile table values over OAuth metadata
   const fullName    = profileRow?.full_name ?? meta.full_name ?? meta.name ?? "Traveler";
   const firstName   = fullName.split(" ")[0];
   const avatarUrl   = profileRow?.avatar_url ?? meta.avatar_url ?? meta.picture ?? null;
@@ -40,157 +34,119 @@ export default async function ProfilePage() {
     vc: "VC", product: "Product", devtools: "DevTools", biotech: "Biotech",
   };
 
+  const headlineStr = [headline, company].filter(Boolean).join(" @ ");
+
   return (
     <div className="animate-fade-in pb-[110px]">
       <div className="px-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
-        <h1 className="text-2xl font-black mb-2" style={{ color: "var(--c-text1)" }}>Profile</h1>
+        <h1 className="text-2xl font-black mb-4" style={{ color: "var(--c-text1)" }}>Profile</h1>
       </div>
 
-      <div className="px-4 pb-4 flex flex-col gap-5">
-        {/* Profile hero */}
-        <div className="card flex flex-col items-center text-center gap-3 py-6">
-          <div className="relative">
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={fullName} className="w-20 h-20 rounded-3xl object-cover" />
-            ) : (
-              <div className="w-20 h-20 rounded-3xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-brand font-black text-3xl">
-                {firstName[0]}
-              </div>
-            )}
-            <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-green-400 border-2 border-white dark:border-[var(--c-card)]" />
-          </div>
+      <div className="px-4 flex flex-col gap-4">
 
-          <div>
-            <h2 className="text-lg font-black" style={{ color: "var(--color-brand)" }}>{fullName}</h2>
-            {(headline || company) && (
-              <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--c-text1)" }}>
-                {[headline, company].filter(Boolean).join(" · ")}
-              </p>
-            )}
-            {email && (
-              <p className="text-xs mt-1" style={{ color: "var(--c-text2)" }}>{email}</p>
-            )}
-            {bio && (
-              <p className="text-sm mt-2 leading-relaxed max-w-[260px]" style={{ color: "var(--c-text2)" }}>{bio}</p>
-            )}
+        {/* ── Profile hero ── */}
+        <div className="card p-4">
+          <div className="flex items-start gap-3">
+            {/* Avatar */}
+            <div className="relative flex-shrink-0">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt={fullName} className="w-16 h-16 rounded-2xl object-cover" />
+              ) : (
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl"
+                  style={{ background: "var(--c-muted)", color: "var(--color-brand)" }}
+                >
+                  {firstName[0]}
+                </div>
+              )}
+              {/* Verified badge */}
+              <div
+                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                style={{ background: "#4A27E8" }}
+              >
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Name + headline */}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-[18px] font-black leading-tight" style={{ color: "var(--c-text1)" }}>{fullName}</h2>
+              {headlineStr && (
+                <p className="text-sm mt-0.5" style={{ color: "var(--c-text2)" }}>{headlineStr}</p>
+              )}
+              {bio && (
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--c-text3)" }}>{bio}</p>
+              )}
+              {/* Interest tags */}
+              {interests.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {interests.map((key: string) => (
+                    <span
+                      key={key}
+                      className="text-xs font-medium px-2.5 py-0.5 rounded-full"
+                      style={{ background: "var(--c-muted)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}
+                    >
+                      {INTEREST_LABELS[key] ?? key}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Edit button */}
+            <EditProfileSheet initial={{
+              fullName,
+              role:      headline ?? "",
+              company:   company  ?? "",
+              bio:       bio      ?? "",
+              avatarUrl,
+              interests,
+            }} />
           </div>
-          <EditProfileSheet initial={{
-            fullName:  fullName,
-            role:      headline ?? "",
-            company:   company  ?? "",
-            bio:       bio      ?? "",
-            avatarUrl: avatarUrl,
-            interests: interests,
-          }} />
         </div>
 
-        {/* Stats */}
+        {/* ── Stats ── */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Connections", value: (connCount ?? 0).toString()                },
-            { label: "Flights",     value: (flightCount ?? 0).toString()              },
-            { label: "Points",      value: totalPoints.toLocaleString()               },
+            { label: "CONNECTIONS", value: (connCount ?? 0).toLocaleString() },
+            { label: "FLIGHTS",     value: (flightCount ?? 0).toLocaleString() },
+            { label: "POINTS",      value: totalPoints.toLocaleString() },
           ].map(({ label, value }) => (
             <div key={label} className="card text-center py-4">
-              <p className="text-xl font-black" style={{ color: "#4A27E8" }}>{value}</p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>{label}</p>
+              <p className="text-xl font-black" style={{ color: "var(--c-text1)" }}>{value}</p>
+              <p className="text-[10px] font-semibold tracking-widest mt-0.5" style={{ color: "var(--c-text3)" }}>{label}</p>
             </div>
           ))}
         </div>
 
-        {/* Interests */}
-        <div className="card flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--c-text3)" }}>Interests</p>
-            <Link href="/onboarding" className="text-xs font-semibold" style={{ color: "#4A27E8" }}>Edit</Link>
+        {/* ── SkyPoints card ── */}
+        <Link href="/rewards" className="card flex items-center gap-3 py-3.5 px-4 active:opacity-80 transition-opacity">
+          <div
+            className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+            style={{ background: "#4A27E8" }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                fill="white" />
+            </svg>
           </div>
-          {interests.length === 0 ? (
-            <p className="text-xs" style={{ color: "var(--c-text3)" }}>
-              No interests added yet.{" "}
-              <Link href="/onboarding" className="font-semibold" style={{ color: "#4A27E8" }}>Add some</Link>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-bold" style={{ color: "var(--c-text1)" }}>SkyPoints</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>
+              {totalPoints.toLocaleString()} pts · 12 deals
             </p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {interests.map((key: string) => (
-                <span key={key}
-                  className="text-xs font-medium px-2.5 py-1 rounded-full"
-                  style={{ background: "var(--c-muted)", color: "var(--c-text2)" }}>
-                  {INTEREST_LABELS[key] ?? key}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Flight history */}
-        <div className="card flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--c-text3)" }}>Recent Flights</p>
-            <Link href="/flight" className="text-xs font-semibold" style={{ color: "#4A27E8" }}>View all</Link>
           </div>
-          {(recentFlights ?? []).length === 0 ? (
-            <EmptyState
-              icon="🗺️"
-              title="No flights yet"
-              body="Your flight history and the connections you made will appear here."
-              action={{ label: "Add a Flight", href: "/flight" }}
-              className="py-6"
-            />
-          ) : (
-            <div className="flex flex-col divide-y divide-[var(--c-border)] -mx-4">
-              {(recentFlights ?? []).map((f: { flight_number: string; origin: string | null; destination: string | null; departure_date: string | null }, i: number) => (
-                <Link key={i} href="/flight"
-                  className="flex items-center gap-3 px-4 py-3 active:opacity-70 transition-opacity">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                       style={{ background: "var(--c-muted)" }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"
-                        fill="#4A27E8"/>
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{f.flight_number}</p>
-                    <p className="text-xs" style={{ color: "var(--c-text2)" }}>
-                      {[f.origin, f.destination].filter(Boolean).join(" → ") || "Route TBD"}
-                    </p>
-                  </div>
-                  {f.departure_date && (
-                    <p className="text-[11px] flex-shrink-0" style={{ color: "var(--c-text3)" }}>
-                      {new Date(f.departure_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </p>
-                  )}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)" }}>
+            <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
 
-        {/* Settings menu */}
-        <div className="card flex flex-col divide-y divide-[var(--c-border)]">
-          {[
-            { label: "Notifications",    href: "/notifications", icon: "🔔" },
-            { label: "Rewards & Points", href: "/rewards",       icon: "🏆" },
-            { label: "Help & Support",   href: "/help",          icon: "💬" },
-          ].map(({ label, href, icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-3 py-3.5 active:bg-surface-muted transition -mx-4 px-4 first:-mt-4 last:-mb-4 first:rounded-t-2xl last:rounded-b-2xl"
-            >
-              <span className="text-lg w-7 text-center">{icon}</span>
-              <span className="flex-1 text-sm font-medium" style={{ color: "var(--c-text1)" }}>{label}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)" }}>
-                <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </Link>
-          ))}
-          {/* Theme toggle row */}
-          <AppearanceRow />
-        </div>
+        {/* ── Settings + Account (client component handles toggles + logout) ── */}
+        <ProfileSettingsCard />
 
-        {/* Sign out */}
-        <LogoutButton />
       </div>
     </div>
   );

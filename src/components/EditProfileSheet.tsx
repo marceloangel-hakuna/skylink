@@ -115,10 +115,10 @@ export default function EditProfileSheet({ initial }: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold px-4 py-2 rounded-full active:scale-95 transition-transform"
-        style={{ background: "var(--c-muted)", color: "#4A27E8", border: "1px solid #4A27E840" }}
+        className="text-sm font-semibold px-4 py-1.5 rounded-xl active:scale-95 transition-transform flex-shrink-0"
+        style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1px solid var(--c-border)" }}
       >
-        ✏️ Edit Profile
+        Edit
       </button>
 
       {open && mounted && createPortal(
