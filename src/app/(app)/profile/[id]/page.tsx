@@ -94,8 +94,6 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   const inits       = initials(profile.full_name);
 
   // Links — add linkedin_url / website_url columns to profiles table to enable
-  const linkedinUrl: string | null = null;
-  const hasLinks = false;
 
   return (
     <div className="animate-fade-in pb-[110px]">
