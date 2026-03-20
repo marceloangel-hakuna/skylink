@@ -173,7 +173,7 @@ function AddFlightModal({ onClose, onAdd }: { onClose: () => void; onAdd: (f: Om
          onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative rounded-t-3xl w-full max-w-[430px]"
-           style={{ background: "var(--c-card)", paddingBottom: "calc(32px + env(safe-area-inset-bottom, 0px))" }}>
+           style={{ background: "var(--c-card)", paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 16px)" }}>
 
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-2">

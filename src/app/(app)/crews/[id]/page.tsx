@@ -515,7 +515,7 @@ function EditSheet({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 z-[55] backdrop-blur-sm" onClick={onClose} />
 
       {/* Delete confirmation overlay */}
       {confirmDelete && (
@@ -553,7 +553,7 @@ function EditSheet({
       )}
 
       {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl"
+      <div className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-3xl"
            style={{
              background: "var(--background)",
              maxHeight: "92dvh",
@@ -561,7 +561,7 @@ function EditSheet({
              overscrollBehavior: "contain",
              WebkitOverflowScrolling: "touch",
              boxShadow: "0 -8px 40px rgba(0,0,0,0.25)",
-             paddingBottom: "max(88px, calc(64px + env(safe-area-inset-bottom)))",
+             paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 16px)",
            }}>
 
         {/* Drag handle */}
