@@ -308,6 +308,59 @@ export default async function HomePage() {
         </Reveal>
         )}
 
+        {/* ── People Near You ───────────────────────────── */}
+        <div className="stagger-3">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-black" style={{ color: "var(--c-text1)" }}>People Near You</h2>
+            <Link href="/network" className="text-xs font-semibold" style={{ color: "#4A27E8" }}>See all</Link>
+          </div>
+          {/* Bleed to screen edges with -mx-4, re-add px-4 inside for first/last padding */}
+          <div
+            className="-mx-4 flex gap-4 overflow-x-auto pb-2"
+            style={{
+              paddingLeft: "16px",
+              paddingRight: "16px",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+              scrollSnapType: "x mandatory",
+            }}
+          >
+            {[
+              { name: "Sarah",  role: "Designer",   img: "https://randomuser.me/api/portraits/women/44.jpg", status: "available" },
+              { name: "Marcus", role: "Engineer",    img: "https://randomuser.me/api/portraits/men/32.jpg",   status: "available" },
+              { name: "Aisha",  role: "VC Partner",  img: "https://randomuser.me/api/portraits/women/68.jpg", status: "not_available" },
+              { name: "James",  role: "Founder",     img: "https://randomuser.me/api/portraits/men/75.jpg",   status: "available" },
+              { name: "Priya",  role: "PM",          img: "https://randomuser.me/api/portraits/women/90.jpg", status: "available" },
+              { name: "Luca",   role: "Designer",    img: "https://randomuser.me/api/portraits/men/46.jpg",   status: "not_available" },
+            ].map((person) => (
+              <div key={person.name}
+                className="flex flex-col items-center gap-2 flex-shrink-0 active:opacity-70 transition-opacity cursor-pointer"
+                style={{ width: "72px", scrollSnapAlign: "start" }}>
+                <div
+                  className="p-[3px]"
+                  style={{
+                    borderRadius: "22px",
+                    background: person.status === "available"
+                      ? "linear-gradient(135deg, #10B981, #34D399)"
+                      : "linear-gradient(135deg, #EAB308, #FCD34D)",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={person.img}
+                    alt={person.name}
+                    className="w-[62px] h-[62px] object-cover block"
+                    style={{ borderRadius: "19px", border: "2.5px solid var(--c-card)" }}
+                  />
+                </div>
+                <p className="text-[11px] font-semibold text-center leading-none w-full truncate" style={{ color: "var(--c-text1)" }}>{person.name}</p>
+                <p className="text-[10px] text-center leading-none w-full truncate" style={{ color: "var(--c-text3)" }}>{person.role}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* ── SkyPoints ─────────────────────────────────── */}
         <Reveal delay={60} variant="scale">
         <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
@@ -333,49 +386,6 @@ export default async function HomePage() {
           </div>
         </Link>
         </Reveal>
-
-        {/* ── People Near You ───────────────────────────── */}
-        <div className="stagger-3">
-          <div className="flex items-center justify-between mb-3 px-0">
-            <h2 className="text-base font-black" style={{ color: "var(--c-text1)" }}>People Near You</h2>
-            <Link href="/network" className="text-xs font-semibold" style={{ color: "#4A27E8" }}>See all</Link>
-          </div>
-          {/* Horizontal scroll — bleeds to screen edge like Instagram stories */}
-          <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            {[
-              { name: "Sarah",   role: "Designer",  img: "https://randomuser.me/api/portraits/women/44.jpg", status: "available" },
-              { name: "Marcus",  role: "Engineer",  img: "https://randomuser.me/api/portraits/men/32.jpg",   status: "available" },
-              { name: "Aisha",   role: "VC Partner",img: "https://randomuser.me/api/portraits/women/68.jpg", status: "not_available" },
-              { name: "James",   role: "Founder",   img: "https://randomuser.me/api/portraits/men/75.jpg",   status: "available" },
-              { name: "Priya",   role: "PM",        img: "https://randomuser.me/api/portraits/women/90.jpg", status: "available" },
-              { name: "Luca",    role: "Designer",  img: "https://randomuser.me/api/portraits/men/46.jpg",   status: "not_available" },
-            ].map((person) => (
-              <div key={person.name} className="flex flex-col items-center gap-2 flex-shrink-0 active:opacity-70 transition-opacity cursor-pointer" style={{ width: "64px" }}>
-                {/* Avatar with status ring */}
-                <div className="relative">
-                  <div
-                    className="p-[2.5px] rounded-[18px]"
-                    style={{
-                      background: person.status === "available"
-                        ? "linear-gradient(135deg, #10B981, #34D399)"
-                        : "linear-gradient(135deg, #EAB308, #FCD34D)",
-                    }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={person.img}
-                      alt={person.name}
-                      className="w-14 h-14 object-cover block"
-                      style={{ borderRadius: "15px", border: "2px solid var(--c-card)" }}
-                    />
-                  </div>
-                </div>
-                <p className="text-[11px] font-semibold text-center leading-none" style={{ color: "var(--c-text2)" }}>{person.name}</p>
-                <p className="text-[9px] text-center leading-none" style={{ color: "var(--c-text3)" }}>{person.role}</p>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* ── Sky Crews ─────────────────────────────────── */}
         <Reveal delay={80}>
