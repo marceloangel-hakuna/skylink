@@ -5,6 +5,7 @@ import AtlasHomeSuggestion from "@/components/AtlasHomeSuggestion";
 import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
 import PullToRefresh from "@/components/PullToRefresh";
+import PeopleNearYou from "@/components/PeopleNearYou";
 
 export const dynamic = "force-dynamic";
 
@@ -309,56 +310,8 @@ export default async function HomePage() {
         )}
 
         {/* ── People Near You ───────────────────────────── */}
-        <div className="stagger-3">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-black" style={{ color: "var(--c-text1)" }}>People Near You</h2>
-            <Link href="/network" className="text-xs font-semibold" style={{ color: "#4A27E8" }}>See all</Link>
-          </div>
-          {/* Bleed to screen edges with -mx-4, re-add px-4 inside for first/last padding */}
-          <div
-            className="-mx-4 flex gap-4 overflow-x-auto pb-2"
-            style={{
-              paddingLeft: "16px",
-              paddingRight: "16px",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              WebkitOverflowScrolling: "touch",
-              scrollSnapType: "x mandatory",
-            }}
-          >
-            {[
-              { name: "Sarah",  role: "Designer",   img: "https://randomuser.me/api/portraits/women/44.jpg", status: "available" },
-              { name: "Marcus", role: "Engineer",    img: "https://randomuser.me/api/portraits/men/32.jpg",   status: "available" },
-              { name: "Aisha",  role: "VC Partner",  img: "https://randomuser.me/api/portraits/women/68.jpg", status: "not_available" },
-              { name: "James",  role: "Founder",     img: "https://randomuser.me/api/portraits/men/75.jpg",   status: "available" },
-              { name: "Priya",  role: "PM",          img: "https://randomuser.me/api/portraits/women/90.jpg", status: "available" },
-              { name: "Luca",   role: "Designer",    img: "https://randomuser.me/api/portraits/men/46.jpg",   status: "not_available" },
-            ].map((person) => (
-              <div key={person.name}
-                className="flex flex-col items-center gap-2 flex-shrink-0 active:opacity-70 transition-opacity cursor-pointer"
-                style={{ width: "72px", scrollSnapAlign: "start" }}>
-                <div
-                  className="p-[3px]"
-                  style={{
-                    borderRadius: "22px",
-                    background: person.status === "available"
-                      ? "linear-gradient(135deg, #10B981, #34D399)"
-                      : "linear-gradient(135deg, #EAB308, #FCD34D)",
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={person.img}
-                    alt={person.name}
-                    className="w-[62px] h-[62px] object-cover block"
-                    style={{ borderRadius: "19px", border: "2.5px solid var(--c-card)" }}
-                  />
-                </div>
-                <p className="text-[11px] font-semibold text-center leading-none w-full truncate" style={{ color: "var(--c-text1)" }}>{person.name}</p>
-                <p className="text-[10px] text-center leading-none w-full truncate" style={{ color: "var(--c-text3)" }}>{person.role}</p>
-              </div>
-            ))}
-          </div>
+        <div className="stagger-3 -mx-4">
+          <PeopleNearYou />
         </div>
 
         {/* ── SkyPoints ─────────────────────────────────── */}
