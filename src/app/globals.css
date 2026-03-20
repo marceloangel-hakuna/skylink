@@ -91,7 +91,10 @@ body {
   margin-inline: auto;
   position: relative;
   background: var(--background);
-  overflow-x: hidden;
+  /* overflow-x: clip instead of hidden — 'hidden' creates a scroll container on
+     iOS Safari which makes position:fixed children anchor to this div instead of
+     the viewport, causing the bottom nav to drift when content is tall. */
+  overflow-x: clip;
 }
 
 .page-scroll {
