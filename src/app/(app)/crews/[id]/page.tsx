@@ -506,25 +506,13 @@ function EditSheet({
     setDeleting(true);
     setDeleteError(null);
     try {
-      // Delete likes on posts in this crew
-      const { data: posts } = await supabase.from("crew_posts").select("id").eq("crew_id", crew.id);
-      const postIds = (posts ?? []).map((p: { id: string }) => p.id);
-      if (postIds.length > 0) {
-        await supabase.from("crew_post_likes").delete().in("post_id", postIds);
-      }
-      // Delete RSVPs on events in this crew
-      const { data: events } = await supabase.from("crew_events").select("id").eq("crew_id", crew.id);
-      const eventIds = (events ?? []).map((e: { id: string }) => e.id);
-      if (eventIds.length > 0) {
-        await supabase.from("crew_event_rsvps").delete().in("event_id", eventIds);
-      }
-      await supabase.from("crew_posts").delete().eq("crew_id", crew.id);
-      await supabase.from("crew_events").delete().eq("crew_id", crew.id);
-      await supabase.from("crew_members").delete().eq("crew_id", crew.id);
-      // Use .select() to get deleted rows — if RLS blocks it, 0 rows come back (no error thrown)
-      const { data: deleted, error } = await supabase.from("crews").delete().eq("id", crew.id).select("id");
-      if (error) throw error;
-      if (!deleted || deleted.length === 0) throw new Error("Could not delete this crew. You may not have permission.");
+      const res = await fetch("/api/crew/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ crewId: crew.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Delete failed");
       router.replace("/crews");
     } catch (err) {
       console.error("Delete crew error:", err);
