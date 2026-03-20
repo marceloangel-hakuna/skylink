@@ -62,6 +62,7 @@ export async function GET(req: Request) {
   let flight: AirLabsFlight | null = null;
 
   const liveData = await queryAirLabs("flight", { flight_iata: raw });
+  console.log("liveData keys:", liveData ? Object.keys(liveData) : "null");
   if (liveData?.response) {
     flight = liveData.response as AirLabsFlight;
   }
