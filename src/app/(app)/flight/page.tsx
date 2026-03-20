@@ -481,7 +481,7 @@ export default function FlightPage() {
   };
 
   return (
-    <div className="animate-fade-in pb-[80px]">
+    <div className="animate-fade-in pb-[110px]">
       {/* ── Header ──────────────────────────────────────── */}
       <div style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
         <div className="flex items-center justify-between px-4 pb-3">

@@ -160,7 +160,7 @@ export default async function HomePage() {
 
   return (
     <PullToRefresh>
-    <div className="animate-fade-in pb-[80px]">
+    <div className="animate-fade-in pb-[110px]">
 
       {/* ── Top bar ──────────────────────────────────────── */}
       <div className="flex items-center px-4 pb-3 gap-3"
@@ -193,21 +193,6 @@ export default async function HomePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link href="/chat"
-            className="relative w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
-            style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
-                stroke="#4A27E8" strokeWidth="1.8" strokeLinejoin="round"/>
-            </svg>
-            {(unreadCount ?? 0) > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-sm">
-                {(unreadCount ?? 0) > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </Link>
-        </div>
       </div>
 
       <div className="px-4 flex flex-col gap-5">

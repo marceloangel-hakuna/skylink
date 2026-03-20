@@ -434,7 +434,7 @@ export default function NetworkPage() {
     : accepted;
 
   return (
-    <div className="animate-fade-in pb-[80px]">
+    <div className="animate-fade-in pb-[110px]">
 
       {/* Header + tabs */}
       <div className="px-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>

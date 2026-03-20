@@ -111,7 +111,7 @@ export default function CrewsPage() {
   const displayed = tab === "mine" ? crews.filter(c => myCrews.has(c.id)) : crews;
 
   return (
-    <div className="animate-fade-in pb-[80px]">
+    <div className="animate-fade-in pb-[110px]">
 
       {/* Header */}
       <div className="px-4 flex items-center justify-between"

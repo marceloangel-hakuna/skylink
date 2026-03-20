@@ -27,6 +27,12 @@
   --nav-height:  64px;
   --header-height: 60px;
   color-scheme: light;
+
+  /* Floating nav */
+  --nav-bg:       rgba(255,255,255,0.92);
+  --nav-border:   rgba(0,0,0,0.08);
+  --nav-active:   #4A27E8;
+  --nav-inactive: #A1A1AA;
 }
 
 html.dark {
@@ -41,6 +47,12 @@ html.dark {
   --c-text3:     #56557A;               /* Tertiary — subtle placeholders        */
   --glass-bg:    rgba(9,9,15,0.97);     /* Frosted glass for nav/sheets          */
   color-scheme: dark;
+
+  /* Floating nav */
+  --nav-bg:       rgba(22,22,35,0.96);
+  --nav-border:   rgba(255,255,255,0.08);
+  --nav-active:   #A78BFA;
+  --nav-inactive: #56557A;
 }
 
 *, *::before, *::after {

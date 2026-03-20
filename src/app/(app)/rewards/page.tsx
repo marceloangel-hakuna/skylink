@@ -303,7 +303,7 @@ export default function RewardsPage() {
   ];
 
   return (
-    <div className="animate-fade-in pb-[80px]">
+    <div className="animate-fade-in pb-[110px]">
       <div className="px-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
         <h1 className="text-2xl font-black mb-5" style={{ color: "var(--c-text1)" }}>Rewards</h1>
       </div>

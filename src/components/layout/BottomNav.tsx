@@ -4,8 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-type NavItem = { href: string; label: string; icon: (active: boolean) => React.ReactNode };
-
 const HomeIcon = ({ active }: { active: boolean }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
     <path d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V16H9V21H4C3.45 21 3 20.55 3 20V10.5Z"
@@ -36,11 +34,18 @@ const AlertsIcon = ({ active }: { active: boolean }) => (
   </svg>
 );
 
-const navItems: NavItem[] = [
-  { href: "/home",          label: "Home",       icon: (a) => <HomeIcon    active={a} /> },
-  { href: "/flight",        label: "My Flights", icon: (a) => <FlightIcon  active={a} /> },
-  { href: "/network",       label: "My Network", icon: (a) => <NetworkIcon active={a} /> },
-  { href: "/notifications", label: "Alerts",     icon: (a) => <AlertsIcon  active={a} /> },
+const ChatIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
+      fill="white" stroke="white" strokeWidth="1.6" strokeLinejoin="round"/>
+  </svg>
+);
+
+const mainItems = [
+  { href: "/home",          label: "Home",       icon: (a: boolean) => <HomeIcon    active={a} /> },
+  { href: "/flight",        label: "My Flights", icon: (a: boolean) => <FlightIcon  active={a} /> },
+  { href: "/network",       label: "My Network", icon: (a: boolean) => <NetworkIcon active={a} /> },
+  { href: "/notifications", label: "Alerts",     icon: (a: boolean) => <AlertsIcon  active={a} /> },
 ];
 
 export default function BottomNav() {
@@ -48,26 +53,55 @@ export default function BottomNav() {
   const router   = useRouter();
 
   useEffect(() => {
-    navItems.forEach(item => router.prefetch(item.href));
+    [...mainItems.map(i => i.href), "/chat"].forEach(href => router.prefetch(href));
   }, [router]);
 
+  const chatActive = pathname === "/chat" || pathname.startsWith("/chat/");
+
   return (
-    <nav
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50
-                 glass border-t border-[var(--c-border)] shadow-nav"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    <div
+      className="fixed left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 flex items-end gap-3 px-4"
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)" }}
     >
-      <div className="flex items-stretch h-[64px]">
-        {navItems.map(({ href, label, icon }) => {
+      {/* ── Floating pill ── */}
+      <div
+        className="flex-1 flex items-stretch h-[62px] rounded-[22px] overflow-hidden"
+        style={{
+          background: "var(--nav-bg)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.12)",
+          border: "1px solid var(--nav-border)",
+        }}
+      >
+        {mainItems.map(({ href, label, icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
-            <Link key={href} href={href} className={`bottom-nav-item ${active ? "active" : ""}`}>
+            <Link
+              key={href}
+              href={href}
+              className="flex-1 flex flex-col items-center justify-center gap-1 transition-all active:scale-90"
+              style={{ color: active ? "var(--nav-active)" : "var(--nav-inactive)" }}
+            >
               {icon(active)}
-              <span className="text-[10px] font-medium leading-none mt-0.5">{label}</span>
+              <span className="text-[9px] font-semibold leading-none">{label}</span>
             </Link>
           );
         })}
       </div>
-    </nav>
+
+      {/* ── Floating Chat button ── */}
+      <Link
+        href="/chat"
+        className="flex-shrink-0 w-[62px] h-[62px] rounded-[22px] flex items-center justify-center active:scale-90 transition-transform"
+        style={{
+          background: chatActive
+            ? "linear-gradient(135deg, #3418C8 0%, #4A27E8 100%)"
+            : "linear-gradient(135deg, #4A27E8 0%, #6B46FF 100%)",
+          boxShadow: "0 8px 24px rgba(74,39,232,0.45), 0 2px 8px rgba(74,39,232,0.3)",
+          border: chatActive ? "1.5px solid rgba(255,255,255,0.25)" : "1.5px solid rgba(107,70,255,0.5)",
+        }}
+      >
+        <ChatIcon />
+      </Link>
+    </div>
   );
 }

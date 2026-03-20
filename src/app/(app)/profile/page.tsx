@@ -41,7 +41,7 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="animate-fade-in pb-[80px]">
+    <div className="animate-fade-in pb-[110px]">
       <div className="px-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
         <h1 className="text-2xl font-black mb-2" style={{ color: "var(--c-text1)" }}>Profile</h1>
       </div>

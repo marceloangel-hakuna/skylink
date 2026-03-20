@@ -103,7 +103,7 @@ export default async function ChatPage() {
   const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
 
   return (
-    <div className="animate-fade-in pb-[80px]">
+    <div className="animate-fade-in pb-[110px]">
       <div className="px-4 flex items-center justify-between"
            style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
         <div>
