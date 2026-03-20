@@ -398,7 +398,7 @@ export default function RewardsPage() {
                 }}>
                 <span className="text-lg w-7 text-center">{icon}</span>
                 <span className="flex-1 text-sm" style={{ color: "var(--c-text1)" }}>{label}</span>
-                <span className="text-sm font-bold" style={{ color: "#4A27E8" }}>{p}</span>
+                <span className="text-sm font-bold" style={{ color: "var(--color-brand-fg)" }}>{p}</span>
               </div>
             ))}
           </div>

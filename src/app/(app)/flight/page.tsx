@@ -196,7 +196,7 @@ function AddFlightModal({ onClose, onAdd }: { onClose: () => void; onAdd: (f: Om
                  style={{ background: "rgba(74, 39, 232, 0.07)", border: "1px solid rgba(74, 39, 232, 0.2)" }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-black" style={{ color: "#4A27E8" }}>
+                  <span className="text-sm font-black" style={{ color: "var(--color-brand-fg)" }}>
                     {flightInfo.origin} → {flightInfo.destination}
                   </span>
                   {flightInfo.status && (

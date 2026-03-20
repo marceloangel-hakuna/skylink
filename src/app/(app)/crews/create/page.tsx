@@ -298,7 +298,7 @@ export default function CreateCrewPage() {
                     onClick={e => { e.stopPropagation(); aiGenerate(); }}
                     disabled={generating}
                     className="text-[11px] font-semibold disabled:opacity-40"
-                    style={{ color: "#4A27E8" }}>
+                    style={{ color: "var(--color-brand-fg)" }}>
                     {generating ? "…" : "Regenerate"}
                   </button>
                 </div>

@@ -18,7 +18,7 @@ export default function PeopleNearYou() {
       {/* Header — inside normal px-4 flow */}
       <div className="flex items-center justify-between mb-4 px-4">
         <h2 className="text-base font-black" style={{ color: "var(--c-text1)" }}>People Near You</h2>
-        <Link href="/network" className="text-xs font-semibold" style={{ color: "#4A27E8" }}>See all</Link>
+        <Link href="/network" className="text-xs font-semibold" style={{ color: "var(--color-brand-fg)" }}>See all</Link>
       </div>
 
       {/* Scroll track — full width, no clipping */}

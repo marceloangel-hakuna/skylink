@@ -19,6 +19,7 @@
   --color-brand:       #4A27E8;
   --color-brand-dark:  #3418C8;
   --color-brand-light: #6B4AF0;
+  --color-brand-fg:    #4A27E8;   /* brand as foreground text — lightens in dark */
   --color-accent-pink: #EC4899;
   --color-accent-gold: #EAB308;
   --color-accent-green:#34D399;
@@ -43,8 +44,9 @@ html.dark {
   --c-muted:     #18182A;               /* Input fills, chips, muted surfaces    */
   --c-border:    rgba(255,255,255,0.08);/* iOS-style barely-there white border   */
   --c-text1:     #F2F1FF;               /* Primary — near-white, slight warmth   */
-  --c-text2:     #9C9BB8;               /* Secondary — good contrast, muted      */
-  --c-text3:     #56557A;               /* Tertiary — subtle placeholders        */
+  --c-text2:     #B0AFCC;               /* Secondary — bumped for better contrast */
+  --c-text3:     #6E6D8F;               /* Tertiary — bumped, still subtle       */
+  --color-brand-fg: #A78BFA;            /* brand text on dark — readable purple  */
   --glass-bg:    rgba(9,9,15,0.97);     /* Frosted glass for nav/sheets          */
   color-scheme: dark;
 
@@ -52,7 +54,7 @@ html.dark {
   --nav-bg:       rgba(22,22,35,0.96);
   --nav-border:   rgba(255,255,255,0.08);
   --nav-active:   #A78BFA;
-  --nav-inactive: #56557A;
+  --nav-inactive: #7A788F;
 }
 
 *, *::before, *::after {

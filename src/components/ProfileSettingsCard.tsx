@@ -128,18 +128,6 @@ export function ProfileSettingsCard() {
           Account
         </p>
 
-        <Link href="/profile/edit" className="flex items-center gap-3 py-3.5 active:opacity-70 transition-opacity">
-          <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center" style={{ color: "var(--c-text2)" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" />
-            </svg>
-          </span>
-          <span className="flex-1 text-[15px]" style={{ color: "var(--c-text1)" }}>Personal Info</span>
-          <ChevronRight />
-        </Link>
-        {divider}
-
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 py-3.5 active:opacity-70 transition-opacity"

@@ -109,11 +109,10 @@ export default async function ProfilePage() {
         </div>
 
         {/* ── Stats ── */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {[
             { label: "CONNECTIONS", value: (connCount ?? 0).toLocaleString() },
             { label: "FLIGHTS",     value: (flightCount ?? 0).toLocaleString() },
-            { label: "POINTS",      value: totalPoints.toLocaleString() },
           ].map(({ label, value }) => (
             <div key={label} className="card text-center py-4">
               <p className="text-xl font-black" style={{ color: "var(--c-text1)" }}>{value}</p>

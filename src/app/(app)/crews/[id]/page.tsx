@@ -681,7 +681,7 @@ function EditSheet({
                     onClick={e => { e.stopPropagation(); aiGenerate(); }}
                     disabled={generating}
                     className="text-[10px] font-semibold px-2.5 py-1 rounded-full active:scale-95 transition-transform disabled:opacity-50"
-                    style={{ background: "rgba(74,39,232,0.1)", color: "#4A27E8" }}>
+                    style={{ background: "rgba(74,39,232,0.1)", color: "var(--color-brand-fg)" }}>
                     {generating ? "…" : "Regenerate"}
                   </button>
                 </div>

@@ -531,7 +531,7 @@ function PeopleTab({
 
             {person.isMe ? (
               <span className="flex-shrink-0 text-[10px] font-semibold px-3 py-1.5 rounded-full"
-                    style={{ background: "rgba(74,39,232,0.08)", color: "#4A27E8" }}>
+                    style={{ background: "rgba(74,39,232,0.08)", color: "var(--color-brand-fg)" }}>
                 You
               </span>
             ) : (
