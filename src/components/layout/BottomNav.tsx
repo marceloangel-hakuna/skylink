@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+type NavItem = { href: string; label: string; icon: (active: boolean) => React.ReactNode };
+
 const HomeIcon = ({ active }: { active: boolean }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
     <path d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V16H9V21H4C3.45 21 3 20.55 3 20V10.5Z"
@@ -34,18 +36,21 @@ const AlertsIcon = ({ active }: { active: boolean }) => (
   </svg>
 );
 
-const ChatIcon = () => (
+const ChatIcon = ({ active }: { active: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
     <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
-      fill="white" stroke="white" strokeWidth="1.6" strokeLinejoin="round"/>
+      fill={active ? "#4A27E8" : "none"}
+      stroke="#4A27E8"
+      strokeWidth="1.8"
+      strokeLinejoin="round"/>
   </svg>
 );
 
-const mainItems = [
-  { href: "/home",          label: "Home",       icon: (a: boolean) => <HomeIcon    active={a} /> },
-  { href: "/flight",        label: "My Flights", icon: (a: boolean) => <FlightIcon  active={a} /> },
-  { href: "/network",       label: "My Network", icon: (a: boolean) => <NetworkIcon active={a} /> },
-  { href: "/notifications", label: "Alerts",     icon: (a: boolean) => <AlertsIcon  active={a} /> },
+const mainItems: NavItem[] = [
+  { href: "/home",          label: "Home",       icon: (a) => <HomeIcon    active={a} /> },
+  { href: "/flight",        label: "My Flights", icon: (a) => <FlightIcon  active={a} /> },
+  { href: "/network",       label: "My Network", icon: (a) => <NetworkIcon active={a} /> },
+  { href: "/notifications", label: "Alerts",     icon: (a) => <AlertsIcon  active={a} /> },
 ];
 
 export default function BottomNav() {
@@ -60,48 +65,52 @@ export default function BottomNav() {
 
   return (
     <div
-      className="fixed left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 flex items-end gap-3 px-4"
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)" }}
+      className="fixed left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 px-4"
+      style={{ bottom: 0, paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)" }}
     >
-      {/* ── Floating pill ── */}
-      <div
-        className="flex-1 flex items-stretch h-[62px] rounded-[22px] overflow-hidden"
-        style={{
-          background: "var(--nav-bg)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.12)",
-          border: "1px solid var(--nav-border)",
-        }}
-      >
-        {mainItems.map(({ href, label, icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
-          return (
-            <Link
-              key={href}
-              href={href}
-              className="flex-1 flex flex-col items-center justify-center gap-1 transition-all active:scale-90"
-              style={{ color: active ? "var(--nav-active)" : "var(--nav-inactive)" }}
-            >
-              {icon(active)}
-              <span className="text-[9px] font-semibold leading-none">{label}</span>
-            </Link>
-          );
-        })}
-      </div>
+      <div className="flex items-end gap-3">
+        {/* Floating pill */}
+        <div
+          className="flex-1 flex items-stretch rounded-[22px] overflow-hidden"
+          style={{
+            height: "62px",
+            background: "var(--nav-bg)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)",
+            border: "1px solid var(--nav-border)",
+          }}
+        >
+          {mainItems.map(({ href, label, icon }) => {
+            const active = pathname === href || pathname.startsWith(href + "/");
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="flex-1 flex flex-col items-center justify-center gap-[3px] transition-all active:scale-90"
+                style={{ color: active ? "var(--nav-active)" : "var(--nav-inactive)" }}
+              >
+                {icon(active)}
+                <span className="text-[9px] font-semibold leading-none">{label}</span>
+              </Link>
+            );
+          })}
+        </div>
 
-      {/* ── Floating Chat button ── */}
-      <Link
-        href="/chat"
-        className="flex-shrink-0 w-[62px] h-[62px] rounded-[22px] flex items-center justify-center active:scale-90 transition-transform"
-        style={{
-          background: chatActive
-            ? "linear-gradient(135deg, #3418C8 0%, #4A27E8 100%)"
-            : "linear-gradient(135deg, #4A27E8 0%, #6B46FF 100%)",
-          boxShadow: "0 8px 24px rgba(74,39,232,0.45), 0 2px 8px rgba(74,39,232,0.3)",
-          border: chatActive ? "1.5px solid rgba(255,255,255,0.25)" : "1.5px solid rgba(107,70,255,0.5)",
-        }}
-      >
-        <ChatIcon />
-      </Link>
+        {/* Floating Chat button */}
+        <Link
+          href="/chat"
+          className="flex-shrink-0 flex items-center justify-center active:scale-90 transition-transform"
+          style={{
+            width: "62px",
+            height: "62px",
+            borderRadius: "22px",
+            background: "var(--nav-bg)",
+            border: chatActive ? "2px solid #4A27E8" : "1.5px solid rgba(74,39,232,0.4)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)",
+          }}
+        >
+          <ChatIcon active={chatActive} />
+        </Link>
+      </div>
     </div>
   );
 }
