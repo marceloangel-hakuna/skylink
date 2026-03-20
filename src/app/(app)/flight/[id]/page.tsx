@@ -446,21 +446,6 @@ function PeopleTab({
     invisible:    { dot: "#94A3B8", label: "You're invisible to others",   bg: "var(--c-muted)",        border: "var(--c-border)"       },
   }[networkingStatus];
 
-  if (networkingStatus === "invisible") {
-    return (
-      <div className="px-4 py-10 flex flex-col items-center text-center gap-4">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-             style={{ background: "var(--c-muted)" }}>👻</div>
-        <div>
-          <p className="text-base font-black mb-1" style={{ color: "var(--c-text1)" }}>You&apos;re in Private Mode</p>
-          <p className="text-sm leading-relaxed" style={{ color: "var(--c-text2)", maxWidth: "260px" }}>
-            Set your status to <strong>Available</strong> on the Overview tab to see and be seen by SkyLink members on this flight.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="px-4 py-5 flex flex-col gap-4">
 

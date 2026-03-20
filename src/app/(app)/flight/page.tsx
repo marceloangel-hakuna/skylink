@@ -399,30 +399,38 @@ function UpcomingFlightRow({ flight }: { flight: UserFlight }) {
 
 // ── History flight card ─────────────────────────────────────
 function HistoryCard({ flight }: { flight: UserFlight }) {
+  const slug = flight.flight_number.toLowerCase().replace(/\s+/g, "-");
   return (
-    <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-sm font-black" style={{ color: "var(--c-text1)" }}>{flight.flight_number}</span>
-            {flight.origin && flight.destination && (
-              <span className="text-xs font-medium" style={{ color: "var(--c-text2)" }}>
-                {flight.origin} → {flight.destination}
-              </span>
+    <Link href={`/flight/${slug}`} className="block active:scale-[0.98] transition-transform">
+      <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-sm font-black" style={{ color: "var(--c-text1)" }}>{flight.flight_number}</span>
+              {flight.origin && flight.destination && (
+                <span className="text-xs font-medium" style={{ color: "var(--c-text2)" }}>
+                  {flight.origin} → {flight.destination}
+                </span>
+              )}
+            </div>
+            {flight.departure_date && (
+              <p className="text-xs" style={{ color: "var(--c-text3)" }}>{formatDate(flight.departure_date)}</p>
             )}
           </div>
-          {flight.departure_date && (
-            <p className="text-xs" style={{ color: "var(--c-text3)" }}>{formatDate(flight.departure_date)}</p>
-          )}
+          <div className="flex items-center gap-2">
+            {flight.networking_score > 0 && <ScoreBadge score={flight.networking_score} />}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)", flexShrink: 0 }}>
+              <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+            </svg>
+          </div>
         </div>
-        {flight.networking_score > 0 && <ScoreBadge score={flight.networking_score} />}
+        {flight.notes && (
+          <div className="mt-3 px-3 py-2.5 rounded-xl" style={{ background: "var(--c-muted)" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "var(--c-text2)" }}>{flight.notes}</p>
+          </div>
+        )}
       </div>
-      {flight.notes && (
-        <div className="mt-3 px-3 py-2.5 rounded-xl" style={{ background: "var(--c-muted)" }}>
-          <p className="text-xs leading-relaxed" style={{ color: "var(--c-text2)" }}>{flight.notes}</p>
-        </div>
-      )}
-    </div>
+    </Link>
   );
 }
 
