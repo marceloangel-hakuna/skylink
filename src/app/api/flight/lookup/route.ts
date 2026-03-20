@@ -27,26 +27,25 @@ type AirLabsFlight = {
 
 function parseDate(dt?: string): string | null {
   if (!dt) return null;
-  // "2025-03-20 14:30" → "2025-03-20"
   return dt.split(" ")[0] ?? null;
 }
 
 function parseTime(dt?: string): string | null {
   if (!dt) return null;
-  // "2025-03-20 14:30" → "14:30"
   return dt.split(" ")[1] ?? null;
 }
 
 async function queryAirLabs(endpoint: string, params: Record<string, string>) {
   const key = process.env.AIRLABS_API_KEY;
-  if (!key) return { _debug: "no_key" };
+  if (!key) { console.error("AIRLABS_API_KEY not set"); return null; }
   const url = new URL(`https://airlabs.co/api/v9/${endpoint}`);
   url.searchParams.set("api_key", key);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  // AirLabs always returns HTTP 200 — check for error field in body
   const res = await fetch(url.toString(), { cache: "no-store" });
-  if (!res.ok) return { _debug: `http_${res.status}` };
+  if (!res.ok) return null;
   const data = await res.json();
-  if (data?.error) return { _debug: "airlabs_error", _msg: data.error.message };
+  if (data?.error) { console.error("AirLabs error:", data.error.message); return null; }
   return data;
 }
 
@@ -57,16 +56,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Flight number too short" }, { status: 400 });
   }
 
-  // 1. Try real-time flight status first
   let flight: AirLabsFlight | null = null;
 
+  // 1. Try real-time flight status first
   const liveData = await queryAirLabs("flight", { flight_iata: raw });
-  console.log("liveData keys:", liveData ? Object.keys(liveData) : "null");
   if (liveData?.response) {
     flight = liveData.response as AirLabsFlight;
   }
 
-  // 2. If not live (scheduled future flight), try schedules endpoint
+  // 2. If not live, try schedules (future flights)
   if (!flight?.dep_iata) {
     const schedData = await queryAirLabs("schedules", { flight_iata: raw });
     if (schedData?.response?.length > 0) {
@@ -75,27 +73,27 @@ export async function GET(req: Request) {
   }
 
   if (!flight?.dep_iata) {
-    return NextResponse.json({ found: false, _debug: liveData });
+    return NextResponse.json({ found: false });
   }
 
   return NextResponse.json({
-    found: true,
-    flight_iata:   flight.flight_iata ?? raw,
-    origin:        flight.dep_iata ?? null,
-    destination:   flight.arr_iata ?? null,
-    dep_city:      flight.dep_city ?? flight.dep_name ?? null,
-    arr_city:      flight.arr_city ?? flight.arr_name ?? null,
+    found:          true,
+    flight_iata:    flight.flight_iata ?? raw,
+    origin:         flight.dep_iata ?? null,
+    destination:    flight.arr_iata ?? null,
+    dep_city:       flight.dep_city ?? flight.dep_name ?? null,
+    arr_city:       flight.arr_city ?? flight.arr_name ?? null,
     departure_date: parseDate(flight.dep_time ?? flight.dep_time_utc),
     departure_time: parseTime(flight.dep_time),
-    arrival_date:  parseDate(flight.arr_time ?? flight.arr_time_utc),
-    arrival_time:  parseTime(flight.arr_time),
-    status:        flight.status ?? "scheduled",
-    airline:       flight.airline_iata ?? null,
-    duration:      flight.duration ?? null,
-    delayed:       flight.delayed ?? 0,
-    dep_terminal:  flight.dep_terminal ?? null,
-    dep_gate:      flight.dep_gate ?? null,
-    arr_terminal:  flight.arr_terminal ?? null,
-    arr_gate:      flight.arr_gate ?? null,
+    arrival_date:   parseDate(flight.arr_time ?? flight.arr_time_utc),
+    arrival_time:   parseTime(flight.arr_time),
+    status:         flight.status ?? "scheduled",
+    airline:        flight.airline_iata ?? null,
+    duration:       flight.duration ?? null,
+    delayed:        flight.delayed ?? 0,
+    dep_terminal:   flight.dep_terminal ?? null,
+    dep_gate:       flight.dep_gate ?? null,
+    arr_terminal:   flight.arr_terminal ?? null,
+    arr_gate:       flight.arr_gate ?? null,
   });
 }
