@@ -39,15 +39,14 @@ function parseTime(dt?: string): string | null {
 
 async function queryAirLabs(endpoint: string, params: Record<string, string>) {
   const key = process.env.AIRLABS_API_KEY;
-  if (!key) { console.error("AIRLABS_API_KEY not set"); return null; }
+  if (!key) return { _debug: "no_key" };
   const url = new URL(`https://airlabs.co/api/v9/${endpoint}`);
   url.searchParams.set("api_key", key);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  // AirLabs always returns HTTP 200 — check for error field in body
   const res = await fetch(url.toString(), { cache: "no-store" });
-  if (!res.ok) return null;
+  if (!res.ok) return { _debug: `http_${res.status}` };
   const data = await res.json();
-  if (data?.error) { console.error("AirLabs error:", data.error); return null; }
+  if (data?.error) return { _debug: "airlabs_error", _msg: data.error.message };
   return data;
 }
 
@@ -76,7 +75,7 @@ export async function GET(req: Request) {
   }
 
   if (!flight?.dep_iata) {
-    return NextResponse.json({ found: false });
+    return NextResponse.json({ found: false, _debug: { liveKeys: liveData ? Object.keys(liveData) : null } });
   }
 
   return NextResponse.json({
