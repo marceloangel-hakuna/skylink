@@ -33,7 +33,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
     { data: targetConns },
   ] = await Promise.all([
     supabase.from("profiles")
-      .select("id, full_name, avatar_url, role, company, bio, interests")
+      .select("id, full_name, avatar_url, role, company, bio, interests, linkedin_url, x_handle, website_url, other_url")
       .eq("id", params.id).single(),
     supabase.from("profiles")
       .select("id, full_name, role, company, bio, interests")
@@ -60,7 +60,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
 
   if (!profile) {
     return (
-      <div className="animate-fade-in pb-[110px]">
+      <div className="animate-fade-in pb-6">
         <PageHeader title="Profile" />
         <div className="px-4 pt-8 flex flex-col items-center gap-3 text-center">
           <div className="w-20 h-20 rounded-3xl flex items-center justify-center font-black text-3xl"
@@ -93,10 +93,16 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   const sub         = [profile.role, profile.company].filter(Boolean).join(" @ ") || "SkyLink Member";
   const inits       = initials(profile.full_name);
 
-  // Links — add linkedin_url / website_url columns to profiles table to enable
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pr = profile as any;
+  const linkedinUrl = pr.linkedin_url as string | null ?? null;
+  const xHandle     = pr.x_handle     as string | null ?? null;
+  const websiteUrl  = pr.website_url  as string | null ?? null;
+  const otherUrl    = pr.other_url    as string | null ?? null;
+  const hasLinks    = !!(linkedinUrl || xHandle || websiteUrl || otherUrl);
 
   return (
-    <div className="animate-fade-in pb-[110px]">
+    <div className="animate-fade-in pb-6">
       <PageHeader title="Profile" />
 
       <div className="px-4 pt-4 flex flex-col gap-4">
@@ -184,7 +190,36 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
           </div>
         )}
 
-        {/* ── Links — add linkedin_url / website_url columns to profiles table to enable ── */}
+        {/* ── Links ── */}
+        {hasLinks && (
+          <div className="card flex flex-col">
+            <p className="text-[11px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--c-text3)" }}>Links</p>
+            {[
+              linkedinUrl && { icon: <span className="text-sm font-black" style={{ color: "#0A66C2", fontFamily: "Georgia, serif" }}>in</span>, bg: "#EBF4FF", label: "LinkedIn", url: linkedinUrl.startsWith("http") ? linkedinUrl : `https://${linkedinUrl}`, display: linkedinUrl.replace(/^https?:\/\//, "") },
+              xHandle     && { icon: <span className="text-sm font-black" style={{ color: "#000" }}>𝕏</span>, bg: "#F4F4F5", label: "X / Twitter", url: `https://x.com/${xHandle}`, display: `@${xHandle}` },
+              websiteUrl  && { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "#3B82F6" }}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/><path d="M12 3C12 3 8 7 8 12s4 9 4 9M12 3c0 0 4 4 4 9s-4 9-4 9M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, bg: "#EFF6FF", label: "Website", url: websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`, display: websiteUrl.replace(/^https?:\/\//, "") },
+              otherUrl    && { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "#6B7280" }}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, bg: "#F3F4F6", label: "Link", url: otherUrl.startsWith("http") ? otherUrl : `https://${otherUrl}`, display: otherUrl.replace(/^https?:\/\//, "") },
+            ].filter(Boolean).map((item, i, arr) => item && (
+              <div key={i}>
+                {i > 0 && <div style={{ height: "1px", background: "var(--c-border)", marginLeft: "48px" }} />}
+                <a href={item.url} target="_blank" rel="noopener noreferrer"
+                   className="flex items-center gap-3 py-2.5 active:opacity-70 transition-opacity">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                       style={{ background: item.bg }}>
+                    {item.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: "var(--c-text1)" }}>{item.label}</p>
+                    <p className="text-xs truncate" style={{ color: "var(--color-brand-fg)" }}>{item.display}</p>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "var(--c-text3)" }}>
+                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* ── Stats ── */}
         <div className="grid grid-cols-3 gap-3">

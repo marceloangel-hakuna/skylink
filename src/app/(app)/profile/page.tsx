@@ -11,7 +11,7 @@ export default async function ProfilePage() {
   const uid   = user?.id ?? "";
 
   const [{ data: profileRow }, { count: flightCount }, { count: connCount }, { data: pointsRows }] = await Promise.all([
-    supabase.from("profiles").select("full_name, role, company, bio, interests, avatar_url").eq("id", uid).single(),
+    supabase.from("profiles").select("full_name, role, company, bio, interests, avatar_url, linkedin_url, x_handle, website_url, other_url").eq("id", uid).single(),
     supabase.from("flights").select("id", { count: "exact", head: true }).eq("user_id", uid),
     supabase.from("connections").select("id", { count: "exact", head: true })
       .or(`requester_id.eq.${uid},receiver_id.eq.${uid}`)
@@ -26,6 +26,12 @@ export default async function ProfilePage() {
   const company     = profileRow?.company ?? meta.company ?? meta.organization ?? null;
   const bio         = profileRow?.bio ?? null;
   const interests   = (profileRow?.interests ?? []) as string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pr = profileRow as any;
+  const linkedinUrl = pr?.linkedin_url as string | null ?? null;
+  const xHandle     = pr?.x_handle     as string | null ?? null;
+  const websiteUrl  = pr?.website_url  as string | null ?? null;
+  const otherUrl    = pr?.other_url    as string | null ?? null;
   const totalPoints = (pointsRows ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0);
 
   const INTEREST_LABELS: Record<string, string> = {
@@ -99,11 +105,15 @@ export default async function ProfilePage() {
             {/* Edit button */}
             <EditProfileSheet initial={{
               fullName,
-              role:      headline ?? "",
-              company:   company  ?? "",
-              bio:       bio      ?? "",
+              role:        headline    ?? "",
+              company:     company     ?? "",
+              bio:         bio         ?? "",
               avatarUrl,
               interests,
+              linkedinUrl: linkedinUrl ?? "",
+              xHandle:     xHandle     ?? "",
+              websiteUrl:  websiteUrl  ?? "",
+              otherUrl:    otherUrl    ?? "",
             }} />
           </div>
         </div>

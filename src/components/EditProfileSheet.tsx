@@ -26,23 +26,59 @@ type Props = {
     bio: string;
     avatarUrl: string | null;
     interests: string[];
+    linkedinUrl?: string;
+    xHandle?: string;
+    websiteUrl?: string;
+    otherUrl?: string;
   };
 };
+
+function FieldInput({
+  label, value, onChange, placeholder, prefix, type = "text",
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder?: string; prefix?: string; type?: string;
+}) {
+  return (
+    <div>
+      <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block"
+             style={{ color: "var(--c-text3)" }}>{label}</label>
+      <div className="flex items-center rounded-2xl overflow-hidden"
+           style={{ background: "var(--c-muted)", border: "1px solid var(--c-border)" }}>
+        {prefix && (
+          <span className="pl-4 pr-1 text-sm flex-shrink-0" style={{ color: "var(--c-text3)" }}>{prefix}</span>
+        )}
+        <input
+          type={type}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="flex-1 px-4 py-3 text-sm focus:outline-none bg-transparent"
+          style={{ paddingLeft: prefix ? "4px" : undefined, color: "var(--c-text1)" }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function EditProfileSheet({ initial }: Props) {
   const router    = useRouter();
   const fileRef   = useRef<HTMLInputElement>(null);
-  const [open,        setOpen]        = useState(false);
-  const [fullName,    setFullName]    = useState(initial.fullName);
-  const [role,        setRole]        = useState(initial.role);
-  const [company,     setCompany]     = useState(initial.company);
-  const [bio,         setBio]         = useState(initial.bio);
-  const [interests,   setInterests]   = useState<string[]>(initial.interests);
-  const [avatarUrl]   = useState<string | null>(initial.avatarUrl);
-  const [avatarFile,  setAvatarFile]  = useState<File | null>(null); // kept for resize
+  const [open,          setOpen]          = useState(false);
+  const [fullName,      setFullName]      = useState(initial.fullName);
+  const [role,          setRole]          = useState(initial.role);
+  const [company,       setCompany]       = useState(initial.company);
+  const [bio,           setBio]           = useState(initial.bio);
+  const [interests,     setInterests]     = useState<string[]>(initial.interests);
+  const [linkedinUrl,   setLinkedinUrl]   = useState(initial.linkedinUrl ?? "");
+  const [xHandle,       setXHandle]       = useState(initial.xHandle ?? "");
+  const [websiteUrl,    setWebsiteUrl]    = useState(initial.websiteUrl ?? "");
+  const [otherUrl,      setOtherUrl]      = useState(initial.otherUrl ?? "");
+  const [avatarUrl]     = useState<string | null>(initial.avatarUrl);
+  const [avatarFile,    setAvatarFile]    = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [saving,      setSaving]      = useState(false);
-  const [mounted,     setMounted]     = useState(false);
+  const [saving,        setSaving]        = useState(false);
+  const [mounted,       setMounted]       = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -61,7 +97,6 @@ export default function EditProfileSheet({ initial }: Props) {
     setAvatarPreview(URL.createObjectURL(file));
   }
 
-  // Resize image client-side → base64 JPEG (no storage bucket needed)
   function resizeToBase64(file: File): Promise<string> {
     return new Promise((resolve) => {
       const img = new Image();
@@ -92,13 +127,17 @@ export default function EditProfileSheet({ initial }: Props) {
     }
 
     await sb.from("profiles").upsert({
-      id:         user.id,
-      full_name:  fullName.trim()  || null,
-      role:       role.trim()      || null,
-      company:    company.trim()   || null,
-      bio:        bio.trim()       || null,
-      avatar_url: finalAvatarUrl,
+      id:           user.id,
+      full_name:    fullName.trim()    || null,
+      role:         role.trim()        || null,
+      company:      company.trim()     || null,
+      bio:          bio.trim()         || null,
+      avatar_url:   finalAvatarUrl,
       interests,
+      linkedin_url: linkedinUrl.trim() || null,
+      x_handle:     xHandle.trim().replace(/^@/, "") || null,
+      website_url:  websiteUrl.trim()  || null,
+      other_url:    otherUrl.trim()    || null,
     });
 
     setSaving(false);
@@ -146,10 +185,7 @@ export default function EditProfileSheet({ initial }: Props) {
 
               {/* Avatar */}
               <div className="flex flex-col items-center gap-2">
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  className="relative active:scale-95 transition-transform"
-                >
+                <button onClick={() => fileRef.current?.click()} className="relative active:scale-95 transition-transform">
                   {displayAvatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={displayAvatar} alt="avatar" className="w-20 h-20 rounded-3xl object-cover" />
@@ -170,44 +206,9 @@ export default function EditProfileSheet({ initial }: Props) {
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
               </div>
 
-              {/* Full name */}
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--c-text3)" }}>Full Name</label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  placeholder="Your full name"
-                  className="w-full px-4 py-3 rounded-2xl text-sm focus:outline-none focus:ring-2"
-                  style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1px solid var(--c-border)", ["--tw-ring-color" as string]: "#4A27E8" }}
-                />
-              </div>
-
-              {/* Role */}
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--c-text3)" }}>Role / Title</label>
-                <input
-                  type="text"
-                  value={role}
-                  onChange={e => setRole(e.target.value)}
-                  placeholder="e.g. Co-founder, VP Engineering"
-                  className="w-full px-4 py-3 rounded-2xl text-sm focus:outline-none focus:ring-2"
-                  style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1px solid var(--c-border)", ["--tw-ring-color" as string]: "#4A27E8" }}
-                />
-              </div>
-
-              {/* Company */}
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--c-text3)" }}>Company</label>
-                <input
-                  type="text"
-                  value={company}
-                  onChange={e => setCompany(e.target.value)}
-                  placeholder="e.g. Stripe, OpenAI, Independent"
-                  className="w-full px-4 py-3 rounded-2xl text-sm focus:outline-none focus:ring-2"
-                  style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1px solid var(--c-border)", ["--tw-ring-color" as string]: "#4A27E8" }}
-                />
-              </div>
+              <FieldInput label="Full Name" value={fullName} onChange={setFullName} placeholder="Your full name" />
+              <FieldInput label="Role / Title" value={role} onChange={setRole} placeholder="e.g. Co-founder, VP Engineering" />
+              <FieldInput label="Company" value={company} onChange={setCompany} placeholder="e.g. Stripe, OpenAI, Independent" />
 
               {/* Bio */}
               <div>
@@ -236,23 +237,54 @@ export default function EditProfileSheet({ initial }: Props) {
                     const selected = interests.includes(id);
                     const maxed    = interests.length >= 5 && !selected;
                     return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => toggleInterest(id)}
-                        disabled={maxed}
+                      <button key={id} type="button" onClick={() => toggleInterest(id)} disabled={maxed}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 disabled:opacity-40"
                         style={{
                           background: selected ? "#4A27E8" : "var(--c-muted)",
                           color: selected ? "#fff" : "var(--c-text2)",
                           border: selected ? "1.5px solid #4A27E8" : "1.5px solid var(--c-border)",
-                        }}
-                      >
-                        <span>{icon}</span>
-                        {label}
+                        }}>
+                        <span>{icon}</span>{label}
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Links section */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "var(--c-text3)" }}>
+                  Links
+                </p>
+                <div className="flex flex-col gap-3">
+                  <FieldInput
+                    label="LinkedIn"
+                    value={linkedinUrl}
+                    onChange={setLinkedinUrl}
+                    placeholder="linkedin.com/in/yourname"
+                    prefix="🔗"
+                  />
+                  <FieldInput
+                    label="X / Twitter"
+                    value={xHandle}
+                    onChange={setXHandle}
+                    placeholder="yourhandle"
+                    prefix="@"
+                  />
+                  <FieldInput
+                    label="Website"
+                    value={websiteUrl}
+                    onChange={setWebsiteUrl}
+                    placeholder="yoursite.com"
+                    prefix="🌐"
+                  />
+                  <FieldInput
+                    label="Other"
+                    value={otherUrl}
+                    onChange={setOtherUrl}
+                    placeholder="any other link"
+                    prefix="🔗"
+                  />
                 </div>
               </div>
 
