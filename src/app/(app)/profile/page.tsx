@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import PageHeader from "@/components/layout/PageHeader";
 import LogoutButton from "@/components/auth/LogoutButton";
 import Link from "next/link";
 import { AppearanceRow } from "@/components/AppearanceRow";
@@ -43,9 +42,11 @@ export default async function ProfilePage() {
 
   return (
     <div className="animate-fade-in pb-[80px]">
-      <PageHeader title="Profile" />
+      <div className="px-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
+        <h1 className="text-2xl font-black mb-2" style={{ color: "var(--c-text1)" }}>Profile</h1>
+      </div>
 
-      <div className="px-4 pt-2 pb-4 flex flex-col gap-5">
+      <div className="px-4 pb-4 flex flex-col gap-5">
         {/* Profile hero */}
         <div className="card flex flex-col items-center text-center gap-3 py-6">
           <div className="relative">

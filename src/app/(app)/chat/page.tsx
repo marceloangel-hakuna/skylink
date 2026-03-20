@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import PageHeader from "@/components/layout/PageHeader";
 import { redirect } from "next/navigation";
 import NewConversationButton from "@/components/NewConversationButton";
 import { EmptyState } from "@/components/EmptyState";
@@ -105,11 +104,16 @@ export default async function ChatPage() {
 
   return (
     <div className="animate-fade-in pb-[80px]">
-      <PageHeader
-        title="Messages"
-        subtitle={totalUnread > 0 ? `${totalUnread} unread` : undefined}
-        action={<NewConversationButton />}
-      />
+      <div className="px-4 flex items-center justify-between"
+           style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
+        <div>
+          <h1 className="text-2xl font-black" style={{ color: "var(--c-text1)" }}>Messages</h1>
+          {totalUnread > 0 && (
+            <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>{totalUnread} unread</p>
+          )}
+        </div>
+        <NewConversationButton />
+      </div>
 
       <div className="px-4 pt-2 pb-4 flex flex-col gap-2">
         {/* Search */}

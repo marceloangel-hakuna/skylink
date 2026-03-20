@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import PageHeader from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 
 // ── Tiers ────────────────────────────────────────────────
@@ -305,7 +304,9 @@ export default function RewardsPage() {
 
   return (
     <div className="animate-fade-in pb-[80px]">
-      <PageHeader title="Rewards" />
+      <div className="px-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
+        <h1 className="text-2xl font-black mb-5" style={{ color: "var(--c-text1)" }}>Rewards</h1>
+      </div>
 
       {/* ── Balance header ─────────────────────────────── */}
       <div className="mx-4 rounded-3xl overflow-hidden mb-5 rewards-balance-card"
