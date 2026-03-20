@@ -528,7 +528,7 @@ function EditSheet({
 
       {/* Delete confirmation overlay */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center px-6">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-6">
           <div className="w-full rounded-3xl p-6 flex flex-col gap-4"
                style={{ background: "var(--background)", border: "1px solid var(--c-border)", boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
             <div className="text-center">

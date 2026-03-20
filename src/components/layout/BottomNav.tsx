@@ -29,26 +29,18 @@ const NetworkIcon = ({ active }: { active: boolean }) => (
   </svg>
 );
 
-const ChatIcon = ({ active }: { active: boolean }) => (
+const AlertsIcon = ({ active }: { active: boolean }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <path d="M21 15C21 15.53 20.79 16.04 20.41 16.41C20.04 16.79 19.53 17 19 17H7L3 21V5C3 4.47 3.21 3.96 3.59 3.59C3.96 3.21 4.47 3 5 3H19C19.53 3 20.04 3.21 20.41 3.59C20.79 3.96 21 4.47 21 5V15Z"
-      fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
-  </svg>
-);
-
-const ProfileIcon = ({ active }: { active: boolean }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="8" r="4" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8"/>
-    <path d="M4 20C4 17.24 7.58 15 12 15C16.42 15 20 17.24 20 20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
   </svg>
 );
 
 const navItems: NavItem[] = [
-  { href: "/home",    label: "Home",    icon: (a) => <HomeIcon    active={a} /> },
-  { href: "/flight",  label: "Flight",  icon: (a) => <FlightIcon  active={a} /> },
-  { href: "/network", label: "Network", icon: (a) => <NetworkIcon active={a} /> },
-  { href: "/chat",    label: "Chat",    icon: (a) => <ChatIcon    active={a} /> },
-  { href: "/profile", label: "Profile", icon: (a) => <ProfileIcon active={a} /> },
+  { href: "/home",          label: "Home",       icon: (a) => <HomeIcon    active={a} /> },
+  { href: "/flight",        label: "My Flights", icon: (a) => <FlightIcon  active={a} /> },
+  { href: "/network",       label: "My Network", icon: (a) => <NetworkIcon active={a} /> },
+  { href: "/notifications", label: "Alerts",     icon: (a) => <AlertsIcon  active={a} /> },
 ];
 
 export default function BottomNav() {
