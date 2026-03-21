@@ -87,18 +87,18 @@ body {
 #app-root {
   width: 100%;
   max-width: 430px;
-  min-height: 100dvh;
+  height: 100dvh;
   margin-inline: auto;
-  position: relative;
+  display: flex;
+  flex-direction: column;
   background: var(--background);
-  /* overflow-x: clip instead of hidden — 'hidden' creates a scroll container on
-     iOS Safari which makes position:fixed children anchor to this div instead of
-     the viewport, causing the bottom nav to drift when content is tall. */
-  overflow-x: clip;
+  overflow: hidden;
 }
 
+/* Scrollable page content — fills remaining space above the nav */
 .page-scroll {
-  height: calc(100dvh - var(--nav-height));
+  flex: 1;
+  min-height: 0; /* critical: allows flex child to shrink and scroll */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;

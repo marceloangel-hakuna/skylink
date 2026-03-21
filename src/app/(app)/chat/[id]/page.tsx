@@ -221,20 +221,15 @@ export default function ConversationPage() {
   const otherSubline = [otherProfile?.role, otherProfile?.company].filter(Boolean).join(" at ");
 
   // ── Render ────────────────────────────────────────────────────────────────
-  // position:fixed escapes the outer page-scroll container so the input
-  // stays pinned to the bottom and only the messages area scrolls.
+  // With flex-column layout, page-scroll is flex:1 with overflow hidden.
+  // This div fills 100% of that space and manages its own internal scroll.
   return (
     <div
-      className="fixed flex flex-col"
+      className="flex flex-col"
       style={{
-        top:       0,
-        bottom:    "calc(64px + env(safe-area-inset-bottom, 0px))",
-        left:      "50%",
-        transform: "translateX(-50%)",
-        width:     "100%",
-        maxWidth:  "430px",
+        height:     "100%",
+        overflow:   "hidden",
         background: "var(--background)",
-        zIndex:    10,
       }}
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
