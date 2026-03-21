@@ -74,6 +74,7 @@ html.dark {
 }
 
 body {
+  min-height: 100%;
   height: 100%;
   color: var(--foreground);
   background: var(--background);
@@ -81,41 +82,41 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
-  /* No overflow:hidden — it can create a stacking context that traps
-     position:fixed elements in iOS Safari / WKWebView / Capacitor.
-     All scrolling is confined to .page-scroll instead. */
 }
 
 #app-root {
   width: 100%;
   max-width: 430px;
-  height: 100%;
+  min-height: 100dvh;
   margin-inline: auto;
+  position: relative;
   background: var(--background);
-  /* Intentionally bare — no overflow, position, transform, or will-change.
-     Any of those would trap position:fixed children on iOS Safari / WebView / Capacitor. */
+  /* overflow-x: clip instead of hidden — 'hidden' creates a scroll container on
+     iOS Safari which makes position:fixed children anchor to this div instead of
+     the viewport. clip does not create a scroll container. */
+  overflow-x: clip;
 }
 
-/* Scrollable page content — content fades out as it reaches the floating nav */
+/* Scrollable page content — floats behind the fixed nav, fades at the bottom */
 .page-scroll {
-  height: 100%;
+  height: 100dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
-  /* Extra padding so last content item scrolls above the floating nav */
-  padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
-  /* Fade content into transparency as it reaches the nav — gives floating depth */
+  /* Extra padding so the last item scrolls above the nav */
+  padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  /* Fade content as it reaches the nav — reinforces the floating depth */
   -webkit-mask-image: linear-gradient(
     to bottom,
     black 0%,
-    black calc(100% - 100px),
+    black calc(100% - 120px),
     transparent 100%
   );
   mask-image: linear-gradient(
     to bottom,
     black 0%,
-    black calc(100% - 100px),
+    black calc(100% - 120px),
     transparent 100%
   );
 }
