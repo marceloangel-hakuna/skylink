@@ -25,7 +25,7 @@
   --color-accent-green:#34D399;
 
   --radius-card: 1rem;
-  --nav-height:  64px;
+  --nav-height:  84px;
   --header-height: 60px;
   color-scheme: light;
 
@@ -103,6 +103,9 @@ body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
+  /* Fade content into the floating nav */
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 52px), transparent 100%);
+  mask-image: linear-gradient(to bottom, black calc(100% - 52px), transparent 100%);
 }
 .page-scroll::-webkit-scrollbar { display: none; }
 

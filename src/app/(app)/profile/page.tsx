@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import EditProfileSheet from "@/components/EditProfileSheet";
 import { ProfileSettingsCard } from "@/components/ProfileSettingsCard";
+import { ConnectionsIcon, PlaneIcon } from "@/components/icons/AppIcons";
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -121,12 +122,13 @@ export default async function ProfilePage() {
         {/* ── Stats ── */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: "CONNECTIONS", value: (connCount ?? 0).toLocaleString() },
-            { label: "FLIGHTS",     value: (flightCount ?? 0).toLocaleString() },
-          ].map(({ label, value }) => (
-            <div key={label} className="card text-center py-4">
-              <p className="text-xl font-black" style={{ color: "var(--c-text1)" }}>{value}</p>
-              <p className="text-[10px] font-semibold tracking-widest mt-0.5" style={{ color: "var(--c-text3)" }}>{label}</p>
+            { label: "CONNECTIONS", value: (connCount ?? 0).toLocaleString(),   icon: <ConnectionsIcon size={20} color="var(--color-brand-fg)" /> },
+            { label: "FLIGHTS",     value: (flightCount ?? 0).toLocaleString(), icon: <PlaneIcon size={20} color="var(--color-brand-fg)" /> },
+          ].map(({ label, value, icon }) => (
+            <div key={label} className="card flex flex-col items-center py-4 gap-1.5">
+              {icon}
+              <p className="text-xl font-black leading-none" style={{ color: "var(--c-text1)" }}>{value}</p>
+              <p className="text-[10px] font-semibold tracking-widest" style={{ color: "var(--c-text3)" }}>{label}</p>
             </div>
           ))}
         </div>

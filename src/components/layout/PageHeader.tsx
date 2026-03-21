@@ -32,12 +32,12 @@ export default function PageHeader({
         {showBack && (
           <button
             onClick={() => router.back()}
-            className="p-2 -ml-2 rounded-full active:opacity-70 transition"
-            style={{ color: "var(--c-text1)" }}
+            className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
+            style={{ background: "rgba(74,39,232,0.1)" }}
             aria-label="Go back"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18L9 12L15 6" stroke="var(--color-brand-fg)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         )}

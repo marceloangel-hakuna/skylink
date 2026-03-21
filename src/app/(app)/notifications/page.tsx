@@ -1,9 +1,14 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
+import {
+  ConnectionNotifIcon, MessageNotifIcon, AtlasSparkleIcon,
+  CrewNotifIcon, FlightNotifIcon, BellIcon, PlaneIcon,
+} from "@/components/icons/AppIcons";
 
 // ── Types ─────────────────────────────────────────────────
 type NotifType = "connection" | "message" | "atlas" | "crew" | "flight";
@@ -71,30 +76,30 @@ function NotifIcon({ type, actorName, actorAvatar }: {
             {initials(actorName ?? null)}
           </div>
         )}
-        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
              style={{ background: "var(--c-card)", border: "1.5px solid var(--c-border)" }}>
-          {type === "message" ? "💬" : type === "crew" ? "✈️" : "🤝"}
+          {type === "message"
+            ? <MessageNotifIcon size={10} color="#4A27E8" />
+            : type === "crew"
+            ? <PlaneIcon size={10} color="#7C3AED" />
+            : <ConnectionNotifIcon size={10} color="#4A27E8" />}
         </div>
       </div>
     );
   }
 
-  const configs: Record<NotifType, { emoji: string; bg: string; darkClass: string }> = {
-    connection: { emoji: "🤝", bg: "#EEF2FF", darkClass: "dark:bg-indigo-900/25" },
-    message:    { emoji: "💬", bg: "#F0FDF4", darkClass: "dark:bg-emerald-900/25" },
-    atlas:      { emoji: "✦",  bg: "#FFFBEB", darkClass: "dark:bg-amber-900/20"  },
-    crew:       { emoji: "✈️", bg: "#F5F3FF", darkClass: "dark:bg-violet-900/25" },
-    flight:     { emoji: "🔔", bg: "#FFF7ED", darkClass: "dark:bg-orange-900/20" },
+  const configs: Record<NotifType, { icon: React.ReactNode; bg: string; iconColor: string; darkClass: string }> = {
+    connection: { icon: <ConnectionNotifIcon size={20} />, bg: "#EEF2FF", iconColor: "#4F46E5", darkClass: "dark:bg-indigo-900/25" },
+    message:    { icon: <MessageNotifIcon   size={20} />, bg: "#F0FDF4", iconColor: "#059669", darkClass: "dark:bg-emerald-900/25" },
+    atlas:      { icon: <AtlasSparkleIcon   size={20} />, bg: "#FFFBEB", iconColor: "#D97706", darkClass: "dark:bg-amber-900/20"  },
+    crew:       { icon: <CrewNotifIcon      size={20} />, bg: "#F5F3FF", iconColor: "#7C3AED", darkClass: "dark:bg-violet-900/25" },
+    flight:     { icon: <FlightNotifIcon    size={20} />, bg: "#FFF7ED", iconColor: "#EA580C", darkClass: "dark:bg-orange-900/20" },
   };
-  const { emoji, bg, darkClass } = configs[type];
+  const { icon, bg, iconColor, darkClass } = configs[type];
   return (
-    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 ${darkClass}`}
-         style={{ background: bg }}>
-      {type === "atlas" ? (
-        <span className="text-amber-500 font-black text-base">✦</span>
-      ) : (
-        <span>{emoji}</span>
-      )}
+    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${darkClass}`}
+         style={{ background: bg, color: iconColor }}>
+      {icon}
     </div>
   );
 }
@@ -329,7 +334,7 @@ export default function NotificationsPage() {
 
               {requests.length === 0 && notifs.length === 0 && (
                 <EmptyState
-                  icon="🔔"
+                  icon={<BellIcon size={32} color="#4A27E8" />}
                   title="All caught up"
                   body="You'll be notified when someone connects, joins your crew, or replies to you."
                   className="py-12"
@@ -343,7 +348,7 @@ export default function NotificationsPage() {
             <>
               {requests.length === 0 ? (
                 <EmptyState
-                  icon="🤝"
+                  icon={<ConnectionNotifIcon size={32} color="#4A27E8" />}
                   title="No pending requests"
                   body="When someone wants to connect with you, they'll appear here."
                   action={{ label: "Discover People", href: "/network" }}

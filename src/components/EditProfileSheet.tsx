@@ -1,21 +1,26 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import {
+  AiMlIcon, FintechIcon, ClimateIcon, SaasIcon, Web3Icon,
+  DesignIcon, VCIcon, ProductIcon, DevToolsIcon, BiotechIcon,
+} from "@/components/icons/AppIcons";
 
-const INTERESTS = [
-  { id: "ai_ml",    label: "AI / ML",     icon: "🤖" },
-  { id: "fintech",  label: "Fintech",      icon: "💳" },
-  { id: "climate",  label: "Climate Tech", icon: "🌱" },
-  { id: "saas",     label: "SaaS",         icon: "☁️" },
-  { id: "web3",     label: "Web3",         icon: "⛓️" },
-  { id: "design",   label: "Design",       icon: "🎨" },
-  { id: "vc",       label: "VC",           icon: "💼" },
-  { id: "product",  label: "Product",      icon: "📦" },
-  { id: "devtools", label: "DevTools",     icon: "🛠️" },
-  { id: "biotech",  label: "Biotech",      icon: "🧬" },
+const INTERESTS: { id: string; label: string; icon: React.ReactNode }[] = [
+  { id: "ai_ml",    label: "AI / ML",     icon: <AiMlIcon    size={16} /> },
+  { id: "fintech",  label: "Fintech",      icon: <FintechIcon size={16} /> },
+  { id: "climate",  label: "Climate Tech", icon: <ClimateIcon size={16} /> },
+  { id: "saas",     label: "SaaS",         icon: <SaasIcon    size={16} /> },
+  { id: "web3",     label: "Web3",         icon: <Web3Icon    size={16} /> },
+  { id: "design",   label: "Design",       icon: <DesignIcon  size={16} /> },
+  { id: "vc",       label: "VC",           icon: <VCIcon      size={16} /> },
+  { id: "product",  label: "Product",      icon: <ProductIcon size={16} /> },
+  { id: "devtools", label: "DevTools",     icon: <DevToolsIcon size={16} /> },
+  { id: "biotech",  label: "Biotech",      icon: <BiotechIcon size={16} /> },
 ];
 
 type Props = {

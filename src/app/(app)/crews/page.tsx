@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/EmptyState";
+import { CrewIcon, PlusIcon } from "@/components/icons/AppIcons";
 
 type Crew = {
   id: string;
@@ -18,29 +19,6 @@ type Crew = {
   is_member?: boolean;
 };
 
-// Matches the solid icon bg color used in the crew detail page header
-const THEME_ICON_BG: Record<string, string> = {
-  city:    "#FFEDD5",
-  tech:    "#DBEAFE",
-  globe:   "#D1FAE5",
-  valley:  "#FEF9C3",
-  vibrant: "#FFE4E6",
-  ocean:   "#CCFBF1",
-};
-const CREW_ID_TO_STYLE: Record<string, string> = {
-  "11111111-0000-0000-0000-000000000001": "city",
-  "11111111-0000-0000-0000-000000000002": "tech",
-  "11111111-0000-0000-0000-000000000003": "globe",
-  "11111111-0000-0000-0000-000000000004": "valley",
-};
-
-function crewIconBg(crewId: string, headerStyle?: string | null): string {
-  const style =
-    (headerStyle && headerStyle !== "auto" && headerStyle !== "custom" && THEME_ICON_BG[headerStyle])
-      ? headerStyle
-      : CREW_ID_TO_STYLE[crewId];
-  return style ? (THEME_ICON_BG[style] ?? "#EDE9FE") : "#EDE9FE";
-}
 
 export default function CrewsPage() {
   const supabase = createClient();
@@ -123,9 +101,7 @@ export default function CrewsPage() {
         <Link href="/crews/create"
           className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white active:scale-95 transition-transform"
           style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 100%)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-          </svg>
+          <PlusIcon size={14} color="white" strokeWidth={2.5} />
           Create
         </Link>
       </div>
@@ -156,14 +132,14 @@ export default function CrewsPage() {
         ) : displayed.length === 0 ? (
           tab === "mine" ? (
             <EmptyState
-              icon="🚀"
+              icon={<CrewIcon size={32} color="#4A27E8" />}
               title="No crews yet"
               body="Join a crew built around your interests, or create one for your community."
               action={{ label: "Browse All Crews", onClick: () => setTab("all") }}
             />
           ) : (
             <EmptyState
-              icon="🚀"
+              icon={<CrewIcon size={32} color="#4A27E8" />}
               title="No crews available"
               body="Be the first to create a crew and build your community of frequent flyers."
               action={{ label: "Create a Crew", href: "/crews/create" }}
@@ -177,9 +153,9 @@ export default function CrewsPage() {
 
               {/* Tappable area → detail page */}
               <Link href={`/crews/${crew.id}`} className="flex items-start gap-3 p-4 active:opacity-80 transition-opacity">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                     style={{ background: crewIconBg(crew.id, crew.header_style) }}>
-                  {crew.icon}
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 crew-icon-bg"
+                     style={{ background: "var(--c-muted)", color: "var(--color-brand-fg)" }}>
+                  <CrewIcon size={24} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm" style={{ color: "var(--c-text1)" }}>{crew.name}</p>

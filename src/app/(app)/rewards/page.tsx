@@ -1,15 +1,29 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { EmptyState } from "@/components/EmptyState";
+import {
+  TierBronzeIcon, TierSilverIcon, TierGoldIcon, TierPlatinumIcon,
+  LoungeIcon, WineIcon, UpgradeIcon, MealIcon, PassIcon, CoffeeIcon,
+  PlaneIcon, HandshakeIcon, PersonPlusIcon, MessageBubbleIcon, StarIcon,
+} from "@/components/icons/AppIcons";
 
 // ── Tiers ────────────────────────────────────────────────
+const TIER_ICONS: Record<string, React.ReactNode> = {
+  Bronze:   <TierBronzeIcon size={32} />,
+  Silver:   <TierSilverIcon size={32} />,
+  Gold:     <TierGoldIcon size={32} />,
+  Platinum: <TierPlatinumIcon size={32} />,
+};
+
 const TIERS = [
-  { name: "Bronze",   min: 0,    max: 499,  icon: "🥉" },
-  { name: "Silver",   min: 500,  max: 1499, icon: "🥈" },
-  { name: "Gold",     min: 1500, max: 4999, icon: "🥇" },
-  { name: "Platinum", min: 5000, max: null, icon: "💎" },
+  { name: "Bronze",   min: 0,    max: 499  },
+  { name: "Silver",   min: 500,  max: 1499 },
+  { name: "Gold",     min: 1500, max: 4999 },
+  { name: "Platinum", min: 5000, max: null },
 ];
 
 function getTier(pts: number) {
@@ -28,6 +42,15 @@ function nextTierInfo(pts: number) {
 
 // ── Deals ────────────────────────────────────────────────
 type Category = "all" | "lounge" | "food" | "upgrade";
+
+const DEAL_ICONS: Record<string, React.ReactNode> = {
+  "lounge-1":  <LoungeIcon  size={22} color="white" />,
+  "food-1":    <WineIcon    size={22} color="white" />,
+  "upgrade-1": <UpgradeIcon size={22} color="white" />,
+  "food-2":    <MealIcon    size={22} color="white" />,
+  "lounge-2":  <PassIcon    size={22} color="white" />,
+  "food-3":    <CoffeeIcon  size={22} color="white" />,
+};
 
 const DEALS = [
   {
@@ -175,9 +198,9 @@ function DealCard({ deal, balance }: { deal: Deal; balance: number }) {
       >
         <div className="flex items-center gap-4 p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)", borderRadius: "1rem" }}>
           {/* Icon */}
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                style={{ background: deal.gradient }}>
-            <span>{deal.emoji}</span>
+            {DEAL_ICONS[deal.id]}
           </div>
           {/* Info */}
           <div className="flex-1 min-w-0">
@@ -217,7 +240,7 @@ function DealCard({ deal, balance }: { deal: Deal; balance: number }) {
                   <h3 className="text-xl font-black text-white mt-0.5">{deal.title}</h3>
                   <p className="text-white/80 text-sm font-bold mt-1">{deal.points.toLocaleString()} SkyPoints</p>
                 </div>
-                <div className="text-4xl">{deal.emoji}</div>
+                <div className="w-12 h-12 flex items-center justify-center opacity-90">{DEAL_ICONS[deal.id]}</div>
               </div>
             </div>
 
@@ -270,6 +293,7 @@ function DealCard({ deal, balance }: { deal: Deal; balance: number }) {
 type PointRow = { amount: number; reason: string; created_at: string };
 
 export default function RewardsPage() {
+  const router = useRouter();
   const [balance, setBalance]   = useState<number | null>(null);
   const [history, setHistory]   = useState<PointRow[]>([]);
   const [filter, setFilter]     = useState<Category>("all");
@@ -304,9 +328,20 @@ export default function RewardsPage() {
 
   return (
     <div className="animate-fade-in pb-[110px]">
-      <div className="px-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
-        <h1 className="text-2xl font-black mb-5" style={{ color: "var(--c-text1)" }}>Rewards</h1>
+      <div className="px-4 flex items-center gap-3" style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
+        <button
+          onClick={() => router.back()}
+          className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
+          style={{ background: "rgba(74,39,232,0.1)" }}
+          aria-label="Go back"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18L9 12L15 6" stroke="var(--color-brand-fg)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <h1 className="text-2xl font-black mb-0" style={{ color: "var(--c-text1)" }}>Rewards</h1>
       </div>
+      <div className="h-5" />
 
       {/* ── Balance header ─────────────────────────────── */}
       <div className="mx-4 rounded-3xl overflow-hidden mb-5 rewards-balance-card"
@@ -324,7 +359,7 @@ export default function RewardsPage() {
               )}
             </div>
             <div className="flex flex-col items-end gap-1">
-              <span className="text-3xl">{tier.icon}</span>
+              {TIER_ICONS[tier.name]}
               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full dark:bg-pink-900/40 dark:text-pink-300" style={{ background: "#FCE7F3", color: "#BE185D" }}>
                 {tier.name}
               </span>
@@ -385,10 +420,10 @@ export default function RewardsPage() {
           <h3 className="text-[15px] font-bold mb-3" style={{ color: "var(--c-text1)" }}>How to Earn</h3>
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--c-border)" }}>
             {[
-              { icon: "✈️", label: "Add a flight",       pts: "+200" },
-              { icon: "🤝", label: "Connect with someone", pts: "+100" },
-              { icon: "👤", label: "Sign up",              pts: "+500" },
-              { icon: "💬", label: "Send a message",       pts: "+10"  },
+              { icon: <PlaneIcon size={18} color="var(--c-text2)" />,         label: "Add a flight",        pts: "+200" },
+              { icon: <HandshakeIcon size={18} color="var(--c-text2)" />,     label: "Connect with someone", pts: "+100" },
+              { icon: <PersonPlusIcon size={18} color="var(--c-text2)" />,    label: "Sign up",              pts: "+500" },
+              { icon: <MessageBubbleIcon size={18} color="var(--c-text2)" />, label: "Send a message",       pts: "+10"  },
             ].map(({ icon, label, pts: p }, i, arr) => (
               <div key={label}
                 className="flex items-center gap-3 px-4 py-3"
@@ -396,7 +431,7 @@ export default function RewardsPage() {
                   background: "var(--c-card)",
                   borderBottom: i < arr.length - 1 ? "1px solid var(--c-border)" : "none",
                 }}>
-                <span className="text-lg w-7 text-center">{icon}</span>
+                <span className="w-7 flex items-center justify-center">{icon}</span>
                 <span className="flex-1 text-sm" style={{ color: "var(--c-text1)" }}>{label}</span>
                 <span className="text-sm font-bold" style={{ color: "var(--color-brand-fg)" }}>{p}</span>
               </div>
@@ -410,7 +445,7 @@ export default function RewardsPage() {
           {history.length === 0 ? (
             <div className="rounded-2xl overflow-hidden" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
               <EmptyState
-                icon="⭐"
+                icon={<StarIcon size={32} color="#4A27E8" />}
                 title="Start earning points"
                 body="Connect with people, join crews, and complete flights to earn SkyPoints."
                 className="py-10"

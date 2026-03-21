@@ -4,6 +4,7 @@ import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import ConnectButton from "@/components/ConnectButton";
 import AtlasIcebreakerCard from "@/components/AtlasIcebreakerCard";
+import { ConnectionsIcon, PlaneIcon, HandshakeIcon } from "@/components/icons/AppIcons";
 
 export const dynamic = "force-dynamic";
 
@@ -225,13 +226,14 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
         {/* ── Stats ── */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "CONNECTIONS", value: (targetConnCount ?? 0).toLocaleString() },
-            { label: "FLIGHTS",     value: (flightCount ?? 0).toLocaleString() },
-            { label: "MUTUAL",      value: mutualCount.toLocaleString() },
-          ].map(({ label, value }) => (
-            <div key={label} className="card text-center py-4">
-              <p className="text-xl font-black" style={{ color: "var(--c-text1)" }}>{value}</p>
-              <p className="text-[10px] font-semibold tracking-widest mt-0.5" style={{ color: "var(--c-text3)" }}>{label}</p>
+            { label: "CONNECTIONS", value: (targetConnCount ?? 0).toLocaleString(), icon: <ConnectionsIcon size={18} color="var(--color-brand-fg)" /> },
+            { label: "FLIGHTS",     value: (flightCount ?? 0).toLocaleString(),     icon: <PlaneIcon size={18} color="var(--color-brand-fg)" /> },
+            { label: "MUTUAL",      value: mutualCount.toLocaleString(),             icon: <HandshakeIcon size={18} color="var(--color-brand-fg)" /> },
+          ].map(({ label, value, icon }) => (
+            <div key={label} className="card flex flex-col items-center py-4 gap-1">
+              {icon}
+              <p className="text-xl font-black leading-none" style={{ color: "var(--c-text1)" }}>{value}</p>
+              <p className="text-[10px] font-semibold tracking-widest" style={{ color: "var(--c-text3)" }}>{label}</p>
             </div>
           ))}
         </div>

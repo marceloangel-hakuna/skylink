@@ -4,6 +4,10 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import {
+  PlaneIcon, CalendarIcon, ClockIcon, AlertTriangleIcon, CheckCircleIcon,
+  EyeOffIcon, AtlasSparkleIcon,
+} from "@/components/icons/AppIcons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -116,9 +120,9 @@ function BoardingPrompt({
         <div className="px-5 pt-4 pb-2 flex flex-col gap-5">
           {/* Icon + headline */}
           <div className="flex flex-col items-center text-center gap-2 pt-1">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-                 style={{ background: "rgba(74, 39, 232, 0.1)" }}>
-              ✈️
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                 style={{ background: "rgba(74, 39, 232, 0.1)", color: "var(--color-brand-fg)" }}>
+              <PlaneIcon size={28} />
             </div>
             <h2 className="text-lg font-black" style={{ color: "var(--c-text1)" }}>
               Ready to board?
@@ -135,7 +139,7 @@ function BoardingPrompt({
               className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl active:scale-[0.98] transition-transform"
               style={{ background: "rgba(16, 185, 129, 0.08)", border: "1.5px solid rgba(16, 185, 129, 0.3)" }}
             >
-              <span className="text-xl">🟢</span>
+              <span className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: "#10B981" }} />
               <div className="text-left">
                 <p className="text-sm font-bold" style={{ color: "#059669" }}>I&apos;m Available</p>
                 <p className="text-xs" style={{ color: "var(--c-text3)" }}>Visible to SkyLink members on this flight</p>
@@ -147,7 +151,7 @@ function BoardingPrompt({
               className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl active:scale-[0.98] transition-transform"
               style={{ background: "rgba(234, 179, 8, 0.08)", border: "1.5px solid rgba(234, 179, 8, 0.3)" }}
             >
-              <span className="text-xl">🟡</span>
+              <span className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: "#EAB308" }} />
               <div className="text-left">
                 <p className="text-sm font-bold" style={{ color: "#B45309" }}>Busy This Flight</p>
                 <p className="text-xs" style={{ color: "var(--c-text3)" }}>Visible but marked as not available</p>
@@ -159,7 +163,7 @@ function BoardingPrompt({
               className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl active:scale-[0.98] transition-transform"
               style={{ background: "var(--c-muted)", border: "1.5px solid var(--c-border)" }}
             >
-              <span className="text-xl">👻</span>
+              <EyeOffIcon size={20} color="var(--c-text3)" />
               <div className="text-left">
                 <p className="text-sm font-bold" style={{ color: "var(--c-text2)" }}>Stay Private</p>
                 <p className="text-xs" style={{ color: "var(--c-text3)" }}>Keep me invisible on this flight</p>
@@ -186,7 +190,7 @@ function StatusCard({
       bg:     "rgba(16, 185, 129, 0.08)",
       border: "rgba(16, 185, 129, 0.3)",
       dot:    "#10B981",
-      icon:   "🟢",
+      icon:   <span className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: "#10B981", display: "inline-block" }} />,
       label:  "Available for Networking",
       sub:    "SkyLink members on this flight can see you",
       other:  [
@@ -198,7 +202,7 @@ function StatusCard({
       bg:     "rgba(234, 179, 8, 0.08)",
       border: "rgba(234, 179, 8, 0.3)",
       dot:    "#EAB308",
-      icon:   "🟡",
+      icon:   <span className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: "#EAB308", display: "inline-block" }} />,
       label:  "Visible but Busy",
       sub:    "Others can see you but know you're not available",
       other:  [
@@ -210,7 +214,7 @@ function StatusCard({
       bg:     "var(--c-muted)",
       border: "var(--c-border)",
       dot:    "#94A3B8",
-      icon:   "👻",
+      icon:   <EyeOffIcon size={18} color="var(--c-text3)" />,
       label:  "Private Mode",
       sub:    "You're invisible to other members on this flight",
       other:  [
@@ -379,16 +383,16 @@ function OverviewTab({
       {/* ── Flight Stats ─────────────────────── */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: "Duration",  value: duration,                    emoji: "⏱" },
-          { label: "Flight",    value: userFlight?.flight_number ?? "—", emoji: "✈" },
-          { label: "Date",      value: userFlight?.departure_date ?? flightData?.departure_date ?? "TBD", emoji: "📅" },
-          { label: "Delayed",   value: delayed > 0 ? `+${delayed} min` : "On time", emoji: delayed > 0 ? "⚠️" : "✓" },
+          { label: "Duration",  value: duration,                    icon: <ClockIcon size={18} color="var(--color-brand-fg)" /> },
+          { label: "Flight",    value: userFlight?.flight_number ?? "—", icon: <PlaneIcon size={18} color="var(--color-brand-fg)" /> },
+          { label: "Date",      value: userFlight?.departure_date ?? flightData?.departure_date ?? "TBD", icon: <CalendarIcon size={18} color="var(--color-brand-fg)" /> },
+          { label: "Delayed",   value: delayed > 0 ? `+${delayed} min` : "On time", icon: delayed > 0 ? <AlertTriangleIcon size={18} color="var(--color-brand-fg)" /> : <CheckCircleIcon size={18} color="var(--color-brand-fg)" /> },
         ].map(s => (
           <div key={s.label} className="rounded-2xl flex items-center gap-3 p-3.5"
                style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base"
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                  style={{ background: "rgba(74, 39, 232, 0.08)" }}>
-              {s.emoji}
+              {s.icon}
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--c-text3)" }}>{s.label}</p>
@@ -468,7 +472,7 @@ function PeopleTab({
       {/* Empty */}
       {!loading && people.length === 0 && (
         <div className="py-10 flex flex-col items-center text-center gap-3">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ background: "var(--c-muted)" }}>✈️</div>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "var(--c-muted)", color: "var(--color-brand-fg)" }}><PlaneIcon size={28} /></div>
           <p className="text-sm font-black" style={{ color: "var(--c-text1)" }}>No one visible yet</p>
           <p className="text-xs" style={{ color: "var(--c-text2)", maxWidth: "240px" }}>
             Other SkyLink members will appear here once they set themselves as Available on this flight.
@@ -585,7 +589,7 @@ function PeopleTab({
                           background: selectedPerson.networking_status === "available" ? "rgba(16,185,129,0.1)" : "rgba(234,179,8,0.1)",
                           color: selectedPerson.networking_status === "available" ? "#059669" : "#B45309",
                         }}>
-                    {selectedPerson.networking_status === "available" ? "🟢 Available" : "🟡 Busy"}
+                    {selectedPerson.networking_status === "available" ? "Available" : "Busy"}
                   </span>
                 </div>
               </div>
