@@ -55,31 +55,30 @@ const mainItems: NavItem[] = [
 ];
 
 export default function BottomNav() {
-  const pathname  = usePathname();
-  const router    = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const router   = useRouter();
+  const [appRoot, setAppRoot] = useState<Element | null>(null);
 
   useEffect(() => {
-    setMounted(true);
+    setAppRoot(document.getElementById("app-root"));
     [...mainItems.map(i => i.href), "/chat"].forEach(href => router.prefetch(href));
   }, [router]);
 
   const chatActive = pathname === "/chat" || pathname.startsWith("/chat/");
 
-  // Render into document.body via portal — this guarantees position:fixed is
-  // relative to the true viewport with zero ancestor interference on any platform.
+  // Render into #app-root via portal.
+  // #app-root is height:100dvh + position:relative, so position:absolute children
+  // are anchored to the true screen bottom — no position:fixed, no iOS Safari quirks.
   const nav = (
     <div
       style={{
-        position: "fixed",
+        position: "absolute",
         bottom: 0,
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: "100%",
-        maxWidth: "430px",
-        zIndex: 9999,
+        left: 0,
+        right: 0,
         padding: "0 16px",
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
+        zIndex: 50,
         pointerEvents: "none",
       }}
     >
@@ -129,6 +128,6 @@ export default function BottomNav() {
     </div>
   );
 
-  if (!mounted) return null;
-  return createPortal(nav, document.body);
+  if (!appRoot) return null;
+  return createPortal(nav, appRoot);
 }

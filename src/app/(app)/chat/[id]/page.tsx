@@ -221,18 +221,16 @@ export default function ConversationPage() {
   const otherSubline = [otherProfile?.role, otherProfile?.company].filter(Boolean).join(" at ");
 
   // ── Render ────────────────────────────────────────────────────────────────
-  // position:fixed fills the viewport above the nav. Works correctly because
-  // #app-root has no overflow/transform that would trap fixed positioning.
+  // position:absolute fills #app-root (height:100dvh, position:relative) above
+  // the nav. Using absolute instead of fixed avoids all iOS Safari PWA quirks.
   return (
     <div
-      className="fixed flex flex-col"
+      className="absolute flex flex-col"
       style={{
         top:        0,
         bottom:     "calc(82px + env(safe-area-inset-bottom, 0px))",
-        left:       "50%",
-        transform:  "translateX(-50%)",
-        width:      "100%",
-        maxWidth:   "430px",
+        left:       0,
+        right:      0,
         background: "var(--background)",
         zIndex:     10,
       }}
