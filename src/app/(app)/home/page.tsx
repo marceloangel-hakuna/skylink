@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/EmptyState";
 import PullToRefresh from "@/components/PullToRefresh";
 import PeopleNearYou from "@/components/PeopleNearYou";
 import { renderCrewIcon } from "@/components/icons/AppIcons";
+import { CREW_MINI_THEMES, resolveCrewThemeKey } from "@/app/(app)/crews/crewMiniThemes";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,7 @@ export default async function HomePage() {
   // Fetch featured crews with member counts
   const { data: featuredCrews } = await supabase
     .from("crews")
-    .select("id, name, icon")
+    .select("id, name, icon, header_style")
     .limit(4);
 
   const { data: crewMemberships } = (featuredCrews ?? []).length > 0
@@ -352,13 +353,23 @@ export default async function HomePage() {
             />
           ) : (
             <div className="flex flex-col gap-3">
-              {featuredCrewsWithMeta.map((crew, i) => (
+              {featuredCrewsWithMeta.map((crew, i) => {
+                const mini = CREW_MINI_THEMES[resolveCrewThemeKey(crew.id, crew.header_style)] ?? CREW_MINI_THEMES.city;
+                return (
                 <Reveal key={crew.id} delay={i * 60}>
                 <Link href={`/crews/${crew.id}`}
                   className="card flex items-center gap-3 active:scale-[0.98] transition-transform">
-                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-                       style={{ background: "var(--c-muted)", color: "var(--color-brand-fg)" }}>
-                    {renderCrewIcon(crew.icon, 22)}
+                  {/* Themed thumbnail — matches internal crew page */}
+                  <div className="w-11 h-11 rounded-2xl flex-shrink-0 overflow-hidden relative"
+                       style={{ background: mini.bg, border: `1px solid ${mini.border}` }}>
+                    {/* Mini illustration in right half */}
+                    <div className="absolute right-0 top-0 w-7 h-full pointer-events-none opacity-90">
+                      {mini.mini}
+                    </div>
+                    {/* Icon */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span style={{ color: mini.accent }}>{renderCrewIcon(crew.icon, 18)}</span>
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-zinc-800 dark:text-[var(--c-text1)]">{crew.name}</p>
@@ -371,7 +382,8 @@ export default async function HomePage() {
                   )}
                 </Link>
                 </Reveal>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
