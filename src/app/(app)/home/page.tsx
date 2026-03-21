@@ -10,13 +10,7 @@ import { renderCrewIcon } from "@/components/icons/AppIcons";
 
 export const dynamic = "force-dynamic";
 
-// Matches crew theme backgrounds in crews/[id]/page.tsx
-const CREW_ICON_BG: Record<string, string> = {
-  "11111111-0000-0000-0000-000000000001": "#FFEDD5", // SFO↔NYC — amber
-  "11111111-0000-0000-0000-000000000002": "#DBEAFE", // AI Founders — blue
-  "11111111-0000-0000-0000-000000000003": "#D1FAE5", // LatAm Tech — emerald
-  "11111111-0000-0000-0000-000000000004": "#FEF9C3", // Silicon Valley — golden
-};
+
 
 const AVATAR_COLORS = [
   "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
