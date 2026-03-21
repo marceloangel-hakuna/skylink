@@ -6,6 +6,7 @@ import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
 import PullToRefresh from "@/components/PullToRefresh";
 import PeopleNearYou from "@/components/PeopleNearYou";
+import { renderCrewIcon } from "@/components/icons/AppIcons";
 
 export const dynamic = "force-dynamic";
 
@@ -361,9 +362,9 @@ export default async function HomePage() {
                 <Reveal key={crew.id} delay={i * 60}>
                 <Link href={`/crews/${crew.id}`}
                   className="card flex items-center gap-3 active:scale-[0.98] transition-transform">
-                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 crew-icon-bg"
-                       style={{ background: CREW_ICON_BG[crew.id] ?? "#EDE9FE" }}>
-                    {crew.icon}
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                       style={{ background: "var(--c-muted)", color: "var(--color-brand-fg)" }}>
+                    {renderCrewIcon(crew.icon, 22)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-zinc-800 dark:text-[var(--c-text1)]">{crew.name}</p>

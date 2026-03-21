@@ -516,3 +516,176 @@ export function CoffeeIcon({ size = 24, color = "currentColor", strokeWidth = 1.
     </svg>
   );
 }
+
+// ─── Crew Thematic Icons ───────────────────────────────────────────────────────
+
+export function RocketIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M12 2c-3.5 0-5.5 5-5.5 8.5V13h11v-2.5C17.5 7 15.5 2 12 2z" />
+      <path d="M6.5 13L4 18h4.5" />
+      <path d="M17.5 13L20 18h-4.5" />
+      <path d="M9.5 18.5h5v2a2.5 2.5 0 01-5 0v-2z" />
+      <circle cx="12" cy="9" r="1.5" />
+    </svg>
+  );
+}
+
+export function BriefcaseIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <rect x="2" y="8" width="20" height="13" rx="2" />
+      <path d="M16 8V6a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+      <path d="M2 13h20" />
+    </svg>
+  );
+}
+
+export function GlobeIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3a14.5 14.5 0 014 9 14.5 14.5 0 01-4 9 14.5 14.5 0 01-4-9 14.5 14.5 0 014-9z" />
+      <path d="M3 12h18" />
+    </svg>
+  );
+}
+
+export function BuildingIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M3 21V8l9-5 9 5v13H3z" />
+      <path d="M10 21v-6h4v6" />
+      <path d="M9 9h2v2H9zM13 9h2v2h-2zM9 14h2v2H9zM13 14h2v2h-2z" />
+    </svg>
+  );
+}
+
+export function PalmIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M12 22V13" />
+      <path d="M12 13C11 9 7.5 7.5 5 4c3.5-.5 6.5 3 7 6" />
+      <path d="M12 13C13 9 16.5 7.5 19 4c-3.5-.5-6.5 3-7 6" />
+      <path d="M12 13c0-2-2.5-6.5-5-6 1.5 1.5 3 4 5 6" />
+      <path d="M12 13c0-2 2.5-6.5 5-6-1.5 1.5-3 4-5 6" />
+    </svg>
+  );
+}
+
+export function CocktailIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M5 3h14L12 14v6" />
+      <path d="M9 20h6" />
+      <path d="M8.5 8l1.5 1.5" />
+    </svg>
+  );
+}
+
+export function TargetIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </svg>
+  );
+}
+
+export function MicIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0014 0" />
+      <path d="M12 18v4" />
+      <path d="M9 22h6" />
+    </svg>
+  );
+}
+
+export function MusicIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </svg>
+  );
+}
+
+export function MountainIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M2 21L9 7l4 6 3-4 6 9H2z" />
+      <path d="M13 7l2 3" />
+    </svg>
+  );
+}
+
+export function WavesIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M2 10c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0" />
+      <path d="M2 15c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0" />
+    </svg>
+  );
+}
+
+export function LightbulbIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M9 18h6M10 21h4" />
+      <path d="M12 3a6 6 0 016 6c0 2.5-1.5 4.5-3 5.5L14.5 16h-5L8.5 14.5C7 13.5 6 11.5 6 9a6 6 0 016-6z" />
+    </svg>
+  );
+}
+
+export function FireIcon({ size = 20, color = "currentColor", strokeWidth = 1.7, className, style }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      <path d="M12 22c4.5 0 7-3 7-6.5 0-4-4-9-7-13-3 4-7 9-7 13C5 19 7.5 22 12 22z" />
+      <path d="M12 22c2 0 3.5-1.5 3.5-3.5 0-2-3.5-5-3.5-5s-3.5 3-3.5 5C8.5 20.5 10 22 12 22z" />
+    </svg>
+  );
+}
+
+// ─── Crew Icon Registry ────────────────────────────────────────────────────────
+
+export const CREW_ICON_LIST: { key: string; label: string; component: (size: number) => React.ReactNode }[] = [
+  { key: "plane",     label: "Aviation",    component: s => <PlaneIcon size={s} /> },
+  { key: "rocket",    label: "Startup",     component: s => <RocketIcon size={s} /> },
+  { key: "briefcase", label: "Business",    component: s => <BriefcaseIcon size={s} /> },
+  { key: "chip",      label: "AI & Tech",   component: s => <AiMlIcon size={s} /> },
+  { key: "globe",     label: "Global",      component: s => <GlobeIcon size={s} /> },
+  { key: "building",  label: "City",        component: s => <BuildingIcon size={s} /> },
+  { key: "palm",      label: "Tropical",    component: s => <PalmIcon size={s} /> },
+  { key: "cocktail",  label: "Nightlife",   component: s => <CocktailIcon size={s} /> },
+  { key: "coffee",    label: "Casual",      component: s => <CoffeeIcon size={s} /> },
+  { key: "target",    label: "Focus",       component: s => <TargetIcon size={s} /> },
+  { key: "star",      label: "General",     component: s => <StarIcon size={s} /> },
+  { key: "mic",       label: "Speaking",    component: s => <MicIcon size={s} /> },
+  { key: "music",     label: "Music",       component: s => <MusicIcon size={s} /> },
+  { key: "leaf",      label: "Nature",      component: s => <ClimateIcon size={s} /> },
+  { key: "mountain",  label: "Outdoors",    component: s => <MountainIcon size={s} /> },
+  { key: "waves",     label: "Ocean",       component: s => <WavesIcon size={s} /> },
+  { key: "dna",       label: "Biotech",     component: s => <BiotechIcon size={s} /> },
+  { key: "network",   label: "Network",     component: s => <Web3Icon size={s} /> },
+  { key: "lightbulb", label: "Ideas",       component: s => <LightbulbIcon size={s} /> },
+  { key: "fire",      label: "Energy",      component: s => <FireIcon size={s} /> },
+];
+
+// Maps legacy emoji strings to their new key equivalents
+const EMOJI_TO_KEY: Record<string, string> = {
+  "✈️": "plane", "🚀": "rocket", "💼": "briefcase", "🤖": "chip",
+  "🌎": "globe", "🏙️": "building", "🌴": "palm", "🍸": "cocktail",
+  "☕": "coffee", "🎯": "target", "⭐": "star", "🎤": "mic",
+  "🎸": "music", "🌿": "leaf", "🏔️": "mountain", "🌊": "waves",
+  "🧬": "dna", "🌐": "network", "💡": "lightbulb", "📡": "chip",
+};
+
+export function renderCrewIcon(iconKey: string, size = 24): React.ReactNode {
+  const key = EMOJI_TO_KEY[iconKey] ?? iconKey;
+  const entry = CREW_ICON_LIST.find(e => e.key === key);
+  return entry ? entry.component(size) : <CrewIcon size={size} />;
+}

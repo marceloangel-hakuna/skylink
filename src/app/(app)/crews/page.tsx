@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/EmptyState";
-import { CrewIcon, PlusIcon } from "@/components/icons/AppIcons";
+import { CrewIcon, PlusIcon, renderCrewIcon } from "@/components/icons/AppIcons";
 
 type Crew = {
   id: string;
@@ -153,9 +153,9 @@ export default function CrewsPage() {
 
               {/* Tappable area → detail page */}
               <Link href={`/crews/${crew.id}`} className="flex items-start gap-3 p-4 active:opacity-80 transition-opacity">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 crew-icon-bg"
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                      style={{ background: "var(--c-muted)", color: "var(--color-brand-fg)" }}>
-                  <CrewIcon size={24} />
+                  {renderCrewIcon(crew.icon, 24)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm" style={{ color: "var(--c-text1)" }}>{crew.name}</p>

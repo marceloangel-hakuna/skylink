@@ -4,8 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { THEME_OPTIONS } from "../themes";
-
-const ICONS = ["✈️","🚀","💼","🤖","🌎","🏙️","🌴","🍸","☕","🎯","📡","🌐","💡","🎤","🏄","🎸","🧬","🌿","🏔️","🌊"];
+import { CREW_ICON_LIST, renderCrewIcon } from "@/components/icons/AppIcons";
 
 // Mini illustrations for the preset theme picker cards
 const THEME_PREVIEWS: Record<string, React.ReactNode> = {
@@ -93,7 +92,7 @@ export default function CreateCrewPage() {
   const [description, setDesc]  = useState("");
   const [style, setStyle]       = useState<string>("city");
   const [customSvg, setCustomSvg] = useState<string | null>(null);  // AI-generated SVG
-  const [icon, setIcon]         = useState("✈️");
+  const [icon, setIcon]         = useState("plane");
   const [creating, setCreating] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError]       = useState("");
@@ -370,7 +369,7 @@ export default function CreateCrewPage() {
                 <div className="absolute inset-0 flex items-end p-3"
                      style={{ background: "linear-gradient(to top, rgba(0,0,0,0.25) 0%, transparent 60%)" }}>
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">{icon}</span>
+                    <span className="text-white opacity-90">{renderCrewIcon(icon, 20)}</span>
                     <div>
                       <p className="text-xs font-bold text-white drop-shadow">{name || "Crew name"}</p>
                       <p className="text-[10px] text-white/70">
@@ -398,14 +397,16 @@ export default function CreateCrewPage() {
               Choose an icon that represents your crew:
             </p>
             <div className="grid grid-cols-5 gap-3">
-              {ICONS.map(ic => (
-                <button key={ic} onClick={() => setIcon(ic)}
-                  className="aspect-square rounded-2xl flex items-center justify-center text-2xl active:scale-90 transition-all"
+              {CREW_ICON_LIST.map(({ key, label, component }) => (
+                <button key={key} onClick={() => setIcon(key)}
+                  title={label}
+                  className="aspect-square rounded-2xl flex items-center justify-center active:scale-90 transition-all"
                   style={{
-                    background: icon === ic ? "rgba(74,39,232,0.12)" : "var(--c-card)",
-                    border: icon === ic ? "2px solid #4A27E8" : "1px solid var(--c-border)",
+                    background: icon === key ? "rgba(74,39,232,0.12)" : "var(--c-card)",
+                    border: icon === key ? "2px solid #4A27E8" : "1px solid var(--c-border)",
+                    color: icon === key ? "#4A27E8" : "var(--c-text2)",
                   }}>
-                  {ic}
+                  {component(22)}
                 </button>
               ))}
             </div>
@@ -425,7 +426,7 @@ export default function CreateCrewPage() {
                 <div className="absolute inset-0 flex items-end p-3"
                      style={{ background: "linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 60%)" }}>
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">{icon}</span>
+                    <span className="text-white opacity-90">{renderCrewIcon(icon, 22)}</span>
                     <div>
                       <p className="text-sm font-bold text-white drop-shadow">{name}</p>
                       {description && (
