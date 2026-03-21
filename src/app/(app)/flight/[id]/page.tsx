@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
   PlaneIcon, CalendarIcon, ClockIcon, AlertTriangleIcon, CheckCircleIcon,
-  EyeOffIcon, AtlasSparkleIcon,
+  EyeOffIcon,
 } from "@/components/icons/AppIcons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
