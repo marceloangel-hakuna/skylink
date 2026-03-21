@@ -221,14 +221,14 @@ export default function ConversationPage() {
   const otherSubline = [otherProfile?.role, otherProfile?.company].filter(Boolean).join(" at ");
 
   // ── Render ────────────────────────────────────────────────────────────────
-  // With flex-column layout, page-scroll is flex:1 with overflow hidden.
-  // This div fills 100% of that space and manages its own internal scroll.
+  // position:absolute fills the full page-scroll area (ignoring its padding-bottom)
+  // so the chat input sits right above the floating nav.
   return (
     <div
       className="flex flex-col"
       style={{
-        height:     "100%",
-        overflow:   "hidden",
+        position:   "absolute",
+        inset:      0,
         background: "var(--background)",
       }}
     >

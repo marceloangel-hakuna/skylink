@@ -65,8 +65,8 @@ export default function BottomNav() {
 
   return (
     <div
-      className="w-full flex-shrink-0 px-4"
-      style={{ paddingTop: "8px", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)", background: "var(--background)" }}
+      className="absolute left-0 right-0 bottom-0 px-4"
+      style={{ paddingTop: "8px", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)" }}
     >
       <div className="flex items-end gap-3">
         {/* Floating pill */}

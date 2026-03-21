@@ -89,20 +89,23 @@ body {
   max-width: 430px;
   height: 100dvh;
   margin-inline: auto;
+  position: relative;        /* nav anchors to this, not the viewport */
   display: flex;
   flex-direction: column;
   background: var(--background);
   overflow: hidden;
 }
 
-/* Scrollable page content — fills remaining space above the nav */
+/* Scrollable page content — fills all space, nav floats above via position:absolute */
 .page-scroll {
   flex: 1;
-  min-height: 0; /* critical: allows flex child to shrink and scroll */
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
+  /* Pad the bottom so the last item isn't hidden behind the floating nav */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 .page-scroll::-webkit-scrollbar { display: none; }
 
