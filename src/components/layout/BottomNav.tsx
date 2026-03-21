@@ -72,14 +72,13 @@ export default function BottomNav() {
     <div
       style={{
         position: "fixed",
-        bottom: 0,
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
         left: "50%",
         transform: "translateX(-50%)",
         width: "100%",
         maxWidth: "430px",
         zIndex: 9999,
-        padding: "8px 16px",
-        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
+        padding: "0 16px",
         pointerEvents: "none",
       }}
     >

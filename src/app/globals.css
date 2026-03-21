@@ -100,8 +100,8 @@ body {
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
-  /* Extra padding so last content item is fully scrollable above the nav */
-  padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  /* Extra padding so last content item scrolls above the floating nav */
+  padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
   /* Fade content into transparency as it reaches the nav — gives floating depth */
   -webkit-mask-image: linear-gradient(
     to bottom,
