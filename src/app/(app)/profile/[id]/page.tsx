@@ -61,7 +61,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   if (!profile) {
     return (
       <div className="animate-fade-in pb-6">
-        <PageHeader title="Profile" />
+        <PageHeader title="Profile" showBack />
         <div className="px-4 pt-8 flex flex-col items-center gap-3 text-center">
           <div className="w-20 h-20 rounded-3xl flex items-center justify-center font-black text-3xl"
                style={{ background: "var(--c-muted)", color: "var(--c-text3)" }}>?</div>
@@ -104,7 +104,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
 
   return (
     <div className="animate-fade-in pb-6">
-      <PageHeader title="Profile" />
+      <PageHeader title="Profile" showBack />
 
       <div className="px-4 pt-4 flex flex-col gap-4">
 

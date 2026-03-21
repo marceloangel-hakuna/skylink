@@ -74,6 +74,7 @@ html.dark {
 }
 
 body {
+  min-height: 100%;
   height: 100%;
   color: var(--foreground);
   background: var(--background);
@@ -86,40 +87,22 @@ body {
 #app-root {
   width: 100%;
   max-width: 430px;
-  /* Exact viewport height — makes this the reliable coordinate system for the nav.
-     position:relative makes it a containing block for position:absolute children.
-     overflow:hidden confines scrolling content to this box.
-     We avoid position:fixed for the nav entirely — absolute+100dvh container
-     is immune to all iOS Safari fixed-positioning quirks on PWA cold launch. */
-  height: 100dvh;
+  min-height: 100dvh;
   margin-inline: auto;
   position: relative;
-  overflow: hidden;
   background: var(--background);
+  /* clip does not create a scroll container (unlike hidden), so position:fixed
+     children stay anchored to the viewport on iOS Safari / WKWebView. */
+  overflow-x: clip;
 }
 
-/* Scrollable page content — sits inside the 100dvh container, fades at bottom */
+/* Scrollable page content — height stops above the fixed nav bar */
 .page-scroll {
-  height: 100%;
+  height: calc(100dvh - var(--nav-height));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
-  /* Extra padding so the last item scrolls above the floating nav */
-  padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
-  /* Fade content as it nears the nav — reinforces the floating depth */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    black 0%,
-    black calc(100% - 120px),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    black 0%,
-    black calc(100% - 120px),
-    transparent 100%
-  );
 }
 .page-scroll::-webkit-scrollbar { display: none; }
 
