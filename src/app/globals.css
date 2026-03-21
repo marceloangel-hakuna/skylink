@@ -81,7 +81,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
-  overflow: hidden; /* body must not scroll — all scrolling happens inside .page-scroll */
+  /* No overflow:hidden — it can create a stacking context that traps
+     position:fixed elements in iOS Safari / WKWebView / Capacitor.
+     All scrolling is confined to .page-scroll instead. */
 }
 
 #app-root {
@@ -98,6 +100,7 @@ body {
 .page-scroll {
   height: 100%;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
   /* Extra padding so last content item scrolls above the floating nav */
