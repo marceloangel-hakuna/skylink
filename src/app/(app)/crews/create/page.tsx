@@ -366,14 +366,11 @@ export default function CreateCrewPage() {
                 )}
                 <div className="absolute inset-0 flex items-end p-3"
                      style={{ background: "linear-gradient(to top, rgba(0,0,0,0.25) 0%, transparent 60%)" }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white opacity-90">{renderCrewIcon(icon, 20)}</span>
-                    <div>
-                      <p className="text-xs font-bold text-white drop-shadow">{name || "Crew name"}</p>
-                      <p className="text-[10px] text-white/70">
-                        {isAiStyle ? "AI Generated" : selectedTheme.label} · 0 members
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-xs font-bold text-white drop-shadow">{name || "Crew name"}</p>
+                    <p className="text-[10px] text-white/70">
+                      {isAiStyle ? "AI Generated" : selectedTheme.label} · 0 members
+                    </p>
                   </div>
                 </div>
               </div>
