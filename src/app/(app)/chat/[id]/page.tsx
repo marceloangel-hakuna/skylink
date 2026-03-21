@@ -221,15 +221,20 @@ export default function ConversationPage() {
   const otherSubline = [otherProfile?.role, otherProfile?.company].filter(Boolean).join(" at ");
 
   // ── Render ────────────────────────────────────────────────────────────────
-  // position:absolute fills the full page-scroll area (ignoring its padding-bottom)
-  // so the chat input sits right above the floating nav.
+  // position:fixed fills the viewport above the nav. Works correctly because
+  // #app-root has no overflow/transform that would trap fixed positioning.
   return (
     <div
-      className="flex flex-col"
+      className="fixed flex flex-col"
       style={{
-        position:   "absolute",
-        inset:      0,
+        top:        0,
+        bottom:     "calc(80px + env(safe-area-inset-bottom, 0px))",
+        left:       "50%",
+        transform:  "translateX(-50%)",
+        width:      "100%",
+        maxWidth:   "430px",
         background: "var(--background)",
+        zIndex:     10,
       }}
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}

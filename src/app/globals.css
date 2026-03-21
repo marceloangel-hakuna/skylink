@@ -74,7 +74,6 @@ html.dark {
 }
 
 body {
-  min-height: 100%;
   height: 100%;
   color: var(--foreground);
   background: var(--background);
@@ -82,29 +81,26 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
+  overflow-x: hidden; /* clip horizontal overflow here, not on #app-root */
 }
 
 #app-root {
   width: 100%;
   max-width: 430px;
-  height: 100dvh;
+  height: 100%;
   margin-inline: auto;
-  position: relative;        /* nav anchors to this, not the viewport */
-  display: flex;
-  flex-direction: column;
   background: var(--background);
-  overflow: hidden;
+  /* NO overflow, NO position, NO transform — anything here would trap
+     position:fixed children in iOS Safari / Android WebView / Capacitor */
 }
 
-/* Scrollable page content — fills all space, nav floats above via position:absolute */
+/* Scrollable page content — pads bottom so content clears the floating nav */
 .page-scroll {
-  flex: 1;
-  min-height: 0;
+  height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
-  /* Pad the bottom so the last item isn't hidden behind the floating nav */
   padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 .page-scroll::-webkit-scrollbar { display: none; }
