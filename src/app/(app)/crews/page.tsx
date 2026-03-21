@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/EmptyState";
-import { CrewIcon, PlusIcon, renderCrewIcon } from "@/components/icons/AppIcons";
+import { CrewIcon, PlusIcon } from "@/components/icons/AppIcons";
 import { CREW_MINI_THEMES, resolveCrewThemeKey } from "./crewMiniThemes";
 
 type Crew = {
@@ -159,11 +159,8 @@ export default function CrewsPage() {
                   return (
                     <div className="w-12 h-12 rounded-2xl flex-shrink-0 overflow-hidden relative"
                          style={{ background: mini.bg, border: `1px solid ${mini.border}` }}>
-                      <div className="absolute right-0 top-0 w-8 h-full pointer-events-none opacity-90">
+                      <div className="absolute inset-0 pointer-events-none opacity-90">
                         {mini.mini}
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span style={{ color: mini.accent }}>{renderCrewIcon(crew.icon, 20)}</span>
                       </div>
                     </div>
                   );

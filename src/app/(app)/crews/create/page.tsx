@@ -4,7 +4,6 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { THEME_OPTIONS } from "../themes";
-import { CREW_ICON_LIST, renderCrewIcon } from "@/components/icons/AppIcons";
 
 // Mini illustrations for the preset theme picker cards
 const THEME_PREVIEWS: Record<string, React.ReactNode> = {
@@ -92,7 +91,6 @@ export default function CreateCrewPage() {
   const [description, setDesc]  = useState("");
   const [style, setStyle]       = useState<string>("city");
   const [customSvg, setCustomSvg] = useState<string | null>(null);  // AI-generated SVG
-  const [icon, setIcon]         = useState("plane");
   const [creating, setCreating] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError]       = useState("");
@@ -132,7 +130,7 @@ export default function CreateCrewPage() {
       .insert({
         name: name.trim(),
         description: description.trim() || null,
-        icon,
+        icon: "",
         header_style: isAiStyle ? "custom" : style,
         header_svg: isAiStyle ? customSvg : null,
         created_by: user.id,
@@ -150,7 +148,7 @@ export default function CreateCrewPage() {
     router.push(`/crews/${data.id}`);
   }
 
-  const stepTitles = ["Name your crew", "Design the header", "Pick an icon"];
+  const stepTitles = ["Name your crew", "Design the header"];
 
   return (
     <div className="animate-fade-in min-h-screen" style={{ background: "var(--c-bg)" }}>
@@ -171,7 +169,7 @@ export default function CreateCrewPage() {
         </button>
         <div className="flex-1">
           <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--c-text3)" }}>
-            Step {step} of 3
+            Step {step} of 2
           </p>
           <h1 className="text-lg font-black" style={{ color: "var(--c-text1)" }}>
             {stepTitles[step - 1]}
@@ -182,7 +180,7 @@ export default function CreateCrewPage() {
       {/* Progress bar */}
       <div className="h-1 mx-4 rounded-full mt-4" style={{ background: "var(--c-muted)" }}>
         <div className="h-full rounded-full transition-all duration-300"
-             style={{ width: `${(step / 3) * 100}%`, background: "#4A27E8" }} />
+             style={{ width: `${(step / 2) * 100}%`, background: "#4A27E8" }} />
       </div>
 
       <div className="px-4 mt-6 flex flex-col gap-5">
@@ -382,67 +380,6 @@ export default function CreateCrewPage() {
             </div>
 
             <button
-              onClick={() => setStep(3)}
-              className="w-full py-4 rounded-2xl text-white font-bold text-sm active:scale-[0.98] transition-transform"
-              style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 100%)" }}>
-              Next: Pick an Icon →
-            </button>
-          </>
-        )}
-
-        {/* ── Step 3: Icon Picker ── */}
-        {step === 3 && (
-          <>
-            <p className="text-sm" style={{ color: "var(--c-text2)" }}>
-              Choose an icon that represents your crew:
-            </p>
-            <div className="grid grid-cols-5 gap-3">
-              {CREW_ICON_LIST.map(({ key, label, component }) => (
-                <button key={key} onClick={() => setIcon(key)}
-                  title={label}
-                  className="aspect-square rounded-2xl flex items-center justify-center active:scale-90 transition-all"
-                  style={{
-                    background: icon === key ? "rgba(74,39,232,0.12)" : "var(--c-card)",
-                    border: icon === key ? "2px solid #4A27E8" : "1px solid var(--c-border)",
-                    color: icon === key ? "#4A27E8" : "var(--c-text2)",
-                  }}>
-                  {component(22)}
-                </button>
-              ))}
-            </div>
-
-            {/* Preview */}
-            <div className="rounded-2xl overflow-hidden border" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
-              <div className="h-24 relative overflow-hidden"
-                   style={isAiStyle ? {} : { background: selectedTheme.bg }}>
-                {isAiStyle ? (
-                  <div className="w-full h-full"
-                       dangerouslySetInnerHTML={{ __html: customSvg!.replace('viewBox="0 0 400 160"', 'viewBox="0 0 400 160" style="width:100%;height:100%"') }} />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center opacity-70 scale-150">
-                    {THEME_PREVIEWS[style] ?? THEME_PREVIEWS.city}
-                  </div>
-                )}
-                <div className="absolute inset-0 flex items-end p-3"
-                     style={{ background: "linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 60%)" }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white opacity-90">{renderCrewIcon(icon, 22)}</span>
-                    <div>
-                      <p className="text-sm font-bold text-white drop-shadow">{name}</p>
-                      {description && (
-                        <p className="text-[11px] text-white/70 line-clamp-1">{description}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-500 text-center">{error}</p>
-            )}
-
-            <button
               onClick={create}
               disabled={creating}
               className="w-full py-4 rounded-2xl text-white font-bold text-sm active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
@@ -455,8 +392,12 @@ export default function CreateCrewPage() {
                   </svg>
                   Creating…
                 </>
-              ) : "Create Crew ✈️"}
+              ) : "Create Crew"}
             </button>
+
+            {error && (
+              <p className="text-sm text-red-500 text-center">{error}</p>
+            )}
           </>
         )}
       </div>

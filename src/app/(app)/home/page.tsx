@@ -6,7 +6,6 @@ import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
 import PullToRefresh from "@/components/PullToRefresh";
 import PeopleNearYou from "@/components/PeopleNearYou";
-import { renderCrewIcon } from "@/components/icons/AppIcons";
 import { CREW_MINI_THEMES, resolveCrewThemeKey } from "@/app/(app)/crews/crewMiniThemes";
 
 export const dynamic = "force-dynamic";
@@ -362,13 +361,8 @@ export default async function HomePage() {
                   {/* Themed thumbnail — matches internal crew page */}
                   <div className="w-11 h-11 rounded-2xl flex-shrink-0 overflow-hidden relative"
                        style={{ background: mini.bg, border: `1px solid ${mini.border}` }}>
-                    {/* Mini illustration in right half */}
-                    <div className="absolute right-0 top-0 w-7 h-full pointer-events-none opacity-90">
+                    <div className="absolute inset-0 pointer-events-none opacity-90">
                       {mini.mini}
-                    </div>
-                    {/* Icon */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span style={{ color: mini.accent }}>{renderCrewIcon(crew.icon, 18)}</span>
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">

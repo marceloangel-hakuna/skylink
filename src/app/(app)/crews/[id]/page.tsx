@@ -63,7 +63,6 @@ type CrewTheme = {
 // Theme options for the picker (create + edit)
 import { THEME_OPTIONS } from "../themes";
 export type { ThemeKey } from "../themes";
-import { CREW_ICON_LIST, renderCrewIcon } from "@/components/icons/AppIcons";
 
 // ── Illustrations ──────────────────────────────────────────────────────────────
 const IllustrationSkyline = () => (
@@ -440,7 +439,7 @@ function EditSheet({
 }: {
   crew: Crew;
   onClose: () => void;
-  onSave: (updates: Pick<Crew, "name" | "description" | "header_style" | "header_svg" | "icon">) => void;
+  onSave: (updates: Pick<Crew, "name" | "description" | "header_style" | "header_svg">) => void;
 }) {
   const supabase  = createClient();
   const router    = useRouter();
@@ -451,7 +450,6 @@ function EditSheet({
       ? crew.header_style
       : (CREW_ID_TO_STYLE[crew.id] ?? "city")
   );
-  const [icon, setIcon]         = useState(crew.icon);
   const [customSvg, setCustomSvg] = useState<string | null>(crew.header_svg ?? null);
   const [saving, setSaving]     = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -493,7 +491,6 @@ function EditSheet({
       description: desc.trim() || null,
       header_style: isAiStyle ? "custom" : style,
       header_svg: isAiStyle ? customSvg : null,
-      icon,
     };
     await supabase.from("crews").update(updates).eq("id", crew.id);
     onSave(updates);
@@ -704,26 +701,6 @@ function EditSheet({
             </div>
           </div>
 
-          {/* Icon */}
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-widest mb-3 block" style={{ color: "var(--c-text3)" }}>
-              Icon
-            </label>
-            <div className="grid grid-cols-5 gap-2">
-              {CREW_ICON_LIST.map(({ key, label, component }) => (
-                <button key={key} onClick={() => setIcon(key)}
-                  title={label}
-                  className="aspect-square rounded-xl flex items-center justify-center active:scale-90 transition-all"
-                  style={{
-                    background: icon === key ? "rgba(74,39,232,0.12)" : "var(--c-card)",
-                    border: icon === key ? "2px solid #4A27E8" : "1px solid var(--c-border)",
-                    color: icon === key ? "#4A27E8" : "var(--c-text2)",
-                  }}>
-                  {component(20)}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Save */}
           <button
@@ -1393,9 +1370,6 @@ export default function CrewDetailPage({ params }: { params: { id: string } }) {
                 style={{ background: theme.accentBadgeBg, color: theme.accent }}>
             {theme.label}
           </span>
-          <div className="flex items-center gap-2.5 mb-2">
-            <span style={{ color: "white", opacity: 0.9 }}>{renderCrewIcon(crew.icon, 32)}</span>
-          </div>
           <h1 className="text-[22px] font-black leading-tight mb-2" style={{ color: theme.accentText }}>
             {crew.name}
           </h1>
