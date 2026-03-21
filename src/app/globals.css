@@ -81,7 +81,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
-  overflow-x: hidden; /* clip horizontal overflow here, not on #app-root */
+  overflow: hidden; /* body must not scroll — all scrolling happens inside .page-scroll */
 }
 
 #app-root {
@@ -90,18 +90,31 @@ body {
   height: 100%;
   margin-inline: auto;
   background: var(--background);
-  /* NO overflow, NO position, NO transform — anything here would trap
-     position:fixed children in iOS Safari / Android WebView / Capacitor */
+  /* Intentionally bare — no overflow, position, transform, or will-change.
+     Any of those would trap position:fixed children on iOS Safari / WebView / Capacitor. */
 }
 
-/* Scrollable page content — pads bottom so content clears the floating nav */
+/* Scrollable page content — content fades out as it reaches the floating nav */
 .page-scroll {
   height: 100%;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  /* Extra padding so last content item is fully scrollable above the nav */
+  padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  /* Fade content into transparency as it reaches the nav — gives floating depth */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black calc(100% - 100px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black calc(100% - 100px),
+    transparent 100%
+  );
 }
 .page-scroll::-webkit-scrollbar { display: none; }
 

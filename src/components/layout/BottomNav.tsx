@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 type NavItem = { href: string; label: string; icon: (active: boolean) => React.ReactNode };
 
@@ -54,21 +55,35 @@ const mainItems: NavItem[] = [
 ];
 
 export default function BottomNav() {
-  const pathname = usePathname();
-  const router   = useRouter();
+  const pathname  = usePathname();
+  const router    = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     [...mainItems.map(i => i.href), "/chat"].forEach(href => router.prefetch(href));
   }, [router]);
 
   const chatActive = pathname === "/chat" || pathname.startsWith("/chat/");
 
-  return (
+  // Render into document.body via portal — this guarantees position:fixed is
+  // relative to the true viewport with zero ancestor interference on any platform.
+  const nav = (
     <div
-      className="fixed left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 px-4"
-      style={{ bottom: 0, paddingTop: "8px", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)" }}
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%",
+        maxWidth: "430px",
+        zIndex: 9999,
+        padding: "8px 16px",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
+        pointerEvents: "none",
+      }}
     >
-      <div className="flex items-end gap-3">
+      <div className="flex items-end gap-3" style={{ pointerEvents: "auto" }}>
         {/* Floating pill */}
         <div
           className="flex-1 flex items-stretch rounded-[22px] overflow-hidden"
@@ -113,4 +128,7 @@ export default function BottomNav() {
       </div>
     </div>
   );
+
+  if (!mounted) return null;
+  return createPortal(nav, document.body);
 }
