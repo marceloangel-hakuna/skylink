@@ -776,15 +776,49 @@ export default function FlightDashboardPage() {
     setPeopleLoading(true);
     const sb = supabase.current;
 
+    // Normalize flight number for consistent matching (strip spaces)
+    const flightNum = userFlight.flight_number.replace(/\s+/g, "").toUpperCase();
+
     // Fetch all users on same flight; filter invisible ones out client-side (but always include self)
-    const { data: flightmates } = await sb
+    const { data: flightmates, error: flightmatesErr } = await sb
       .from("user_flights")
       .select("user_id, networking_status")
-      .eq("flight_number", userFlight.flight_number)
+      .or(`flight_number.eq.${flightNum},flight_number.eq.${userFlight.flight_number}`)
       .in("status", ["upcoming", "active", "completed"]);
 
+    // If the query errored (e.g. networking_status column missing), fall back to showing all users
+    if (flightmatesErr) {
+      const { data: fallback } = await sb
+        .from("user_flights")
+        .select("user_id")
+        .or(`flight_number.eq.${flightNum},flight_number.eq.${userFlight.flight_number}`)
+        .in("status", ["upcoming", "active", "completed"]);
+      const ids = (fallback ?? []).map(f => f.user_id);
+      if (!ids.length) { setPeople([]); setPeopleLoading(false); return; }
+      const [{ data: profiles }, { data: conns }] = await Promise.all([
+        sb.from("profiles").select("id, full_name, avatar_url, role, company").in("id", ids),
+        sb.from("connections").select("requester_id, receiver_id").or(`requester_id.eq.${userId},receiver_id.eq.${userId}`).eq("status", "accepted"),
+      ]);
+      const connectedIds = new Set((conns ?? []).map((c: { requester_id: string; receiver_id: string }) => c.requester_id === userId ? c.receiver_id : c.requester_id));
+      const all = (profiles ?? []).map((p: { id: string; full_name: string | null; avatar_url: string | null; role: string | null; company: string | null }) => ({
+        id: p.id, name: p.full_name ?? "Traveler", role: p.role, company: p.company, avatar_url: p.avatar_url,
+        networking_status: (p.id === userId ? networkingStatus : "available") as NetworkingStatus,
+        connected: connectedIds.has(p.id), isMe: p.id === userId,
+      }));
+      all.sort((a, b) => (a.isMe ? -1 : b.isMe ? 1 : 0));
+      setPeople(all); setPeopleLoading(false); return;
+    }
+
+    // Deduplicate by user_id (in case .or() returns duplicate rows), prefer non-invisible status
+    const byUser = new Map<string, { user_id: string; networking_status: string }>();
+    for (const f of flightmates ?? []) {
+      const existing = byUser.get(f.user_id);
+      if (!existing || existing.networking_status === "invisible") byUser.set(f.user_id, f);
+    }
+    const deduped = Array.from(byUser.values());
+
     // Always include self, exclude others who are invisible
-    const visible = (flightmates ?? []).filter(
+    const visible = deduped.filter(
       f => f.user_id === userId || f.networking_status !== "invisible"
     );
 
@@ -822,6 +856,10 @@ export default function FlightDashboardPage() {
     setPeopleLoading(false);
   }, [userFlight, userId, networkingStatus]);
 
+  // Keep a stable ref so the realtime subscription can always call the latest loadPeople
+  const loadPeopleRef = useRef(loadPeople);
+  useEffect(() => { loadPeopleRef.current = loadPeople; }, [loadPeople]);
+
   // Load people when switching to people tab
   useEffect(() => {
     if (activeTab === "people") loadPeople();
@@ -832,6 +870,31 @@ export default function FlightDashboardPage() {
     if (activeTab === "people") loadPeople();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [networkingStatus]);
+
+  // ── Realtime: watch user_flights for changes on this flight ───────────────
+  useEffect(() => {
+    if (!userFlight) return;
+    const flightNum = userFlight.flight_number.replace(/\s+/g, "").toUpperCase();
+
+    const channel = supabase.current
+      .channel(`flight-people:${flightNum}`)
+      .on(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "user_flights", filter: `flight_number=eq.${flightNum}` },
+        () => { loadPeopleRef.current(); }
+      )
+      .on(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "user_flights", filter: `flight_number=eq.${userFlight.flight_number}` },
+        () => { loadPeopleRef.current(); }
+      )
+      .subscribe();
+
+    return () => { supabase.current.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userFlight?.id]);
 
   // ── Realtime chat ──────────────────────────────────────────────────────────
   useEffect(() => {

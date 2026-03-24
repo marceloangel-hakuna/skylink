@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -114,7 +115,7 @@ function AddFlightModal({ onClose, onAdd }: { onClose: () => void; onAdd: (f: Om
 
     const row = {
       user_id:          user.id,
-      flight_number:    flightNum.trim().toUpperCase(),
+      flight_number:    flightNum.trim().toUpperCase().replace(/\s+/g, ""),
       origin:           origin.trim().toUpperCase() || null,
       destination:      dest.trim().toUpperCase() || null,
       departure_date:   date || null,
@@ -436,6 +437,7 @@ function HistoryCard({ flight }: { flight: UserFlight }) {
 
 // ── Main Page ──────────────────────────────────────────────
 export default function FlightPage() {
+  const router                          = useRouter();
   const [tab, setTab]                   = useState<"upcoming" | "history">("upcoming");
   const [flights, setFlights]           = useState<UserFlight[]>([]);
   const [loading, setLoading]           = useState(true);
@@ -478,6 +480,8 @@ export default function FlightPage() {
 
   const handleAdd = (f: Omit<UserFlight, "id" | "created_at">) => {
     setFlights(prev => [...prev, { ...f, id: Math.random().toString(), created_at: new Date().toISOString() }]);
+    // Bust the Next.js router cache so the home page picks up the new flight immediately
+    router.refresh();
   };
 
   return (
