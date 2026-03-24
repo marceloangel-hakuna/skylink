@@ -265,6 +265,7 @@ function StatusCard({
 
 function OverviewTab({
   userFlight, flightData, networkingStatus, onStatusUpdate, updatingStatus, onDelete,
+  networkingOverview,
 }: {
   userFlight: UserFlight | null;
   flightData: FlightData | null;
@@ -272,6 +273,7 @@ function OverviewTab({
   onStatusUpdate: (s: NetworkingStatus) => void;
   updatingStatus: boolean;
   onDelete: () => void;
+  networkingOverview: string | "loading" | null;
 }) {
   const origin      = flightData?.origin      ?? userFlight?.origin      ?? "—";
   const destination = flightData?.destination  ?? userFlight?.destination  ?? "—";
@@ -402,20 +404,29 @@ function OverviewTab({
         ))}
       </div>
 
-      {/* ── Atlas Networking Score ────────────── */}
+      {/* ── Atlas Networking Insight ─────────── */}
       <div className="rounded-2xl p-4 atlas-insight-card" style={{ border: "1px solid var(--c-border)" }}>
         <div className="flex items-center gap-1.5 mb-1.5">
           <span className="atlas-icon text-sm">✦</span>
           <span className="text-sm font-black atlas-label">Atlas Insight</span>
           <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full atlas-badge">AI</span>
         </div>
-        <p className="text-xs atlas-text-secondary leading-relaxed">
-          {networkingStatus === "available"
-            ? "You're visible! Other SkyLink members on this flight can discover and connect with you."
-            : networkingStatus === "not_available"
-            ? "You're visible but marked as busy. Others can see your profile but know you prefer not to be approached."
-            : "You're in private mode. Go Available to discover who's networking on this flight."}
-        </p>
+        {networkingOverview === "loading" ? (
+          <div className="flex flex-col gap-1.5">
+            <div className="h-3 rounded-full animate-pulse w-full" style={{ background: "rgba(74,39,232,0.12)" }} />
+            <div className="h-3 rounded-full animate-pulse w-4/5" style={{ background: "rgba(74,39,232,0.08)" }} />
+          </div>
+        ) : networkingOverview ? (
+          <p className="text-xs atlas-text-secondary leading-relaxed">{networkingOverview}</p>
+        ) : (
+          <p className="text-xs atlas-text-secondary leading-relaxed">
+            {networkingStatus === "available"
+              ? "You're visible! Other SkyLink members on this flight can discover and connect with you."
+              : networkingStatus === "not_available"
+              ? "You're visible but marked as busy. Others can see your profile but know you prefer not to be approached."
+              : "You're in private mode. Go Available to discover who's networking on this flight."}
+          </p>
+        )}
       </div>
 
       {/* ── Delete Flight ─────────────────────── */}
@@ -705,15 +716,18 @@ export default function FlightDashboardPage() {
   const [showDelete,       setShowDelete]       = useState(false);
   const [deleting,         setDeleting]         = useState(false);
   const [activeTab,        setActiveTab]        = useState<Tab>("overview");
-  const [people,           setPeople]           = useState<Person[]>([]);
-  const [peopleLoading,    setPeopleLoading]    = useState(false);
-  const [userId,           setUserId]           = useState<string>("");
-  const [messages,         setMessages]         = useState<Message[]>(INITIAL_MESSAGES);
-  const [inputText,        setInputText]        = useState("");
+  const [people,            setPeople]            = useState<Person[]>([]);
+  const [peopleLoading,     setPeopleLoading]     = useState(false);
+  const [userId,            setUserId]            = useState<string>("");
+  const [messages,          setMessages]          = useState<Message[]>(INITIAL_MESSAGES);
+  const [inputText,         setInputText]         = useState("");
+  const [networkingOverview, setNetworkingOverview] = useState<string | "loading" | null>(null);
 
-  const supabase      = useRef(createClient());
-  const channelRef    = useRef<RealtimeChannel | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const supabase           = useRef(createClient());
+  const channelRef         = useRef<RealtimeChannel | null>(null);
+  const peopleChannelRef   = useRef<RealtimeChannel | null>(null);
+  const messagesEndRef     = useRef<HTMLDivElement>(null);
+  const overviewFetched    = useRef(false);
 
   // ── Load user flight + AirLabs data ───────────────────────────────────────
   const load = useCallback(async () => {
@@ -776,24 +790,27 @@ export default function FlightDashboardPage() {
     setPeopleLoading(true);
     const sb = supabase.current;
 
-    // Normalize flight number for consistent matching (strip spaces)
+    // Normalize flight number and build a deduplicated list of formats to query
     const flightNum = userFlight.flight_number.replace(/\s+/g, "").toUpperCase();
+    const flightNumsRaw = [flightNum, userFlight.flight_number];
+    const flightNums = flightNumsRaw.filter((v, i, a) => a.indexOf(v) === i);
 
-    // Fetch all users on same flight; filter invisible ones out client-side (but always include self)
+    // Fetch all users on same flight using .in() so both normalized and stored formats match
     const { data: flightmates, error: flightmatesErr } = await sb
       .from("user_flights")
       .select("user_id, networking_status")
-      .or(`flight_number.eq.${flightNum},flight_number.eq.${userFlight.flight_number}`)
+      .in("flight_number", flightNums)
       .in("status", ["upcoming", "active", "completed"]);
 
-    // If the query errored (e.g. networking_status column missing), fall back to showing all users
+    // If the query errored (e.g. networking_status column missing), fall back without status filter
     if (flightmatesErr) {
       const { data: fallback } = await sb
         .from("user_flights")
         .select("user_id")
-        .or(`flight_number.eq.${flightNum},flight_number.eq.${userFlight.flight_number}`)
+        .in("flight_number", flightNums)
         .in("status", ["upcoming", "active", "completed"]);
-      const ids = (fallback ?? []).map(f => f.user_id);
+      const idsRaw = (fallback ?? []).map(f => f.user_id);
+      const ids = idsRaw.filter((v, i, a) => a.indexOf(v) === i);
       if (!ids.length) { setPeople([]); setPeopleLoading(false); return; }
       const [{ data: profiles }, { data: conns }] = await Promise.all([
         sb.from("profiles").select("id, full_name, avatar_url, role, company").in("id", ids),
@@ -871,30 +888,59 @@ export default function FlightDashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [networkingStatus]);
 
-  // ── Realtime: watch user_flights for changes on this flight ───────────────
+  // ── Background: load people count on mount so tab label + overview work ───
+  useEffect(() => {
+    if (userFlight && userId && !loading) loadPeople();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userFlight?.id, userId, loading]);
+
+  // ── Realtime: postgres_changes + broadcast for instant people updates ──────
   useEffect(() => {
     if (!userFlight) return;
     const flightNum = userFlight.flight_number.replace(/\s+/g, "").toUpperCase();
 
     const channel = supabase.current
       .channel(`flight-people:${flightNum}`)
+      // postgres_changes covers status updates saved to DB
       .on(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "postgres_changes" as any,
         { event: "*", schema: "public", table: "user_flights", filter: `flight_number=eq.${flightNum}` },
         () => { loadPeopleRef.current(); }
       )
-      .on(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        "postgres_changes" as any,
-        { event: "*", schema: "public", table: "user_flights", filter: `flight_number=eq.${userFlight.flight_number}` },
-        () => { loadPeopleRef.current(); }
-      )
+      // broadcast covers users who just changed status (fires instantly, no replication lag)
+      .on("broadcast", { event: "people_status" }, () => {
+        loadPeopleRef.current();
+      })
       .subscribe();
 
-    return () => { supabase.current.removeChannel(channel); };
+    peopleChannelRef.current = channel;
+    return () => {
+      supabase.current.removeChannel(channel);
+      peopleChannelRef.current = null;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userFlight?.id]);
+
+  // ── Fetch Atlas networking overview once people are loaded ─────────────────
+  useEffect(() => {
+    const others = people.filter(p => !p.isMe);
+    if (!others.length || !userFlight || !userId || overviewFetched.current) return;
+    overviewFetched.current = true;
+    setNetworkingOverview("loading");
+    fetch("/api/flight/networking-overview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        viewer: people.find(p => p.isMe) ?? { id: userId, name: "You", role: null, company: null },
+        people: people.map(p => ({ id: p.id, name: p.name, role: p.role, company: p.company })),
+        flightNumber: userFlight.flight_number,
+      }),
+    })
+      .then(r => r.json())
+      .then(({ insight }: { insight: string | null }) => setNetworkingOverview(insight ?? null))
+      .catch(() => setNetworkingOverview(null));
+  }, [people, userFlight, userId]);
 
   // ── Realtime chat ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -927,6 +973,15 @@ export default function FlightDashboardPage() {
       .update({ networking_status: s })
       .eq("id", userFlight.id);
     setUpdatingStatus(false);
+    // Broadcast immediately so other users on the same flight get a real-time refresh
+    // (belt-and-suspenders alongside postgres_changes)
+    if (peopleChannelRef.current) {
+      peopleChannelRef.current.send({
+        type: "broadcast",
+        event: "people_status",
+        payload: { networking_status: s },
+      }).catch(() => {});
+    }
   }, [userFlight]);
 
   const handlePromptChoose = useCallback(async (s: NetworkingStatus) => {
@@ -1079,6 +1134,7 @@ export default function FlightDashboardPage() {
           onStatusUpdate={handleStatusUpdate}
           updatingStatus={updatingStatus}
           onDelete={() => setShowDelete(true)}
+          networkingOverview={networkingOverview}
         />
       )}
       {activeTab === "people" && (
