@@ -8,6 +8,7 @@ import {
   PlaneIcon, EyeOffIcon, MessageBubbleIcon,
 } from "@/components/icons/AppIcons";
 import { avatarColor, initials as getInitials } from "@/lib/utils/avatarColor";
+import type { DestEvent } from "@/app/api/events/destination/route";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -276,7 +277,7 @@ function StatusCard({
 
 function OverviewTab({
   userFlight, flightData, networkingStatus, onStatusUpdate, updatingStatus, onDelete,
-  networkingOverview, people,
+  networkingOverview, people, destEvents, destCity,
 }: {
   userFlight: UserFlight | null;
   flightData: FlightData | null;
@@ -286,6 +287,8 @@ function OverviewTab({
   onDelete: () => void;
   networkingOverview: string | "loading" | null;
   people: Person[];
+  destEvents: DestEvent[] | "loading" | null;
+  destCity: string | null;
 }) {
   const origin      = flightData?.origin      ?? userFlight?.origin      ?? "—";
   const destination = flightData?.destination  ?? userFlight?.destination  ?? "—";
@@ -576,6 +579,86 @@ function OverviewTab({
           ))}
         </div>
       </div>
+
+      {/* ── Destination Events ────────────────── */}
+      {destEvents !== null && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--c-text3)" }}>
+              Events in {destCity ?? destination}
+            </p>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(76,175,121,0.12)", color: "#4CAF79" }}>PredictHQ</span>
+          </div>
+
+          {destEvents === "loading" ? (
+            <div className="flex flex-col gap-2">
+              {[1,2,3].map(i => (
+                <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: "var(--c-muted)" }} />
+              ))}
+            </div>
+          ) : destEvents.length === 0 ? (
+            <div className="rounded-2xl p-4 text-center" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+              <p className="text-xs" style={{ color: "var(--c-text3)" }}>No major events found near your arrival date.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {destEvents.map(ev => {
+                const catIcon: Record<string, string> = {
+                  concerts:         "🎵",
+                  conferences:      "💼",
+                  festivals:        "🎪",
+                  sports:           "⚽",
+                  community:        "🤝",
+                  expos:            "🏛️",
+                  academic:         "📚",
+                  "school-holidays":"🏖️",
+                  "public-holidays":"🎉",
+                  performing_arts:  "🎭",
+                  airport:          "✈️",
+                  terror_attack:    "⚠️",
+                };
+                const icon = catIcon[ev.category] ?? "📅";
+                const evDate = new Date(ev.start);
+                const dateStr = evDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                const attendStr = ev.attendance
+                  ? ev.attendance >= 1000 ? `${Math.round(ev.attendance / 1000)}K expected` : `${ev.attendance} expected`
+                  : null;
+
+                return (
+                  <div key={ev.id} className="rounded-2xl p-3.5 flex items-start gap-3"
+                       style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                         style={{ background: "var(--c-muted)" }}>
+                      {icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold leading-tight" style={{ color: "var(--c-text1)" }}>{ev.title}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="text-[10px] font-medium" style={{ color: "var(--c-text3)" }}>{dateStr}</span>
+                        {attendStr && (
+                          <>
+                            <span style={{ color: "var(--c-border)" }}>·</span>
+                            <span className="text-[10px] font-medium" style={{ color: "var(--c-text3)" }}>{attendStr}</span>
+                          </>
+                        )}
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full capitalize"
+                              style={{ background: "var(--c-muted)", color: "var(--c-text3)" }}>
+                          {ev.category.replace(/-/g, " ")}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                      <span className="text-[10px] font-bold" style={{ color: "#A78BFA" }}>
+                        #{ev.rank}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Delete Flight ─────────────────────── */}
       <button
@@ -928,6 +1011,9 @@ export default function FlightDashboardPage() {
   const [chatSending,       setChatSending]       = useState(false);
   const [isChatOnline,      setIsChatOnline]      = useState(true);
   const [networkingOverview, setNetworkingOverview] = useState<string | "loading" | null>(null);
+  const [destEvents,         setDestEvents]         = useState<DestEvent[] | "loading" | null>(null);
+  const [destCity,           setDestCity]           = useState<string | null>(null);
+  const eventsFetched      = useRef(false);
 
   const supabase           = useRef(createClient());
   const chatChannelRef     = useRef<RealtimeChannel | null>(null);
@@ -1116,6 +1202,30 @@ export default function FlightDashboardPage() {
       .then(({ insight }: { insight: string | null }) => setNetworkingOverview(insight ?? null))
       .catch(() => setNetworkingOverview(null));
   }, [people, userFlight, userId]);
+
+  // ── Fetch destination events once flightData has arr_city / destination ────
+  useEffect(() => {
+    if (eventsFetched.current) return;
+    const dest = flightData?.destination ?? userFlight?.destination;
+    const city = flightData?.arr_city;
+    const date = flightData?.departure_date ?? userFlight?.departure_date;
+    if (!dest || !date) return;
+    eventsFetched.current = true;
+    setDestEvents("loading");
+
+    const params = new URLSearchParams({ date });
+    if (city) params.set("city", city);
+    else      params.set("iata", dest);
+
+    fetch(`/api/events/destination?${params}`)
+      .then(r => r.json())
+      .then(({ events, city: resolvedCity }: { events: DestEvent[]; city?: string }) => {
+        setDestEvents(events.length > 0 ? events : []);
+        if (resolvedCity) setDestCity(resolvedCity);
+      })
+      .catch(() => setDestEvents([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flightData?.destination, userFlight?.destination, flightData?.departure_date, userFlight?.departure_date]);
 
   // ── Online / offline detection ────────────────────────────────────────────
   useEffect(() => {
@@ -1427,6 +1537,8 @@ export default function FlightDashboardPage() {
           onDelete={() => setShowDelete(true)}
           networkingOverview={networkingOverview}
           people={people}
+          destEvents={destEvents}
+          destCity={destCity}
         />
       )}
       {activeTab === "people" && (

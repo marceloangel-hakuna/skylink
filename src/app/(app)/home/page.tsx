@@ -250,6 +250,26 @@ export default async function HomePage() {
 
   const flightSlug = flightNumber ? flightNumber.replace(/\s+/g, "").toLowerCase() : null;
 
+  // Destination events via PredictHQ (fire-and-forget, only if key present + flight active)
+  type DestEvent = { id: string; title: string; category: string; start: string; rank: number; attendance: number | null };
+  let destEvents: DestEvent[] = [];
+  let destCityName: string | null = null;
+
+  if (hasActiveFlight && flightDest && flightDate && process.env.PREDICTHQ_API_KEY) {
+    try {
+      const params = new URLSearchParams({ date: flightDate, iata: flightDest });
+      const evRes = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/api/events/destination?${params}`,
+        { next: { revalidate: 3600 } },
+      );
+      if (evRes.ok) {
+        const evJson = await evRes.json() as { events?: DestEvent[]; city?: string };
+        destEvents   = evJson.events?.slice(0, 4) ?? [];
+        destCityName = evJson.city ?? null;
+      }
+    } catch { /* non-critical */ }
+  }
+
   return (
     <PullToRefresh>
     <div className="animate-fade-in pb-[110px]">
@@ -470,6 +490,50 @@ export default async function HomePage() {
             ptsToNext={ptsToNext}
           />
         </Reveal>
+
+        {/* ── Destination Events ────────────────────────── */}
+        {destEvents.length > 0 && (
+        <Reveal delay={70}>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="section-title leading-none">Events in {destCityName ?? flightDest}</h3>
+                <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>Around your arrival · powered by PredictHQ</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              {destEvents.map(ev => {
+                const catIcon: Record<string, string> = {
+                  concerts: "🎵", conferences: "💼", festivals: "🎪",
+                  sports: "⚽", community: "🤝", expos: "🏛️",
+                  performing_arts: "🎭",
+                };
+                const icon = catIcon[ev.category] ?? "📅";
+                const evDate = new Date(ev.start);
+                const dateStr = evDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                return (
+                  <div key={ev.id} className="card flex items-center gap-3 py-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                         style={{ background: "var(--c-muted)" }}>
+                      {icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: "var(--c-text1)" }}>{ev.title}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>
+                        {dateStr}{ev.attendance ? ` · ${ev.attendance >= 1000 ? `${Math.round(ev.attendance / 1000)}K` : ev.attendance} attending` : ""}
+                      </p>
+                    </div>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full capitalize flex-shrink-0"
+                          style={{ background: "var(--c-muted)", color: "var(--c-text3)" }}>
+                      {ev.category.replace(/-/g, " ")}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Reveal>
+        )}
 
         {/* ── Sky Crews ─────────────────────────────────── */}
         <Reveal delay={80}>
