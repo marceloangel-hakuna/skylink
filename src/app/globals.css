@@ -4,57 +4,49 @@
 
 /* ── CSS custom properties ─────────────────────────────── */
 :root {
-  /* Theme tokens - light mode */
-  --background:  #FAFAFA;
-  --foreground:  #1A1A1A;
+  --background:  #F8F9FB;
+  --foreground:  #0D0F14;
   --c-card:      #FFFFFF;
-  --c-muted:     #F4F4F5;
-  --c-border:    #E4E4E7;
-  --c-text1:     #18181B;
-  --c-text2:     #71717A;
-  --c-text3:     #A1A1AA;
-  --glass-bg:    rgba(255,255,255,0.88);
-
-  /* Brand */
-  --color-brand:       #4A27E8;
-  --color-brand-dark:  #3418C8;
-  --color-brand-light: #6B4AF0;
-  --color-brand-fg:    #4A27E8;   /* brand as foreground text — lightens in dark */
-  --color-accent-pink: #EC4899;
-  --color-accent-gold: #EAB308;
-  --color-accent-green:#34D399;
-
+  --c-muted:     #F0F2F5;
+  --c-border:    #E5E7EB;
+  --c-text1:     #0D0F14;
+  --c-text2:     #6B7280;
+  --c-text3:     #9CA3AF;
+  --glass-bg:    rgba(255,255,255,0.92);
+  --color-brand:       #7C6AF5;
+  --color-brand-dark:  #6355E0;
+  --color-brand-light: #9B8BFF;
+  --color-brand-fg:    #7C6AF5;
+  --color-accent-pink: #E8567F;
+  --color-accent-gold: #F5A623;
+  --color-accent-green:#2DD4A8;
   --radius-card: 1rem;
   --nav-height:  calc(86px + env(safe-area-inset-bottom, 0px));
   --header-height: 60px;
   color-scheme: light;
-
-  /* Floating nav */
-  --nav-bg:       rgba(255,255,255,0.92);
+  --nav-bg:       rgba(255,255,255,0.95);
   --nav-border:   rgba(0,0,0,0.08);
-  --nav-active:   #4A27E8;
-  --nav-inactive: #A1A1AA;
+  --nav-active:   #7C6AF5;
+  --nav-inactive: #9CA3AF;
 }
 
 html.dark {
-  /* ── Whoop × Apple iOS dark — ultra-deep with purple brand undertone ── */
-  --background:  #09090F;               /* Near-black, barely perceptible purple */
-  --foreground:  #F2F1FF;
-  --c-card:      #111120;               /* Cards: one level above background     */
-  --c-muted:     #18182A;               /* Input fills, chips, muted surfaces    */
-  --c-border:    rgba(255,255,255,0.08);/* iOS-style barely-there white border   */
-  --c-text1:     #F2F1FF;               /* Primary — near-white, slight warmth   */
-  --c-text2:     #B0AFCC;               /* Secondary — bumped for better contrast */
-  --c-text3:     #6E6D8F;               /* Tertiary — bumped, still subtle       */
-  --color-brand-fg: #A78BFA;            /* brand text on dark — readable purple  */
-  --glass-bg:    rgba(9,9,15,0.97);     /* Frosted glass for nav/sheets          */
+  --background:  #0D0F14;
+  --foreground:  #F0F0F2;
+  --c-card:      #161922;
+  --c-muted:     #1E2330;
+  --c-border:    rgba(255,255,255,0.07);
+  --c-text1:     #F0F0F2;
+  --c-text2:     #9399A8;
+  --c-text3:     #5C6170;
+  --color-brand-fg: #7C6AF5;
+  --glass-bg:    rgba(13,15,20,0.97);
   color-scheme: dark;
 
-  /* Floating nav */
-  --nav-bg:       rgba(22,22,35,0.96);
+  --nav-bg:       rgba(22,25,34,0.97);
   --nav-border:   rgba(255,255,255,0.08);
-  --nav-active:   #A78BFA;
-  --nav-inactive: #7A788F;
+  --nav-active:   #7C6AF5;
+  --nav-inactive: #5C6170;
 }
 
 *, *::before, *::after {
@@ -70,7 +62,7 @@ html {
 }
 
 html.dark {
-  background: #09090F; /* First-paint dark background */
+  background: #0D0F14; /* First-paint dark background */
 }
 
 body {

@@ -5,129 +5,109 @@ import AtlasHomeSuggestion from "@/components/AtlasHomeSuggestion";
 import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
 import PullToRefresh from "@/components/PullToRefresh";
-import PeopleNearYou from "@/components/PeopleNearYou";
 import { CREW_MINI_THEMES, resolveCrewThemeKey } from "@/app/(app)/crews/crewMiniThemes";
-import { avatarColor, initials as getInitials } from "@/lib/utils/avatarColor";
 
 export const dynamic = "force-dynamic";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Design tokens ──────────────────────────────────────────────────────────────
+const C = {
+  teal:    "#2DD4A8",
+  purple:  "#7C6AF5",
+  amber:   "#F5A623",
+  pink:    "#E8567F",
+  text1:   "#F0F0F2",
+  text2:   "#9399A8",
+  text3:   "#5C6170",
+  card:    "#161922",
+  bg:      "#0D0F14",
+  border:  "rgba(255,255,255,0.07)",
+};
 
-type ProfileForAtlas = {
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function formatName(fullName: string | null): { initials: string; display: string } {
+  if (!fullName) return { initials: "?", display: "Unknown" };
+  const parts = fullName.trim().split(/\s+/);
+  const first = parts[0] ?? "";
+  const last  = parts[parts.length - 1] ?? "";
+  const initials = (first[0] ?? "") + (parts.length > 1 ? (last[0] ?? "") : "");
+  const display  = parts.length > 1 ? `${first} ${last[0]}.` : first;
+  return { initials: initials.toUpperCase(), display };
+}
+
+const AVATAR_COLORS = [
+  { bg: "rgba(45,212,168,0.2)",  text: "#2DD4A8" },
+  { bg: "rgba(124,106,245,0.2)", text: "#7C6AF5" },
+  { bg: "rgba(245,166,35,0.2)",  text: "#F5A623" },
+  { bg: "rgba(232,86,127,0.2)",  text: "#E8567F" },
+  { bg: "rgba(96,165,250,0.2)",  text: "#60A5FA" },
+];
+function avatarColor(str: string) {
+  const i = (str.charCodeAt(0) + (str.charCodeAt(str.length - 1) || 0)) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[i];
+}
+
+type ProfileForMatch = {
   id: string;
-  full_name: string | null;
   role: string | null;
   company: string | null;
-  bio: string | null;
   interests: unknown;
 };
 
-function matchScore(viewer: ProfileForAtlas, candidate: { id: string; full_name: string | null; role: string | null; company: string | null; bio: string | null; interests: unknown }): number {
+function matchScore(viewer: ProfileForMatch, candidate: { id: string; role: string | null; company: string | null; interests: unknown }): number {
   let score = 72;
-  if (viewer.company && candidate.company &&
-      viewer.company.toLowerCase() === candidate.company.toLowerCase()) score += 20;
+  if (viewer.company && candidate.company && viewer.company.toLowerCase() === candidate.company.toLowerCase()) score += 20;
   if (viewer.role && candidate.role) {
-    const vWords = viewer.role.toLowerCase().split(/\s+/);
-    const cWords = candidate.role.toLowerCase().split(/\s+/);
-    if (vWords.some(w => cWords.includes(w) && w.length > 3)) score += 6;
+    const vw = viewer.role.toLowerCase().split(/\s+/);
+    const cw = candidate.role.toLowerCase().split(/\s+/);
+    if (vw.some(w => cw.includes(w) && w.length > 3)) score += 6;
   }
-  const vInt = Array.isArray(viewer.interests) ? viewer.interests as string[] : [];
-  const cInt = Array.isArray(candidate.interests) ? candidate.interests as string[] : [];
-  const overlap = vInt.filter(i => cInt.includes(i)).length;
-  score += Math.min(overlap * 3, 8);
+  const vi = Array.isArray(viewer.interests) ? viewer.interests as string[] : [];
+  const ci = Array.isArray(candidate.interests) ? candidate.interests as string[] : [];
+  score += Math.min(vi.filter(x => ci.includes(x)).length * 3, 8);
   const variation = (candidate.id.charCodeAt(0) + candidate.id.charCodeAt(candidate.id.length - 1)) % 11 - 5;
-  return Math.min(98, Math.max(65, score + variation));
+  return Math.min(97, Math.max(61, score + variation));
 }
 
-function whyMatch(candidate: { role: string | null; company: string | null }): string {
-  const parts = [candidate.role, candidate.company].filter(Boolean);
-  return parts.length > 0 ? parts.join(" · ") : "Similar background";
+function whyMatch(viewer: { role: string | null; company: string | null }, candidate: { role: string | null; company: string | null }): string {
+  const parts: string[] = [];
+  if (candidate.role && viewer.role) {
+    const vw = viewer.role.toLowerCase().split(/\s+/);
+    const cw = candidate.role.toLowerCase().split(/\s+/);
+    if (vw.some(w => cw.includes(w) && w.length > 3)) parts.push("Same industry");
+  }
+  if (candidate.company) parts.push(candidate.company);
+  if (parts.length === 0 && candidate.role) parts.push(candidate.role);
+  return parts.length > 0 ? parts.join(", ") : "Similar professional background";
 }
 
-// ── Circular Match Ring ───────────────────────────────────────────────────────
-
-function MatchRing({ pct }: { pct: number }) {
-  const r = 25;
+// ── Match Ring ─────────────────────────────────────────────────────────────────
+function MatchRing({ score }: { score: number }) {
+  if (score < 60) return null;
+  const color = score >= 85 ? C.teal : score >= 70 ? C.purple : C.amber;
+  const r = 22;
   const circ = 2 * Math.PI * r;
-  const dash = (pct / 100) * circ;
+  const dash = (score / 100) * circ;
   return (
-    <svg width={58} height={58} viewBox="0 0 58 58" className="absolute inset-0"
-         style={{ transform: "rotate(-90deg)" }}>
-      <circle cx="29" cy="29" r={r} fill="none" stroke="rgba(74,39,232,0.12)" strokeWidth="3.5" />
-      <circle cx="29" cy="29" r={r} fill="none" stroke="#4CAF79" strokeWidth="3.5"
-        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
-    </svg>
-  );
-}
-
-// ── Tier Progress Bar ─────────────────────────────────────────────────────────
-
-function TierProgressBar({ totalPoints, tierName, nextTierPts, ptsToNext }: {
-  totalPoints: number;
-  tierName: string;
-  nextTierPts: number | null;
-  ptsToNext: number | null;
-}) {
-  const tierThresholds = [0, 500, 1500, 5000];
-  const tierNames = ["Bronze", "Silver", "Gold", "Platinum"];
-  const currentTierIdx = tierNames.indexOf(tierName);
-  const prevThreshold = tierThresholds[currentTierIdx] ?? 0;
-  const nextThreshold = nextTierPts ?? totalPoints;
-  const rangeSize = nextThreshold - prevThreshold;
-  const progress = rangeSize > 0 ? Math.min(1, (totalPoints - prevThreshold) / rangeSize) : 1;
-
-  return (
-    <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
-      <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(234,179,8,0.12)" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                  fill="#EAB308" strokeWidth="0"/>
-              </svg>
-            </div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--c-text3)" }}>SkyPoints</span>
-          </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(234,179,8,0.12)", color: "#B45309" }}>
-            {tierName}
-          </span>
-        </div>
-
-        <p className="text-2xl font-black leading-none mb-3" style={{ color: "var(--c-text1)" }}>
-          {totalPoints.toLocaleString()}
-          <span className="text-sm font-semibold ml-1" style={{ color: "var(--c-text3)" }}>pts</span>
-        </p>
-
-        {/* Progress bar */}
-        <div className="rounded-full overflow-hidden mb-1.5" style={{ height: 6, background: "var(--c-muted)" }}>
-          <div className="h-full rounded-full transition-all" style={{ width: `${progress * 100}%`, background: "linear-gradient(90deg, #EAB308, #F59E0B)" }} />
-        </div>
-
-        {ptsToNext ? (
-          <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>
-            <span className="font-semibold" style={{ color: "var(--c-text2)" }}>{ptsToNext.toLocaleString()} pts</span> to {tierNames[(currentTierIdx + 1)] ?? "max"}
-          </p>
-        ) : (
-          <p className="text-[10px] font-semibold" style={{ color: "#EAB308" }}>Platinum — top tier! ✦</p>
-        )}
+    <div className="relative flex-shrink-0" style={{ width: 54, height: 54 }}>
+      <svg width={54} height={54} viewBox="0 0 54 54" style={{ transform: "rotate(-90deg)", position: "absolute", inset: 0 }}>
+        <circle cx={27} cy={27} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+        <circle cx={27} cy={27} r={r} fill="none" stroke={color} strokeWidth="3"
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-sm font-black" style={{ color }}>{score}</span>
       </div>
-    </Link>
+    </div>
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
-
+// ── Main ───────────────────────────────────────────────────────────────────────
 export default async function HomePage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_complete")
-      .eq("id", user.id)
-      .single();
+    const { data: profile } = await supabase.from("profiles").select("onboarding_complete").eq("id", user.id).single();
     if (!profile?.onboarding_complete) redirect("/onboarding");
   }
 
@@ -138,12 +118,7 @@ export default async function HomePage() {
     supabase.from("points").select("amount").eq("user_id", uid),
   ]);
 
-  // Fetch featured crews with member counts
-  const { data: featuredCrews } = await supabase
-    .from("crews")
-    .select("id, name, icon, header_style")
-    .limit(4);
-
+  const { data: featuredCrews } = await supabase.from("crews").select("id, name, icon, header_style").limit(4);
   const { data: crewMemberships } = (featuredCrews ?? []).length > 0
     ? await supabase.from("crew_members").select("crew_id, user_id").in("crew_id", (featuredCrews ?? []).map(c => c.id))
     : { data: [] };
@@ -154,64 +129,51 @@ export default async function HomePage() {
     memberCountMap[m.crew_id] = (memberCountMap[m.crew_id] ?? 0) + 1;
     if (m.user_id === uid) joinedCrewIds.add(m.crew_id);
   }
-
   const featuredCrewsWithMeta = (featuredCrews ?? []).map(c => ({
-    ...c,
-    member_count: memberCountMap[c.id] ?? 0,
-    is_member: joinedCrewIds.has(c.id),
+    ...c, member_count: memberCountMap[c.id] ?? 0, is_member: joinedCrewIds.has(c.id),
   }));
 
   const hasActiveFlight = (flights?.length ?? 0) > 0;
   const activeFlight   = flights?.[0] ?? null;
   const flightNumber   = activeFlight?.flight_number ?? null;
 
-  // Enrich with live AirLabs data
   let flightOrigin = activeFlight?.origin ?? null;
   let flightDest   = activeFlight?.destination ?? null;
   let flightDate   = activeFlight?.departure_date ?? null;
+  let depCity: string | null = null;
+  let arrCity: string | null = null;
+  let depTime: string | null = null;
+  let arrTime: string | null = null;
+  let flightDuration: string | null = null;
+  let gate: string | null = null;
 
   if (flightNumber) {
     try {
       const airLabsKey = process.env.AIRLABS_API_KEY;
       if (airLabsKey) {
         const fn = flightNumber.replace(/\s+/g, "");
-        let airData: { dep_iata?: string; arr_iata?: string; dep_time?: string } | null = null;
-
-        const liveRes = await fetch(
-          `https://airlabs.co/api/v9/flight?api_key=${airLabsKey}&flight_iata=${fn}`,
-          { cache: "no-store" },
-        );
-        if (liveRes.ok) {
-          const liveJson = await liveRes.json();
-          if (liveJson?.response?.dep_iata) airData = liveJson.response;
-        }
+        let airData: Record<string, unknown> | null = null;
+        const liveRes = await fetch(`https://airlabs.co/api/v9/flight?api_key=${airLabsKey}&flight_iata=${fn}`, { cache: "no-store" });
+        if (liveRes.ok) { const j = await liveRes.json(); if (j?.response?.dep_iata) airData = j.response; }
         if (!airData) {
-          const schedRes = await fetch(
-            `https://airlabs.co/api/v9/schedules?api_key=${airLabsKey}&flight_iata=${fn}`,
-            { cache: "no-store" },
-          );
-          if (schedRes.ok) {
-            const schedJson = await schedRes.json();
-            if (schedJson?.response?.[0]?.dep_iata) airData = schedJson.response[0];
-          }
+          const schedRes = await fetch(`https://airlabs.co/api/v9/schedules?api_key=${airLabsKey}&flight_iata=${fn}`, { cache: "no-store" });
+          if (schedRes.ok) { const j = await schedRes.json(); if (j?.response?.[0]?.dep_iata) airData = j.response[0]; }
         }
-
         if (airData?.dep_iata) {
-          flightOrigin = airData.dep_iata;
-          flightDest   = airData.arr_iata ?? flightDest;
-          if (airData.dep_time) flightDate = airData.dep_time.split(" ")[0] ?? flightDate;
-
-          supabase
-            .from("user_flights")
-            .update({ origin: flightOrigin, destination: flightDest, ...(airData.dep_time ? { departure_date: flightDate } : {}) })
-            .eq("flight_number", flightNumber)
-            .eq("user_id", uid)
-            .then(() => {});
+          flightOrigin = airData.dep_iata as string;
+          flightDest   = (airData.arr_iata as string) ?? flightDest;
+          depCity      = (airData.dep_city as string) ?? null;
+          arrCity      = (airData.arr_city as string) ?? null;
+          depTime      = (airData.dep_time as string)?.split(" ")[1]?.slice(0,5) ?? null;
+          arrTime      = (airData.arr_time as string)?.split(" ")[1]?.slice(0,5) ?? null;
+          gate         = (airData.dep_gate as string) ?? null;
+          const dur    = airData.duration as number | undefined;
+          if (dur) flightDuration = `${Math.floor(dur/60)}h ${dur%60}m`;
+          if (airData.dep_time) flightDate = (airData.dep_time as string).split(" ")[0] ?? flightDate;
+          supabase.from("user_flights").update({ origin: flightOrigin, destination: flightDest, ...(airData.dep_time ? { departure_date: flightDate } : {}) }).eq("flight_number", flightNumber).eq("user_id", uid).then(() => {});
         }
       }
-    } catch {
-      // AirLabs unavailable — fall back to stored values
-    }
+    } catch { /* AirLabs unavailable */ }
   }
 
   const totalPoints = (pointsRows ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0);
@@ -219,369 +181,330 @@ export default async function HomePage() {
   const nextTierPts = totalPoints >= 5000 ? null : totalPoints >= 1500 ? 5000 : totalPoints >= 500 ? 1500 : 500;
   const ptsToNext   = nextTierPts ? nextTierPts - totalPoints : null;
 
-  // Flightmates for Atlas matching
+  const tierThresholds: Record<string, number> = { Bronze: 0, Silver: 500, Gold: 1500, Platinum: 5000 };
+  const prevThreshold = tierThresholds[tierName] ?? 0;
+  const progress = nextTierPts ? Math.min(1, (totalPoints - prevThreshold) / (nextTierPts - prevThreshold)) : 1;
+
   const { data: flightmates } = flightNumber
-    ? await supabase
-        .from("user_flights")
-        .select("user_id")
-        .eq("flight_number", flightNumber)
-        .neq("user_id", uid)
-        .limit(5)
+    ? await supabase.from("user_flights").select("user_id").eq("flight_number", flightNumber).neq("user_id", uid).limit(8)
     : { data: [] };
 
   const flightmateIds = (flightmates ?? []).map(f => f.user_id);
   const { data: flightmateProfiles } = flightmateIds.length > 0
-    ? await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url, role, company, bio, interests")
-        .in("id", flightmateIds)
+    ? await supabase.from("profiles").select("id, full_name, avatar_url, role, company, bio, interests").in("id", flightmateIds)
     : { data: [] };
 
-  const viewerForAtlas = viewerProfileRow ?? {
-    id: uid,
-    full_name: user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? null,
-    role: null, company: null, bio: null, interests: null,
-  };
-
+  const viewerForAtlas = viewerProfileRow ?? { id: uid, full_name: user?.user_metadata?.full_name ?? null, role: null, company: null, bio: null, interests: null };
   const meta      = user?.user_metadata ?? {};
   const fullName  = meta.full_name ?? meta.name ?? "Traveler";
-  const firstName = fullName.split(" ")[0];
+  const firstName = (fullName as string).split(" ")[0];
   const avatarUrl = meta.avatar_url ?? meta.picture ?? null;
-
+  const { initials: myInitials } = formatName(fullName as string);
   const flightSlug = flightNumber ? flightNumber.replace(/\s+/g, "").toLowerCase() : null;
 
-  // Destination events via PredictHQ (fire-and-forget, only if key present + flight active)
-  type DestEvent = { id: string; title: string; category: string; start: string; rank: number; attendance: number | null };
-  let destEvents: DestEvent[] = [];
-  let destCityName: string | null = null;
-
-  if (hasActiveFlight && flightDest && flightDate && process.env.PREDICTHQ_API_KEY) {
-    try {
-      const params = new URLSearchParams({ date: flightDate, iata: flightDest });
-      const evRes = await fetch(
-        `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/api/events/destination?${params}`,
-        { next: { revalidate: 3600 } },
-      );
-      if (evRes.ok) {
-        const evJson = await evRes.json() as { events?: DestEvent[]; city?: string };
-        destEvents   = evJson.events?.slice(0, 4) ?? [];
-        destCityName = evJson.city ?? null;
-      }
-    } catch { /* non-critical */ }
+  // Boarding countdown (simplified)
+  let boardingLabel: string | null = null;
+  if (depTime && flightDate) {
+    const now = new Date();
+    const dep = new Date(`${flightDate}T${depTime}:00`);
+    const diffMs = dep.getTime() - now.getTime();
+    if (diffMs > 0 && diffMs < 24 * 3600 * 1000) {
+      const h = Math.floor(diffMs / 3600000);
+      const m = Math.floor((diffMs % 3600000) / 60000);
+      boardingLabel = h > 0 ? `Boarding in ${h}h ${m}m` : `Boarding in ${m}m`;
+    }
   }
+
+  const dateLabel = flightDate
+    ? new Date(flightDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    : null;
 
   return (
     <PullToRefresh>
     <div className="animate-fade-in pb-[110px]">
 
       {/* ── Top bar ──────────────────────────────────────── */}
-      <div className="flex items-center px-4 pb-3 gap-3"
+      <div className="flex items-center px-4 pb-4 gap-3"
            style={{ paddingTop: "max(20px, env(safe-area-inset-top))" }}>
-        <Link href="/profile" className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white dark:ring-white/20 shadow-sm active:scale-90 transition-transform">
+        <Link href="/profile" className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 active:scale-90 transition-transform"
+              style={{ background: "linear-gradient(135deg, #7C6AF5, #9B8BFF)" }}>
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+            <img src={avatarUrl as string} alt={fullName as string} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-brand flex items-center justify-center text-white font-bold text-base">
-              {firstName[0]}
+            <div className="w-full h-full flex items-center justify-center text-white font-black text-base">
+              {myInitials[0]}
             </div>
           )}
         </Link>
 
         <div className="flex-1 min-w-0">
-          <p className="text-[17px] font-bold text-zinc-900 dark:text-[var(--c-text1)] leading-tight">Hey, {firstName} 👋</p>
-          <p className="text-xs text-zinc-500 dark:text-[var(--c-text2)] mt-0.5 flex items-center gap-1.5">
+          <p className="text-[18px] font-black leading-tight" style={{ color: "var(--c-text1)" }}>Hey, {firstName}</p>
+          <p className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: "var(--c-text2)" }}>
             {hasActiveFlight ? (
               <>
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0 animate-pulse" />
-                {flightNumber ?? ""}{flightOrigin && flightDest ? ` · ${flightOrigin} → ${flightDest}` : ""}
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" style={{ boxShadow: "0 0 4px #4ade80" }} />
+                {flightNumber}{flightOrigin && flightDest ? ` · ${flightOrigin} → ${flightDest}` : ""}
               </>
             ) : (
               <>
-                <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600 flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: C.text3 }} />
                 No active flight
               </>
             )}
           </p>
         </div>
 
-        {/* Notification + Search icons */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Link href="/notifications"
-            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-            style={{ background: "var(--c-muted)" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="var(--c-text2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform relative"
+            style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="var(--c-text2)" strokeWidth="1.8" strokeLinecap="round"/>
               <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="var(--c-text2)" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
+            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full" style={{ background: C.pink }} />
           </Link>
         </div>
       </div>
 
       <div className="px-4 flex flex-col gap-5">
 
-        {/* ── Flight Card ───────────────────────────────── */}
+        {/* ── Upcoming Flight Card ──────────────────────── */}
         <div className="stagger-1">
         {hasActiveFlight ? (
-          <div className="rounded-3xl overflow-hidden relative"
-               style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
-            <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5 pointer-events-none" />
-            <div className="absolute -bottom-12 -left-6 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
-
-            <div className="relative p-5">
-              {/* Header row */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">Upcoming Flight</p>
-                  <p className="text-lg font-black mt-0.5 text-white">{flightNumber}</p>
-                </div>
-                {flightDate && (
-                  <span className="bg-white/15 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
-                    {new Date(flightDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          <div className="rounded-3xl overflow-hidden" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+            <div className="p-5">
+              {/* Row 1: label + boarding badge */}
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: C.text3 }}>Upcoming Flight</p>
+                {boardingLabel && (
+                  <span className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-full"
+                        style={{ background: "rgba(45,212,168,0.12)", color: C.teal, border: `1px solid rgba(45,212,168,0.3)` }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke={C.teal} strokeWidth="2"/>
+                      <path d="M12 7v5l3 3" stroke={C.teal} strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    {boardingLabel}
                   </span>
                 )}
               </div>
 
-              {/* Route */}
-              <div className="flex items-end justify-between mb-1">
+              {/* Row 2: flight number + date/gate */}
+              <div className="flex items-baseline justify-between mb-4">
+                <p className="text-2xl font-black" style={{ color: C.text1 }}>{flightNumber}</p>
+                <p className="text-sm" style={{ color: C.text2 }}>
+                  {[dateLabel, gate && `Gate ${gate}`].filter(Boolean).join(" · ")}
+                </p>
+              </div>
+
+              {/* Row 3: IATA codes */}
+              <div className="flex items-center justify-between mb-1">
                 <div>
-                  <p className="text-4xl font-black tracking-tight text-white">{flightOrigin ?? "—"}</p>
-                  <p className="text-white/60 text-xs mt-0.5">Origin</p>
+                  <p className="text-[48px] font-black tracking-tight leading-none" style={{ color: C.text1 }}>{flightOrigin ?? "—"}</p>
+                  {depCity && <p className="text-xs mt-0.5" style={{ color: C.text2 }}>{depCity}</p>}
+                  {depTime && <p className="text-sm font-semibold" style={{ color: C.text2 }}>{depTime}</p>}
                 </div>
-                <div className="flex-1 mx-3 mb-3">
-                  <svg viewBox="0 0 160 50" fill="none" className="w-full">
-                    <path d="M8 42 Q80 4 152 42" stroke="white" strokeOpacity="0.25"
-                          strokeWidth="1.5" fill="none" strokeDasharray="4 3"/>
-                    <path d="M8 42 Q80 16 152 42" stroke="white" strokeWidth="2"
-                          fill="none" strokeLinecap="round"/>
-                    <g transform="translate(80,20)">
-                      <path d="M-7 0 L3 -3 L5 0 L3 3 Z M-7 -1 L-3 -5 L-2 -1 Z M-7 1 L-3 5 L-2 1 Z" fill="white"/>
-                    </g>
-                    <circle cx="8"   cy="42" r="3" fill="white" fillOpacity="0.8"/>
-                    <circle cx="152" cy="42" r="3" fill="white" fillOpacity="0.4"/>
+
+                <div className="flex flex-col items-center gap-1 mx-2">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ color: C.purple }}>
+                    <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z" fill="currentColor"/>
                   </svg>
+                  {flightDuration && <p className="text-[10px]" style={{ color: C.text3 }}>{flightDuration}</p>}
                 </div>
+
                 <div className="text-right">
-                  <p className="text-4xl font-black tracking-tight text-white">{flightDest ?? "—"}</p>
-                  <p className="text-white/60 text-xs mt-0.5">Destination</p>
+                  <p className="text-[48px] font-black tracking-tight leading-none" style={{ color: C.text1 }}>{flightDest ?? "—"}</p>
+                  {arrCity && <p className="text-xs mt-0.5" style={{ color: C.text2 }}>{arrCity}</p>}
+                  {arrTime && <p className="text-sm font-semibold" style={{ color: C.text2 }}>{arrTime}</p>}
                 </div>
               </div>
 
-              {/* Quick action buttons */}
-              <div className="flex gap-2 mt-4">
-                <Link href={flightSlug ? `/flight/${flightSlug}` : "/flight"}
-                  className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl active:scale-[0.97] transition-transform"
-                  style={{ background: "rgba(255,255,255,0.15)" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="white" strokeWidth="2"/>
-                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="white" strokeWidth="2"/>
-                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="white" strokeWidth="2"/>
-                    <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="white" strokeWidth="2"/>
-                  </svg>
-                  <span className="text-[10px] font-semibold text-white/90">Dashboard</span>
-                </Link>
-                <Link href={flightSlug ? `/flight/${flightSlug}?tab=people` : "/flight"}
-                  className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl active:scale-[0.97] transition-transform"
-                  style={{ background: "rgba(255,255,255,0.15)" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                    <circle cx="9" cy="7" r="4" stroke="white" strokeWidth="2"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                  <span className="text-[10px] font-semibold text-white/90">People</span>
-                </Link>
-                <button
-                  className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl active:scale-[0.97] transition-transform"
-                  style={{ background: "rgba(255,255,255,0.15)" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <rect x="2" y="5" width="20" height="14" rx="2" stroke="white" strokeWidth="2"/>
-                    <path d="M16 5V3M8 5V3M16 19v2M8 19v2M2 10h20" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                  <span className="text-[10px] font-semibold text-white/90">Pass</span>
-                </button>
+              {/* Divider */}
+              <div className="mt-4 pt-4" style={{ borderTop: "1px solid var(--c-border)" }}>
+                {/* Quick actions */}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Dashboard", href: flightSlug ? `/flight/${flightSlug}` : "/flight", icon: (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.8"/></svg>
+                    )},
+                    { label: "Seat map", href: flightSlug ? `/flight/${flightSlug}/seatmap` : "/flight", icon: (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="9" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><rect x="13" y="4" width="9" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><rect x="2" y="13" width="9" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><rect x="13" y="13" width="9" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8"/></svg>
+                    )},
+                    { label: "Pass", href: flightSlug ? `/flight/${flightSlug}` : "/flight", icon: (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M16 5V3M8 5V3M16 19v2M8 19v2M2 10h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                    )},
+                  ].map(({ label, href, icon }) => (
+                    <Link key={label} href={href}
+                      className="flex flex-col items-center gap-1.5 py-3 rounded-2xl active:scale-95 transition-transform"
+                      style={{ background: "var(--c-muted)", color: "var(--c-text2)" }}>
+                      {icon}
+                      <span className="text-[10px] font-semibold">{label}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="rounded-3xl overflow-hidden" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-            <EmptyState
-              icon="✈️"
-              title="No active flight"
-              body="Add your flight to discover professionals onboard and start networking at 35,000 ft."
-              action={{ label: "Add a Flight", href: "/flight" }}
-              className="py-10"
-            />
+            <EmptyState icon="✈️" title="No active flight" body="Add your flight to discover professionals onboard and start networking at 35,000 ft." action={{ label: "Add a Flight", href: "/flight" }} className="py-10" />
           </div>
         )}
         </div>
 
         {/* ── Atlas AI Card ─────────────────────────────── */}
         <div className="stagger-2">
-        <AtlasHomeSuggestion
-          viewerProfile={viewerForAtlas}
-          candidates={flightmateProfiles ?? []}
-        />
+          <AtlasHomeSuggestion viewerProfile={viewerForAtlas} candidates={flightmateProfiles ?? []} />
         </div>
 
-        {/* ── People on Your Flight · AI Matched ────────── */}
+        {/* ── People on your flight ─────────────────────── */}
         {(flightmateProfiles ?? []).length > 0 && (
         <Reveal delay={40}>
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="section-title leading-none">People on your flight</h3>
-              <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>AI matched · {(flightmateProfiles ?? []).length} found</p>
+          <div>
+            {/* Section header */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>People on your flight</h3>
+                <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: "rgba(124,106,245,0.15)", color: C.purple }}>
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: C.purple }} />
+                  AI matched
+                </span>
+              </div>
+              <Link href="/network"
+                className="text-xs font-semibold px-3 py-1.5 rounded-full active:opacity-70"
+                style={{ border: `1px solid var(--c-border)`, color: "var(--c-text1)" }}>
+                See all
+              </Link>
             </div>
-            <Link href="/network" className="text-xs text-brand font-semibold">See all</Link>
-          </div>
-          <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-            {(flightmateProfiles ?? []).map((p) => {
-              const name = p.full_name ?? "Traveler";
-              const initials = getInitials(name);
-              const color = avatarColor(name);
-              const pct = matchScore(viewerForAtlas, p);
-              const why = whyMatch(p);
-              return (
-                <Link key={p.id} href={`/profile/${p.id}`}
-                  className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[76px] active:opacity-70 transition-opacity">
-                  {/* Avatar with match ring */}
-                  <div className="relative w-[58px] h-[58px]">
-                    <MatchRing pct={pct} />
-                    <div className="absolute inset-[5px] rounded-full overflow-hidden">
-                      {p.avatar_url
-                        ? <img src={p.avatar_url} alt={name} className="w-full h-full object-cover rounded-full" />
-                        : <div className={`w-full h-full rounded-full ${color} flex items-center justify-center text-xs font-black`}>{initials}</div>}
-                    </div>
-                    {/* Match % badge */}
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-black px-1.5 rounded-full text-white"
-                         style={{ background: "#4CAF79", whiteSpace: "nowrap" }}>
-                      {pct}%
-                    </div>
-                  </div>
-                  <p className="text-[11px] font-semibold text-center leading-tight mt-1.5" style={{ color: "var(--c-text1)" }}>
-                    {name.split(" ")[0]}
-                  </p>
-                  <p className="text-[9px] text-center leading-tight truncate w-full px-1" style={{ color: "var(--c-text3)" }}>{why}</p>
-                </Link>
-              );
-            })}
-          </div>
 
-          {/* Privacy notice */}
-          <div className="flex items-center gap-1.5 mt-3 px-1">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" stroke="var(--c-text3)" strokeWidth="2" strokeLinejoin="round"/>
-            </svg>
-            <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>Visible only to SkyLink members on your flight</p>
+            {/* Person cards */}
+            <div className="flex flex-col gap-3">
+              {(flightmateProfiles ?? []).slice(0, 4).map((p) => {
+                const { initials, display } = formatName(p.full_name ?? null);
+                const pct  = matchScore(viewerForAtlas, p);
+                if (pct < 60) return null;
+                const why  = whyMatch(viewerForAtlas, p);
+                const ac   = avatarColor(p.full_name ?? p.id);
+                return (
+                  <Link key={p.id} href={`/profile/${p.id}`}
+                    className="block rounded-2xl p-4 active:opacity-80 transition-opacity"
+                    style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+                    <div className="flex items-center gap-3">
+                      {/* Avatar */}
+                      <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
+                           style={{ background: ac.bg, color: ac.text }}>
+                        {initials}
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{display}</p>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill={C.teal}><path d="M9 12L11 14L15 10M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z" stroke={C.teal} strokeWidth="2" strokeLinecap="round" fill="none"/></svg>
+                        </div>
+                        <p className="text-xs mt-0.5 truncate" style={{ color: "var(--c-text2)" }}>
+                          {[p.role, p.company].filter(Boolean).join(", ")}
+                        </p>
+                      </div>
+                      {/* Match ring */}
+                      <MatchRing score={pct} />
+                    </div>
+                    {/* Why */}
+                    <p className="text-xs mt-2.5 leading-relaxed" style={{ color: C.text3 }}>
+                      <span className="font-semibold" style={{ color: C.text2 }}>Why: </span>{why}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Privacy note */}
+            <div className="flex items-center gap-2 mt-3 px-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" stroke={C.text3} strokeWidth="2" strokeLinejoin="round"/>
+              </svg>
+              <p className="text-[10px]" style={{ color: C.text3 }}>
+                Only opt-in passengers shown.{" "}
+                <Link href="/profile#privacy" className="underline" style={{ color: C.teal }}>Privacy settings</Link>
+              </p>
+            </div>
           </div>
         </Reveal>
         )}
 
-        {/* ── People Near You ───────────────────────────── */}
-        <div className="stagger-3 -mx-4">
-          <PeopleNearYou />
-        </div>
-
-        {/* ── SkyPoints ─────────────────────────────────── */}
-        <Reveal delay={60} variant="scale">
-          <TierProgressBar
-            totalPoints={totalPoints}
-            tierName={tierName}
-            nextTierPts={nextTierPts}
-            ptsToNext={ptsToNext}
-          />
-        </Reveal>
-
-        {/* ── Destination Events ────────────────────────── */}
-        {destEvents.length > 0 && (
-        <Reveal delay={70}>
+        {/* ── Your Crews ────────────────────────────────── */}
+        <Reveal delay={60}>
           <div>
             <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="section-title leading-none">Events in {destCityName ?? flightDest}</h3>
-                <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>Around your arrival · powered by PredictHQ</p>
+              <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>Your crews</h3>
+              <Link href="/crews"
+                className="text-xs font-semibold px-3 py-1.5 rounded-full active:opacity-70"
+                style={{ border: `1px solid var(--c-border)`, color: "var(--c-text1)" }}>
+                Browse
+              </Link>
+            </div>
+            {featuredCrewsWithMeta.length === 0 ? (
+              <EmptyState icon="🚀" title="No crews yet" body="Join a crew built around your interests." action={{ label: "Browse Crews", href: "/crews" }} className="py-8" />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {featuredCrewsWithMeta.map((crew) => {
+                  const mini = CREW_MINI_THEMES[resolveCrewThemeKey(crew.id, crew.header_style)] ?? CREW_MINI_THEMES.city;
+                  return (
+                    <Link key={crew.id} href={`/crews/${crew.id}`}
+                      className="rounded-2xl overflow-hidden active:scale-97 transition-transform"
+                      style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+                      <div className="p-4">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 overflow-hidden relative"
+                             style={{ background: mini.bg, border: `1px solid ${mini.border}` }}>
+                          <div className="absolute inset-0">{mini.mini}</div>
+                        </div>
+                        <p className="text-sm font-bold leading-tight" style={{ color: "var(--c-text1)" }}>{crew.name}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: C.text3 }}>
+                          {crew.member_count} member{crew.member_count !== 1 ? "s" : ""}
+                        </p>
+                        {/* Member avatar stack — colored initials */}
+                        <div className="flex items-center gap-1 mt-2">
+                          {Array.from({ length: Math.min(3, crew.member_count) }).map((_, i) => (
+                            <div key={i} className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black -ml-1 first:ml-0"
+                                 style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length].bg, color: AVATAR_COLORS[i % AVATAR_COLORS.length].text, border: "1px solid var(--c-card)" }}>
+                              {String.fromCharCode(65 + i)}
+                            </div>
+                          ))}
+                          {crew.member_count > 3 && (
+                            <span className="text-[9px] ml-1" style={{ color: C.text3 }}>+{crew.member_count - 3}</span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              {destEvents.map(ev => {
-                const catIcon: Record<string, string> = {
-                  concerts: "🎵", conferences: "💼", festivals: "🎪",
-                  sports: "⚽", community: "🤝", expos: "🏛️",
-                  performing_arts: "🎭",
-                };
-                const icon = catIcon[ev.category] ?? "📅";
-                const evDate = new Date(ev.start);
-                const dateStr = evDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                return (
-                  <div key={ev.id} className="card flex items-center gap-3 py-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
-                         style={{ background: "var(--c-muted)" }}>
-                      {icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate" style={{ color: "var(--c-text1)" }}>{ev.title}</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>
-                        {dateStr}{ev.attendance ? ` · ${ev.attendance >= 1000 ? `${Math.round(ev.attendance / 1000)}K` : ev.attendance} attending` : ""}
-                      </p>
-                    </div>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full capitalize flex-shrink-0"
-                          style={{ background: "var(--c-muted)", color: "var(--c-text3)" }}>
-                      {ev.category.replace(/-/g, " ")}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            )}
           </div>
         </Reveal>
-        )}
 
-        {/* ── Sky Crews ─────────────────────────────────── */}
-        <Reveal delay={80}>
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="section-title">Sky Crews</h3>
-            <Link href="/crews" className="text-xs text-brand font-semibold">Browse</Link>
-          </div>
-          {featuredCrewsWithMeta.length === 0 ? (
-            <EmptyState
-              icon="🚀"
-              title="No crews yet"
-              body="Join a crew built around your interests, or create one for your community."
-              action={{ label: "Browse Crews", href: "/crews" }}
-              className="py-8"
-            />
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {featuredCrewsWithMeta.map((crew, i) => {
-                const mini = CREW_MINI_THEMES[resolveCrewThemeKey(crew.id, crew.header_style)] ?? CREW_MINI_THEMES.city;
-                return (
-                <Reveal key={crew.id} delay={i * 60}>
-                <Link href={`/crews/${crew.id}`}
-                  className="rounded-2xl overflow-hidden active:scale-[0.97] transition-transform"
-                  style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-                  {/* Themed thumbnail */}
-                  <div className="relative h-20 overflow-hidden"
-                       style={{ background: mini.bg }}>
-                    <div className="absolute inset-0 opacity-90">
-                      {mini.mini}
-                    </div>
-                    {crew.is_member && (
-                      <span className="absolute top-2 right-2 text-[9px] font-bold text-emerald-600 border border-emerald-200 bg-emerald-50 rounded-full px-2 py-0.5 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-900/60">
-                        Joined
-                      </span>
-                    )}
-                  </div>
-                  <div className="p-2.5">
-                    <p className="text-xs font-bold leading-tight" style={{ color: "var(--c-text1)" }}>{crew.name}</p>
-                    <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>{crew.member_count} member{crew.member_count !== 1 ? "s" : ""}</p>
-                  </div>
-                </Link>
-                </Reveal>
-                );
-              })}
+        {/* ── SkyPoints ─────────────────────────────────── */}
+        <Reveal delay={80} variant="scale">
+          <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
+            <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: C.text3 }}>SkyPoints</p>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-baseline gap-2">
+                  <p className="text-4xl font-black" style={{ color: "var(--c-text1)" }}>{totalPoints.toLocaleString()}</p>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(245,166,35,0.18)", color: C.amber }}>{tierName}</span>
+                </div>
+                <div className="text-right">
+                  {ptsToNext && <p className="text-sm font-semibold" style={{ color: "var(--c-text1)" }}>{ptsToNext.toLocaleString()} to {tierName === "Bronze" ? "Silver" : tierName === "Silver" ? "Gold" : "Platinum"}</p>}
+                  <p className="text-[11px] mt-0.5" style={{ color: C.teal }}>+50 this flight</p>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div className="rounded-full overflow-hidden" style={{ height: 5, background: "var(--c-muted)" }}>
+                <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: C.amber }} />
+              </div>
             </div>
-          )}
-        </div>
+          </Link>
         </Reveal>
 
       </div>

@@ -273,6 +273,20 @@ function StatusCard({
   );
 }
 
+// ─── Industry inference ───────────────────────────────────────────────────────
+
+function inferIndustry(role: string | null): string {
+  if (!role) return "Other";
+  const r = role.toLowerCase();
+  if (/design|ux|ui|product design/.test(r)) return "Design";
+  if (/engineer|dev|software|tech|data/.test(r)) return "Engineering";
+  if (/vc|venture|invest|fund|finance|capital/.test(r)) return "Finance";
+  if (/product|pm|program/.test(r)) return "Product";
+  if (/market|growth|brand/.test(r)) return "Marketing";
+  if (/found|ceo|cto|coo|exec/.test(r)) return "Executive";
+  return "Other";
+}
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({
@@ -307,27 +321,50 @@ function OverviewTab({
   // People stats
   const others      = people.filter(p => !p.isMe);
   const available   = others.filter(p => p.networking_status === "available").length;
-  const busyCount   = others.filter(p => p.networking_status === "not_available").length;
-  const invisCount  = others.filter(p => p.networking_status === "invisible").length;
   const connections = others.filter(p => p.connected).length;
   const total       = others.length;
 
+  // Nearby (same section — simplified as connections + some random nearby estimate)
+  const nearby = Math.max(0, Math.floor(available * 0.4));
+
+  // Industry breakdown from roles
+  const industryCounts: Record<string, number> = {};
+  for (const p of others) {
+    const ind = inferIndustry(p.role);
+    industryCounts[ind] = (industryCounts[ind] ?? 0) + 1;
+  }
+  const industryEntries = Object.entries(industryCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  const INDUSTRY_COLORS: Record<string, string> = {
+    "Design":      "#7C6AF5",
+    "Engineering": "#2DD4A8",
+    "Finance":     "#F5A623",
+    "Product":     "#60A5FA",
+    "Marketing":   "#E8567F",
+    "Executive":   "#A78BFA",
+    "Other":       "#5C6170",
+  };
+
   const statusConfig: Record<string, { label: string; dot: string; badge: string; badgeText: string }> = {
-    scheduled: { label: "Scheduled",  dot: "#6366F1", badge: "rgba(99,102,241,0.15)",  badgeText: "#A5B4FC" },
-    active:    { label: "In Flight",  dot: "#4CAF79", badge: "rgba(76,175,121,0.15)",  badgeText: "#6EE7B7" },
-    landed:    { label: "Landed",     dot: "#4CAF79", badge: "rgba(76,175,121,0.15)",  badgeText: "#6EE7B7" },
-    cancelled: { label: "Cancelled",  dot: "#EF4444", badge: "rgba(239,68,68,0.15)",   badgeText: "#FCA5A5" },
-    upcoming:  { label: "Upcoming",   dot: "#A78BFA", badge: "rgba(167,139,250,0.15)", badgeText: "#C4B5FD" },
+    scheduled: { label: "Scheduled",  dot: "#7C6AF5", badge: "rgba(124,106,245,0.15)",  badgeText: "#9B8BFF" },
+    active:    { label: "In Flight",  dot: "#2DD4A8", badge: "rgba(45,212,168,0.15)",   badgeText: "#2DD4A8" },
+    landed:    { label: "Landed",     dot: "#2DD4A8", badge: "rgba(45,212,168,0.15)",   badgeText: "#2DD4A8" },
+    cancelled: { label: "Cancelled",  dot: "#EF4444", badge: "rgba(239,68,68,0.15)",    badgeText: "#FCA5A5" },
+    upcoming:  { label: "Upcoming",   dot: "#7C6AF5", badge: "rgba(124,106,245,0.15)",  badgeText: "#9B8BFF" },
     completed: { label: "Completed",  dot: "#94A3B8", badge: "rgba(148,163,184,0.12)", badgeText: "#CBD5E1" },
   };
   const sc = statusConfig[airStatus] ?? statusConfig.scheduled;
 
   // Timeline events
   const timelineEvents = [
-    { label: "Check-in",  time: "—",      done: true,  active: false },
-    { label: "Boarding",  time: depTime,   done: airStatus !== "scheduled" && airStatus !== "upcoming", active: airStatus === "scheduled" || airStatus === "upcoming" },
-    { label: "Departure", time: depTime,   done: airStatus === "active" || airStatus === "landed" || airStatus === "completed", active: false },
-    { label: "Arrival",   time: arrTime,   done: airStatus === "landed" || airStatus === "completed", active: airStatus === "active" },
+    { label: "Check-in open",        time: "—",      done: true,  active: false, sub: "Completed" },
+    { label: "Bag drop",             time: "—",      done: true,  active: false, sub: "Completed" },
+    { label: "Boarding",             time: depTime,  done: airStatus !== "scheduled" && airStatus !== "upcoming", active: airStatus === "scheduled" || airStatus === "upcoming", sub: gate ? `Gate ${gate} · Group A` : undefined, matchCount: available },
+    { label: "Takeoff",              time: depTime,  done: airStatus === "active" || airStatus === "landed" || airStatus === "completed", active: false, sub: undefined, matchCount: undefined },
+    { label: "In-flight networking", time: "—",      done: false, active: airStatus === "active", sub: "Wi-Fi enabled · Chat available", matchCount: undefined },
+    { label: "Landing",              time: arrTime,  done: airStatus === "landed" || airStatus === "completed", active: false, sub: arrTerminal ? `Terminal ${arrTerminal}` : undefined, matchCount: undefined },
   ];
 
   return (
@@ -341,18 +378,13 @@ function OverviewTab({
       />
 
       {/* ── Main Flight Card ──────────────────── */}
-      <div className="rounded-3xl overflow-hidden relative"
-           style={{ background: "linear-gradient(145deg, #1A0A50 0%, #2D1580 55%, #3D1FAF 100%)" }}>
-        {/* Decorative circles */}
-        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.04)" }} />
-        <div className="absolute -bottom-14 -left-8 w-36 h-36 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.03)" }} />
-
-        <div className="relative p-5">
+      <div className="rounded-3xl overflow-hidden" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+        <div className="p-5">
           {/* Top: flight number + status */}
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest mb-0.5">Flight</p>
-              <p className="text-base font-black text-white">{userFlight?.flight_number ?? "—"}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: "var(--c-text3)" }}>Flight</p>
+              <p className="text-base font-black" style={{ color: "var(--c-text1)" }}>{userFlight?.flight_number ?? "—"}</p>
             </div>
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full"
                   style={{ background: sc.badge, color: sc.badgeText }}>
@@ -362,66 +394,53 @@ function OverviewTab({
           </div>
 
           {/* IATA codes */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-[42px] font-black tracking-tight leading-none text-white">{origin}</p>
-              <p className="text-white/50 text-xs mt-1">{depCity}</p>
+              <p className="text-[52px] font-black tracking-tight leading-none" style={{ color: "var(--c-text1)" }}>{origin}</p>
+              {terminal && <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>Terminal {terminal}</p>}
+              <p className="text-base font-semibold mt-1" style={{ color: "var(--c-text2)" }}>{depTime}</p>
             </div>
 
-            {/* Route line with dot */}
-            <div className="flex-1 mx-4 flex flex-col items-center gap-1">
-              <div className="w-full flex items-center gap-1">
-                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.2)" }} />
-                <div className="w-6 h-6 flex items-center justify-center">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                    <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"/>
-                  </svg>
-                </div>
-                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.2)" }} />
+            {/* Center: progress dot + duration */}
+            <div className="flex flex-col items-center gap-1.5 mx-2">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ color: "#7C6AF5" }}>
+                <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z" fill="currentColor"/>
+              </svg>
+              <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>{duration}</p>
+            </div>
+
+            <div className="text-right">
+              <p className="text-[52px] font-black tracking-tight leading-none" style={{ color: "var(--c-text1)" }}>{destination}</p>
+              {arrTerminal && <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>Terminal {arrTerminal}</p>}
+              <p className="text-base font-semibold mt-1" style={{ color: "var(--c-text2)" }}>{arrTime}</p>
+            </div>
+          </div>
+
+          {/* City names below IATA */}
+          <div className="flex justify-between mb-4">
+            <p className="text-xs" style={{ color: "var(--c-text2)" }}>{depCity}</p>
+            <p className="text-xs text-right" style={{ color: "var(--c-text2)" }}>{arrCity}</p>
+          </div>
+
+          {/* Mini info cards: Aircraft · Gate · Seat */}
+          <div className="grid grid-cols-3 gap-2 pt-4" style={{ borderTop: "1px solid var(--c-border)" }}>
+            {[
+              { label: "Aircraft", value: airline, icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z" fill="currentColor"/></svg>
+              )},
+              { label: "Gate", value: gate ?? "—", icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M3 9h18M9 21V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+              )},
+              { label: "Seat", value: "14C", icon: (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8"/></svg>
+              )},
+            ].map(({ label, value, icon }) => (
+              <div key={label} className="rounded-2xl p-3 text-center" style={{ background: "var(--c-muted)" }}>
+                <div className="flex justify-center mb-1" style={{ color: "var(--c-text3)" }}>{icon}</div>
+                <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: "var(--c-text3)" }}>{label}</p>
+                <p className="text-xs font-black" style={{ color: "var(--c-text1)" }}>{value}</p>
               </div>
-              <p className="text-white/40 text-[10px]">{duration}</p>
-            </div>
-
-            <div className="text-right">
-              <p className="text-[42px] font-black tracking-tight leading-none text-white">{destination}</p>
-              <p className="text-white/50 text-xs mt-1">{arrCity}</p>
-            </div>
-          </div>
-
-          {/* Times + airline row */}
-          <div className="flex items-center justify-between pt-3.5 mt-1 border-t border-white/10">
-            <div>
-              <p className="text-white/40 text-[9px] uppercase tracking-wider">Departs</p>
-              <p className="text-sm font-bold text-white">{depTime}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-white/40 text-[9px] uppercase tracking-wider">Airline</p>
-              <p className="text-sm font-bold text-white font-mono">{airline}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-white/40 text-[9px] uppercase tracking-wider">Arrives</p>
-              <p className="text-sm font-bold text-white">{arrTime}</p>
-            </div>
-          </div>
-
-          {/* Mini info cards: Gate · Terminal · Date */}
-          <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3.5 border-t border-white/10">
-            <div className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.07)" }}>
-              <p className="text-white/40 text-[9px] uppercase tracking-wider mb-1">Gate</p>
-              <p className="text-sm font-black text-white">{gate ?? "—"}</p>
-            </div>
-            <div className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.07)" }}>
-              <p className="text-white/40 text-[9px] uppercase tracking-wider mb-1">Terminal</p>
-              <p className="text-sm font-black text-white">{terminal ? `T${terminal}` : (arrTerminal ? `T${arrTerminal}` : "—")}</p>
-            </div>
-            <div className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.07)" }}>
-              <p className="text-white/40 text-[9px] uppercase tracking-wider mb-1">Date</p>
-              <p className="text-[11px] font-black text-white leading-tight">
-                {userFlight?.departure_date
-                  ? new Date(userFlight.departure_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                  : "—"}
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </div>
@@ -430,48 +449,53 @@ function OverviewTab({
       {total > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Networking", value: available, color: "#4CAF79", bg: "rgba(76,175,121,0.1)" },
-            { label: "Passengers", value: total,     color: "#A78BFA", bg: "rgba(167,139,250,0.1)" },
-            { label: "Connected",  value: connections, color: "#60A5FA", bg: "rgba(96,165,250,0.1)" },
-          ].map(({ label, value, color, bg }) => (
+            { label: "Networking",  sublabel: "Matches on board", value: available,    color: "#2DD4A8" },
+            { label: "Your row",    sublabel: "Matches nearby",   value: nearby,       color: "#7C6AF5" },
+            { label: "Connections", sublabel: "Mutual contacts",  value: connections,  color: "#F5A623" },
+          ].map(({ label, sublabel, value, color }) => (
             <div key={label} className="rounded-2xl p-3.5 flex flex-col gap-1"
                  style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
               <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--c-text3)" }}>{label}</p>
               <p className="text-2xl font-black leading-none" style={{ color }}>{value}</p>
-              <div className="h-1 rounded-full mt-1" style={{ background: "var(--c-muted)" }}>
-                {total > 0 && <div className="h-full rounded-full" style={{ width: `${Math.min(100, (value / total) * 100)}%`, background: bg.replace("0.1", "0.6") }} />}
-              </div>
+              <p className="text-[9px] leading-tight mt-0.5" style={{ color: "var(--c-text3)" }}>{sublabel}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* ── Networking Breakdown ──────────────── */}
-      {total > 0 && (
+      {/* ── Networking Breakdown (Industry) ───── */}
+      {industryEntries.length > 0 && (
         <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--c-text3)" }}>Networking Breakdown</p>
+          <div className="flex items-center gap-2 mb-4">
+            <p className="text-sm font-black" style={{ color: "var(--c-text1)" }}>Networking breakdown</p>
+            <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: "rgba(124,106,245,0.15)", color: "#7C6AF5" }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#7C6AF5" }} />
+              AI insights
+            </span>
+          </div>
           <div className="flex flex-col gap-2.5">
-            {[
-              { label: "Available",   count: available,  color: "#4CAF79", pct: total > 0 ? available / total : 0 },
-              { label: "Busy",        count: busyCount,  color: "#EAB308", pct: total > 0 ? busyCount  / total : 0 },
-              { label: "Private",     count: invisCount, color: "#94A3B8", pct: total > 0 ? invisCount / total : 0 },
-            ].map(({ label, count, color, pct }) => (
-              <div key={label} className="flex items-center gap-3">
-                <p className="text-xs w-16 flex-shrink-0" style={{ color: "var(--c-text2)" }}>{label}</p>
-                <div className="flex-1 rounded-full overflow-hidden" style={{ height: 6, background: "var(--c-muted)" }}>
-                  <div className="h-full rounded-full transition-all"
-                       style={{ width: `${pct * 100}%`, background: color }} />
+            {industryEntries.map(([ind, count]) => {
+              const color = INDUSTRY_COLORS[ind] ?? "#5C6170";
+              const pct = total > 0 ? count / total : 0;
+              return (
+                <div key={ind} className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+                  <p className="text-xs w-20 flex-shrink-0" style={{ color: "var(--c-text2)" }}>{ind}</p>
+                  <div className="flex-1 rounded-full overflow-hidden" style={{ height: 5, background: "var(--c-muted)" }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pct * 100}%`, background: color }} />
+                  </div>
+                  <p className="text-xs font-bold w-5 text-right flex-shrink-0" style={{ color: "var(--c-text2)" }}>{count}</p>
                 </div>
-                <p className="text-xs font-bold w-5 text-right flex-shrink-0" style={{ color: "var(--c-text2)" }}>{count}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* ── Flight Timeline ───────────────────── */}
       <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--c-text3)" }}>Flight Timeline</p>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--c-text3)" }}>Flight Timeline</p>
         <div className="flex flex-col gap-0">
           {timelineEvents.map((ev, i) => (
             <div key={ev.label} className="flex items-start gap-3">
@@ -479,48 +503,82 @@ function OverviewTab({
               <div className="flex flex-col items-center flex-shrink-0" style={{ width: 16 }}>
                 <div className="w-3.5 h-3.5 rounded-full flex-shrink-0 border-2"
                      style={{
-                       background: ev.done ? "#4CAF79" : ev.active ? "#A78BFA" : "var(--c-muted)",
-                       borderColor: ev.done ? "#4CAF79" : ev.active ? "#A78BFA" : "var(--c-border)",
+                       background: ev.done ? "#2DD4A8" : ev.active ? "#7C6AF5" : "var(--c-muted)",
+                       borderColor: ev.done ? "#2DD4A8" : ev.active ? "#7C6AF5" : "var(--c-border)",
+                       boxShadow: ev.active ? "0 0 8px rgba(124,106,245,0.5)" : "none",
                      }} />
                 {i < timelineEvents.length - 1 && (
-                  <div className="w-px flex-1 mt-0.5 mb-0.5" style={{ height: 20, background: ev.done ? "rgba(76,175,121,0.3)" : "var(--c-border)" }} />
+                  <div className="w-px flex-1 mt-0.5 mb-0.5" style={{ height: 28, background: ev.done ? "rgba(45,212,168,0.3)" : "var(--c-border)" }} />
                 )}
               </div>
               {/* Content */}
-              <div className="flex items-center justify-between w-full pb-4">
-                <p className="text-xs font-semibold" style={{ color: ev.active ? "var(--c-text1)" : ev.done ? "var(--c-text2)" : "var(--c-text3)" }}>
-                  {ev.label}
-                </p>
-                <p className="text-[11px]" style={{ color: ev.active ? "#A78BFA" : "var(--c-text3)" }}>{ev.time}</p>
+              <div className="flex-1 pb-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold" style={{ color: ev.active ? "var(--c-text1)" : ev.done ? "var(--c-text2)" : "var(--c-text3)" }}>
+                    {ev.label}
+                  </p>
+                  {ev.done ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(45,212,168,0.12)", color: "#2DD4A8" }}>Completed</span>
+                  ) : ev.active && ev.time !== "—" ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(124,106,245,0.15)", color: "#7C6AF5" }}>{ev.time}</span>
+                  ) : (
+                    <p className="text-[11px]" style={{ color: "var(--c-text3)" }}>{ev.time}</p>
+                  )}
+                </div>
+                {ev.sub && (
+                  <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>{ev.sub}</p>
+                )}
+                {ev.matchCount !== undefined && ev.matchCount > 0 && (
+                  <p className="text-[10px] mt-1 font-semibold" style={{ color: "#7C6AF5" }}>
+                    {ev.matchCount} match{ev.matchCount !== 1 ? "es" : ""} boarding with you
+                  </p>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── Atlas Networking Insight ─────────── */}
+      {/* ── AI Networking Tip ─────────────────── */}
       <div className="rounded-2xl p-4 atlas-insight-card" style={{ border: "1px solid var(--c-border)" }}>
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="atlas-icon text-sm">✦</span>
-          <span className="text-sm font-black atlas-label">Atlas Tip</span>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="atlas-icon text-base">✦</span>
+          <span className="text-base font-black atlas-label">AI networking tip</span>
           <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full atlas-badge">AI</span>
         </div>
-        {networkingOverview === "loading" ? (
-          <div className="flex flex-col gap-1.5">
-            <div className="h-3 rounded-full animate-pulse w-full" style={{ background: "rgba(74,39,232,0.12)" }} />
-            <div className="h-3 rounded-full animate-pulse w-4/5" style={{ background: "rgba(74,39,232,0.08)" }} />
+        <div className="rounded-2xl p-3.5 mb-3" style={{ background: "rgba(124,106,245,0.06)" }}>
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 atlas-icon" style={{ background: "rgba(124,106,245,0.12)" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="3" width="20" height="5" rx="1" stroke="currentColor" strokeWidth="1.8"/>
+                <rect x="2" y="11" width="20" height="5" rx="1" stroke="currentColor" strokeWidth="1.8"/>
+                <rect x="2" y="19" width="20" height="5" rx="1" stroke="currentColor" strokeWidth="1.8"/>
+              </svg>
+            </div>
+            <div className="flex-1">
+              {networkingOverview === "loading" ? (
+                <div className="flex flex-col gap-1.5">
+                  <div className="h-3 rounded-full animate-pulse w-full atlas-skeleton" />
+                  <div className="h-3 rounded-full animate-pulse w-4/5 atlas-skeleton" />
+                  <div className="h-3 rounded-full animate-pulse w-3/5 atlas-skeleton" />
+                </div>
+              ) : networkingOverview ? (
+                <p className="text-xs atlas-text-secondary leading-relaxed">{networkingOverview}</p>
+              ) : (
+                <p className="text-xs atlas-text-secondary leading-relaxed">
+                  {networkingStatus === "available"
+                    ? "You appear to be networking. Consider connecting with matches before takeoff — early conversations tend to lead to stronger professional connections."
+                    : networkingStatus === "not_available"
+                    ? "You're marked as busy. Others can see your profile but may not initiate contact. You can change this anytime."
+                    : "You're in private mode. Setting yourself as available may help you discover who's networking on this flight."}
+                </p>
+              )}
+            </div>
           </div>
-        ) : networkingOverview ? (
-          <p className="text-xs atlas-text-secondary leading-relaxed">{networkingOverview}</p>
-        ) : (
-          <p className="text-xs atlas-text-secondary leading-relaxed">
-            {networkingStatus === "available"
-              ? "You're visible to SkyLink members on this flight. Check the People tab to connect before boarding."
-              : networkingStatus === "not_available"
-              ? "You're marked as busy. Others can see your profile but won't approach you."
-              : "You're in private mode. Tap Go Available to discover who's networking on this flight."}
-          </p>
-        )}
+        </div>
+        <p className="text-[10px] atlas-text-secondary opacity-60">
+          🔒 Based on public profiles and your preferences
+        </p>
       </div>
 
       {/* ── Quick Actions ─────────────────────── */}
@@ -536,8 +594,8 @@ function OverviewTab({
                   <path d="M16 5V3M8 5V3M16 19v2M8 19v2M2 10h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                 </svg>
               ),
-              color: "#A78BFA",
-              bg: "rgba(167,139,250,0.1)",
+              color: "#2DD4A8",
+              bg: "rgba(45,212,168,0.1)",
             },
             {
               label: "Lounge",
@@ -548,8 +606,8 @@ function OverviewTab({
                   <path d="M12 12v3M8 12v1M16 12v1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                 </svg>
               ),
-              color: "#60A5FA",
-              bg: "rgba(96,165,250,0.1)",
+              color: "#7C6AF5",
+              bg: "rgba(124,106,245,0.1)",
             },
             {
               label: "Share Trip",
@@ -561,8 +619,8 @@ function OverviewTab({
                   <path d="M8.59 13.51L15.42 17.49M15.41 6.51L8.59 10.49" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
                 </svg>
               ),
-              color: "#4CAF79",
-              bg: "rgba(76,175,121,0.1)",
+              color: "#E8567F",
+              bg: "rgba(232,86,127,0.1)",
             },
           ].map(({ label, icon, color, bg }) => (
             <button
