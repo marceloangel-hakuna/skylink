@@ -124,7 +124,13 @@ function AddFlightModal({ onClose, onAdd }: { onClose: () => void; onAdd: (f: Om
       notes:            null,
     };
 
-    const { error: dbErr } = await sb.from("user_flights").insert(row);
+    // Try inserting with networking_status: "available" so the user is visible immediately.
+    // Fall back to inserting without it if the column doesn't exist yet.
+    let dbErr;
+    ({ error: dbErr } = await sb.from("user_flights").insert({ ...row, networking_status: "available" }));
+    if (dbErr) {
+      ({ error: dbErr } = await sb.from("user_flights").insert(row));
+    }
     if (dbErr) { setError(dbErr.message); setSaving(false); return; }
 
     await sb.from("points").insert({ user_id: user.id, amount: 200, reason: `Added flight ${row.flight_number}` });

@@ -7,8 +7,10 @@ import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
 import {
   ConnectionNotifIcon, MessageNotifIcon, AtlasSparkleIcon,
-  CrewNotifIcon, FlightNotifIcon, BellIcon, PlaneIcon,
+  CrewNotifIcon, FlightNotifIcon, BellIcon, PlaneIcon, SpinnerIcon,
 } from "@/components/icons/AppIcons";
+import { avatarColor, initials } from "@/lib/utils/avatarColor";
+import { formatTime } from "@/lib/utils/formatTime";
 
 // ── Types ─────────────────────────────────────────────────
 type NotifType = "connection" | "message" | "atlas" | "crew" | "flight";
@@ -40,22 +42,6 @@ type ConnectionRequest = {
 };
 
 
-// ── Helpers ────────────────────────────────────────────────
-function formatTime(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1)  return "Just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
-
-function initials(name: string | null) {
-  if (!name) return "?";
-  return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
-}
-
 // ── Notification Icon ─────────────────────────────────────
 function NotifIcon({ type, actorName, actorAvatar }: {
   type: NotifType;
@@ -71,18 +57,17 @@ function NotifIcon({ type, actorName, actorAvatar }: {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={actorAvatar} alt={actorName ?? ""} className="w-11 h-11 rounded-2xl object-cover" />
         ) : (
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm text-white"
-               style={{ background: "#4A27E8" }}>
-            {initials(actorName ?? null)}
+          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm ${avatarColor(actorName)}`}>
+            {initials(actorName)}
           </div>
         )}
         <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
              style={{ background: "var(--c-card)", border: "1.5px solid var(--c-border)" }}>
           {type === "message"
-            ? <MessageNotifIcon size={10} color="#4A27E8" />
+            ? <MessageNotifIcon size={10} color="var(--color-brand)" />
             : type === "crew"
             ? <PlaneIcon size={10} color="#7C3AED" />
-            : <ConnectionNotifIcon size={10} color="#4A27E8" />}
+            : <ConnectionNotifIcon size={10} color="var(--color-brand)" />}
         </div>
       </div>
     );
@@ -189,7 +174,7 @@ export default function NotificationsPage() {
           </div>
           {unreadCount > 0 && (
             <span className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-bold"
-                  style={{ background: "#4A27E8" }}>
+                  style={{ background: "var(--color-brand)" }}>
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -208,7 +193,7 @@ export default function NotificationsPage() {
             Requests
             {requests.length > 0 && (
               <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-white text-[9px] font-bold flex items-center justify-center"
-                    style={{ background: "#4A27E8" }}>
+                    style={{ background: "var(--color-brand)" }}>
                 {requests.length}
               </span>
             )}
@@ -244,22 +229,21 @@ export default function NotificationsPage() {
                 const inits = initials(name);
                 return (
                   <div key={req.id} className="rounded-2xl p-4 flex flex-col gap-3"
-                       style={{ background: "var(--c-card)", border: "2px solid #4A27E8" }}>
+                       style={{ background: "var(--c-card)", border: "1.5px solid var(--color-brand)", boxShadow: "0 0 0 1px rgba(74,39,232,0.08)" }}>
                     <div className="flex items-center gap-3">
                       <Link href={`/profile/${req.requester_id}`} className="flex-shrink-0 active:opacity-70 transition-opacity">
                         {req.profile?.avatar_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={req.profile.avatar_url} alt={name} className="w-11 h-11 rounded-2xl object-cover" />
                         ) : (
-                          <div className="w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm text-white"
-                               style={{ background: "#4A27E8" }}>
+                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm ${avatarColor(name)}`}>
                             {inits}
                           </div>
                         )}
                       </Link>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#4A27E8" }} />
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "var(--color-brand)" }} />
                           <p className="text-sm font-bold truncate" style={{ color: "var(--c-text1)" }}>{name}</p>
                         </div>
                         <p className="text-xs truncate" style={{ color: "var(--c-text2)" }}>{sub}</p>
@@ -276,9 +260,9 @@ export default function NotificationsPage() {
                     )}
                     <div className="flex gap-2">
                       <button onClick={() => respond(req.id, "accepted")} disabled={acting === req.id}
-                        className="flex-1 py-2.5 rounded-2xl text-white text-sm font-semibold active:scale-95 transition-transform disabled:opacity-50"
-                        style={{ background: "#4A27E8" }}>
-                        {acting === req.id ? "…" : "Accept"}
+                        className="flex-1 py-2.5 rounded-2xl text-white text-sm font-semibold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-1.5"
+                        style={{ background: "var(--color-brand)" }}>
+                        {acting === req.id ? <SpinnerIcon size={16} color="white" /> : "Accept"}
                       </button>
                       <button onClick={() => respond(req.id, "declined")} disabled={acting === req.id}
                         className="flex-1 py-2.5 rounded-2xl text-sm font-semibold active:scale-95 transition-transform border"
@@ -303,14 +287,14 @@ export default function NotificationsPage() {
                     <div className="rounded-2xl p-4 flex items-start gap-3"
                          style={{
                            background: "var(--c-card)",
-                           border: `1px solid ${n.read ? "var(--c-border)" : "#4A27E8"}`,
+                           border: `1px solid ${n.read ? "var(--c-border)" : "var(--color-brand)"}`,
                          }}>
                       <NotifIcon type={n.type} actorName={n.actor_name} actorAvatar={n.actor_avatar_url} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-1.5 min-w-0">
                             {!n.read && (
-                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#4A27E8" }} />
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "var(--color-brand)" }} />
                             )}
                             <p className={`text-sm truncate ${!n.read ? "font-bold" : "font-semibold"}`}
                                style={{ color: "var(--c-text1)" }}>
@@ -334,7 +318,7 @@ export default function NotificationsPage() {
 
               {requests.length === 0 && notifs.length === 0 && (
                 <EmptyState
-                  icon={<BellIcon size={32} color="#4A27E8" />}
+                  icon={<BellIcon size={32} color="var(--color-brand)" />}
                   title="All caught up"
                   body="You'll be notified when someone connects, joins your crew, or replies to you."
                   className="py-12"
@@ -348,7 +332,7 @@ export default function NotificationsPage() {
             <>
               {requests.length === 0 ? (
                 <EmptyState
-                  icon={<ConnectionNotifIcon size={32} color="#4A27E8" />}
+                  icon={<ConnectionNotifIcon size={32} color="var(--color-brand)" />}
                   title="No pending requests"
                   body="When someone wants to connect with you, they'll appear here."
                   action={{ label: "Discover People", href: "/network" }}
@@ -366,8 +350,7 @@ export default function NotificationsPage() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={req.profile.avatar_url} alt={name} className="w-12 h-12 rounded-2xl object-cover" />
                         ) : (
-                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm text-white"
-                               style={{ background: "#4A27E8" }}>
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm ${avatarColor(name)}`}>
                             {inits}
                           </div>
                         )}
@@ -388,9 +371,9 @@ export default function NotificationsPage() {
                     )}
                     <div className="flex gap-2">
                       <button onClick={() => respond(req.id, "accepted")} disabled={acting === req.id}
-                        className="flex-1 py-2.5 rounded-2xl text-white text-sm font-semibold active:scale-95 transition-transform disabled:opacity-50"
-                        style={{ background: "#4A27E8" }}>
-                        {acting === req.id ? "…" : "Accept"}
+                        className="flex-1 py-2.5 rounded-2xl text-white text-sm font-semibold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-1.5"
+                        style={{ background: "var(--color-brand)" }}>
+                        {acting === req.id ? <SpinnerIcon size={16} color="white" /> : "Accept"}
                       </button>
                       <button onClick={() => respond(req.id, "declined")} disabled={acting === req.id}
                         className="flex-1 py-2.5 rounded-2xl text-sm font-semibold active:scale-95 transition-transform border"

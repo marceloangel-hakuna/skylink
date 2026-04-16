@@ -7,19 +7,116 @@ import { EmptyState } from "@/components/EmptyState";
 import PullToRefresh from "@/components/PullToRefresh";
 import PeopleNearYou from "@/components/PeopleNearYou";
 import { CREW_MINI_THEMES, resolveCrewThemeKey } from "@/app/(app)/crews/crewMiniThemes";
+import { avatarColor, initials as getInitials } from "@/lib/utils/avatarColor";
 
 export const dynamic = "force-dynamic";
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
+type ProfileForAtlas = {
+  id: string;
+  full_name: string | null;
+  role: string | null;
+  company: string | null;
+  bio: string | null;
+  interests: unknown;
+};
 
-const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
-  "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
-  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
-  "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-];
+function matchScore(viewer: ProfileForAtlas, candidate: { id: string; full_name: string | null; role: string | null; company: string | null; bio: string | null; interests: unknown }): number {
+  let score = 72;
+  if (viewer.company && candidate.company &&
+      viewer.company.toLowerCase() === candidate.company.toLowerCase()) score += 20;
+  if (viewer.role && candidate.role) {
+    const vWords = viewer.role.toLowerCase().split(/\s+/);
+    const cWords = candidate.role.toLowerCase().split(/\s+/);
+    if (vWords.some(w => cWords.includes(w) && w.length > 3)) score += 6;
+  }
+  const vInt = Array.isArray(viewer.interests) ? viewer.interests as string[] : [];
+  const cInt = Array.isArray(candidate.interests) ? candidate.interests as string[] : [];
+  const overlap = vInt.filter(i => cInt.includes(i)).length;
+  score += Math.min(overlap * 3, 8);
+  const variation = (candidate.id.charCodeAt(0) + candidate.id.charCodeAt(candidate.id.length - 1)) % 11 - 5;
+  return Math.min(98, Math.max(65, score + variation));
+}
+
+function whyMatch(candidate: { role: string | null; company: string | null }): string {
+  const parts = [candidate.role, candidate.company].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "Similar background";
+}
+
+// ── Circular Match Ring ───────────────────────────────────────────────────────
+
+function MatchRing({ pct }: { pct: number }) {
+  const r = 25;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  return (
+    <svg width={58} height={58} viewBox="0 0 58 58" className="absolute inset-0"
+         style={{ transform: "rotate(-90deg)" }}>
+      <circle cx="29" cy="29" r={r} fill="none" stroke="rgba(74,39,232,0.12)" strokeWidth="3.5" />
+      <circle cx="29" cy="29" r={r} fill="none" stroke="#4CAF79" strokeWidth="3.5"
+        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// ── Tier Progress Bar ─────────────────────────────────────────────────────────
+
+function TierProgressBar({ totalPoints, tierName, nextTierPts, ptsToNext }: {
+  totalPoints: number;
+  tierName: string;
+  nextTierPts: number | null;
+  ptsToNext: number | null;
+}) {
+  const tierThresholds = [0, 500, 1500, 5000];
+  const tierNames = ["Bronze", "Silver", "Gold", "Platinum"];
+  const currentTierIdx = tierNames.indexOf(tierName);
+  const prevThreshold = tierThresholds[currentTierIdx] ?? 0;
+  const nextThreshold = nextTierPts ?? totalPoints;
+  const rangeSize = nextThreshold - prevThreshold;
+  const progress = rangeSize > 0 ? Math.min(1, (totalPoints - prevThreshold) / rangeSize) : 1;
+
+  return (
+    <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
+      <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "rgba(234,179,8,0.12)" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                  fill="#EAB308" strokeWidth="0"/>
+              </svg>
+            </div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--c-text3)" }}>SkyPoints</span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(234,179,8,0.12)", color: "#B45309" }}>
+            {tierName}
+          </span>
+        </div>
+
+        <p className="text-2xl font-black leading-none mb-3" style={{ color: "var(--c-text1)" }}>
+          {totalPoints.toLocaleString()}
+          <span className="text-sm font-semibold ml-1" style={{ color: "var(--c-text3)" }}>pts</span>
+        </p>
+
+        {/* Progress bar */}
+        <div className="rounded-full overflow-hidden mb-1.5" style={{ height: 6, background: "var(--c-muted)" }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${progress * 100}%`, background: "linear-gradient(90deg, #EAB308, #F59E0B)" }} />
+        </div>
+
+        {ptsToNext ? (
+          <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>
+            <span className="font-semibold" style={{ color: "var(--c-text2)" }}>{ptsToNext.toLocaleString()} pts</span> to {tierNames[(currentTierIdx + 1)] ?? "max"}
+          </p>
+        ) : (
+          <p className="text-[10px] font-semibold" style={{ color: "#EAB308" }}>Platinum — top tier! ✦</p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default async function HomePage() {
   const supabase = createClient();
@@ -68,7 +165,7 @@ export default async function HomePage() {
   const activeFlight   = flights?.[0] ?? null;
   const flightNumber   = activeFlight?.flight_number ?? null;
 
-  // Enrich with live AirLabs data so we always show real origin/destination
+  // Enrich with live AirLabs data
   let flightOrigin = activeFlight?.origin ?? null;
   let flightDest   = activeFlight?.destination ?? null;
   let flightDate   = activeFlight?.departure_date ?? null;
@@ -80,7 +177,6 @@ export default async function HomePage() {
         const fn = flightNumber.replace(/\s+/g, "");
         let airData: { dep_iata?: string; arr_iata?: string; dep_time?: string } | null = null;
 
-        // Try real-time first, then schedules
         const liveRes = await fetch(
           `https://airlabs.co/api/v9/flight?api_key=${airLabsKey}&flight_iata=${fn}`,
           { cache: "no-store" },
@@ -105,7 +201,6 @@ export default async function HomePage() {
           flightDest   = airData.arr_iata ?? flightDest;
           if (airData.dep_time) flightDate = airData.dep_time.split(" ")[0] ?? flightDate;
 
-          // Silently update the DB record so the flight list also shows correct data
           supabase
             .from("user_flights")
             .update({ origin: flightOrigin, destination: flightDest, ...(airData.dep_time ? { departure_date: flightDate } : {}) })
@@ -124,7 +219,7 @@ export default async function HomePage() {
   const nextTierPts = totalPoints >= 5000 ? null : totalPoints >= 1500 ? 5000 : totalPoints >= 500 ? 1500 : 500;
   const ptsToNext   = nextTierPts ? nextTierPts - totalPoints : null;
 
-  // Find other users on the same flight for Atlas matching
+  // Flightmates for Atlas matching
   const { data: flightmates } = flightNumber
     ? await supabase
         .from("user_flights")
@@ -152,6 +247,8 @@ export default async function HomePage() {
   const fullName  = meta.full_name ?? meta.name ?? "Traveler";
   const firstName = fullName.split(" ")[0];
   const avatarUrl = meta.avatar_url ?? meta.picture ?? null;
+
+  const flightSlug = flightNumber ? flightNumber.replace(/\s+/g, "").toLowerCase() : null;
 
   return (
     <PullToRefresh>
@@ -188,6 +285,17 @@ export default async function HomePage() {
           </p>
         </div>
 
+        {/* Notification + Search icons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Link href="/notifications"
+            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+            style={{ background: "var(--c-muted)" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="var(--c-text2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="var(--c-text2)" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </Link>
+        </div>
       </div>
 
       <div className="px-4 flex flex-col gap-5">
@@ -195,63 +303,85 @@ export default async function HomePage() {
         {/* ── Flight Card ───────────────────────────────── */}
         <div className="stagger-1">
         {hasActiveFlight ? (
-          <Link href={`/flight/${(flightNumber ?? "").toLowerCase().replace(/\s+/g, "-")}`} className="block active:scale-[0.98] transition-transform">
-            <div className="rounded-3xl p-5 text-white overflow-hidden relative"
-                 style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
-              <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
-              <div className="absolute -bottom-12 -left-6 w-32 h-32 rounded-full bg-white/5" />
+          <div className="rounded-3xl overflow-hidden relative"
+               style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
+            <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5 pointer-events-none" />
+            <div className="absolute -bottom-12 -left-6 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
 
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">Upcoming Flight</p>
-                    <p className="text-lg font-black mt-0.5">{flightNumber}</p>
-                  </div>
-                  {flightDate && (
-                    <span className="bg-white/15 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
-                      {new Date(flightDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </span>
-                  )}
+            <div className="relative p-5">
+              {/* Header row */}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">Upcoming Flight</p>
+                  <p className="text-lg font-black mt-0.5 text-white">{flightNumber}</p>
                 </div>
-
-                <div className="flex items-end justify-between mb-1">
-                  <div>
-                    <p className="text-4xl font-black tracking-tight">{flightOrigin ?? "—"}</p>
-                    <p className="text-white/60 text-xs mt-0.5">Origin</p>
-                  </div>
-                  <div className="flex-1 mx-3 mb-3">
-                    <svg viewBox="0 0 160 50" fill="none" className="w-full">
-                      <path d="M8 42 Q80 4 152 42" stroke="white" strokeOpacity="0.25"
-                            strokeWidth="1.5" fill="none" strokeDasharray="4 3"/>
-                      <path d="M8 42 Q80 16 152 42" stroke="white" strokeWidth="2"
-                            fill="none" strokeLinecap="round" strokeDasharray="0"/>
-                      <g transform="translate(80,20)">
-                        <path d="M-7 0 L3 -3 L5 0 L3 3 Z
-                                 M-7 -1 L-3 -5 L-2 -1 Z
-                                 M-7  1 L-3  5 L-2  1 Z" fill="white"/>
-                      </g>
-                      <circle cx="8"   cy="42" r="3" fill="white" fillOpacity="0.6"/>
-                      <circle cx="152" cy="42" r="3" fill="white" fillOpacity="0.3"/>
-                    </svg>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-4xl font-black tracking-tight">{flightDest ?? "—"}</p>
-                    <p className="text-white/60 text-xs mt-0.5">Destination</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-3 border-t border-white/15 mt-1">
-                  <p className="text-white/60 text-xs">Tap to see who&apos;s onboard</p>
-                  <span className="bg-white/15 text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1">
-                    Flight Dashboard
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                      <path d="M9 18L15 12L9 6" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
-                    </svg>
+                {flightDate && (
+                  <span className="bg-white/15 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
+                    {new Date(flightDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </span>
+                )}
+              </div>
+
+              {/* Route */}
+              <div className="flex items-end justify-between mb-1">
+                <div>
+                  <p className="text-4xl font-black tracking-tight text-white">{flightOrigin ?? "—"}</p>
+                  <p className="text-white/60 text-xs mt-0.5">Origin</p>
+                </div>
+                <div className="flex-1 mx-3 mb-3">
+                  <svg viewBox="0 0 160 50" fill="none" className="w-full">
+                    <path d="M8 42 Q80 4 152 42" stroke="white" strokeOpacity="0.25"
+                          strokeWidth="1.5" fill="none" strokeDasharray="4 3"/>
+                    <path d="M8 42 Q80 16 152 42" stroke="white" strokeWidth="2"
+                          fill="none" strokeLinecap="round"/>
+                    <g transform="translate(80,20)">
+                      <path d="M-7 0 L3 -3 L5 0 L3 3 Z M-7 -1 L-3 -5 L-2 -1 Z M-7 1 L-3 5 L-2 1 Z" fill="white"/>
+                    </g>
+                    <circle cx="8"   cy="42" r="3" fill="white" fillOpacity="0.8"/>
+                    <circle cx="152" cy="42" r="3" fill="white" fillOpacity="0.4"/>
+                  </svg>
+                </div>
+                <div className="text-right">
+                  <p className="text-4xl font-black tracking-tight text-white">{flightDest ?? "—"}</p>
+                  <p className="text-white/60 text-xs mt-0.5">Destination</p>
                 </div>
               </div>
+
+              {/* Quick action buttons */}
+              <div className="flex gap-2 mt-4">
+                <Link href={flightSlug ? `/flight/${flightSlug}` : "/flight"}
+                  className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl active:scale-[0.97] transition-transform"
+                  style={{ background: "rgba(255,255,255,0.15)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="white" strokeWidth="2"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="white" strokeWidth="2"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="white" strokeWidth="2"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="white" strokeWidth="2"/>
+                  </svg>
+                  <span className="text-[10px] font-semibold text-white/90">Dashboard</span>
+                </Link>
+                <Link href={flightSlug ? `/flight/${flightSlug}?tab=people` : "/flight"}
+                  className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl active:scale-[0.97] transition-transform"
+                  style={{ background: "rgba(255,255,255,0.15)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                    <circle cx="9" cy="7" r="4" stroke="white" strokeWidth="2"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  <span className="text-[10px] font-semibold text-white/90">People</span>
+                </Link>
+                <button
+                  className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-2xl active:scale-[0.97] transition-transform"
+                  style={{ background: "rgba(255,255,255,0.15)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="5" width="20" height="14" rx="2" stroke="white" strokeWidth="2"/>
+                    <path d="M16 5V3M8 5V3M16 19v2M8 19v2M2 10h20" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  <span className="text-[10px] font-semibold text-white/90">Pass</span>
+                </button>
+              </div>
             </div>
-          </Link>
+          </div>
         ) : (
           <div className="rounded-3xl overflow-hidden" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
             <EmptyState
@@ -273,33 +403,55 @@ export default async function HomePage() {
         />
         </div>
 
-        {/* ── People on Your Flight ─────────────────────── */}
+        {/* ── People on Your Flight · AI Matched ────────── */}
         {(flightmateProfiles ?? []).length > 0 && (
         <Reveal delay={40}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="section-title">People on Your Flight</h3>
+            <div>
+              <h3 className="section-title leading-none">People on your flight</h3>
+              <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>AI matched · {(flightmateProfiles ?? []).length} found</p>
+            </div>
             <Link href="/network" className="text-xs text-brand font-semibold">See all</Link>
           </div>
           <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-            {(flightmateProfiles ?? []).map((p, i) => {
+            {(flightmateProfiles ?? []).map((p) => {
               const name = p.full_name ?? "Traveler";
-              const initials = name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase();
-              const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+              const initials = getInitials(name);
+              const color = avatarColor(name);
+              const pct = matchScore(viewerForAtlas, p);
+              const why = whyMatch(p);
               return (
                 <Link key={p.id} href={`/profile/${p.id}`}
-                  className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[72px] active:opacity-70 transition-opacity">
-                  <div className={`w-14 h-14 rounded-2xl ${color} flex items-center justify-center text-sm font-black shadow-sm`}>
-                    {p.avatar_url
-                      ? <img src={p.avatar_url} alt={name} className="w-full h-full rounded-2xl object-cover" />
-                      : initials}
+                  className="flex flex-col items-center gap-1.5 flex-shrink-0 w-[76px] active:opacity-70 transition-opacity">
+                  {/* Avatar with match ring */}
+                  <div className="relative w-[58px] h-[58px]">
+                    <MatchRing pct={pct} />
+                    <div className="absolute inset-[5px] rounded-full overflow-hidden">
+                      {p.avatar_url
+                        ? <img src={p.avatar_url} alt={name} className="w-full h-full object-cover rounded-full" />
+                        : <div className={`w-full h-full rounded-full ${color} flex items-center justify-center text-xs font-black`}>{initials}</div>}
+                    </div>
+                    {/* Match % badge */}
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-black px-1.5 rounded-full text-white"
+                         style={{ background: "#4CAF79", whiteSpace: "nowrap" }}>
+                      {pct}%
+                    </div>
                   </div>
-                  <p className="text-[11px] font-semibold text-zinc-800 dark:text-[var(--c-text1)] text-center leading-tight">
+                  <p className="text-[11px] font-semibold text-center leading-tight mt-1.5" style={{ color: "var(--c-text1)" }}>
                     {name.split(" ")[0]}
                   </p>
-                  <p className="text-[10px] text-zinc-400 dark:text-[var(--c-text2)] text-center leading-tight">{p.role ?? ""}</p>
+                  <p className="text-[9px] text-center leading-tight truncate w-full px-1" style={{ color: "var(--c-text3)" }}>{why}</p>
                 </Link>
               );
             })}
+          </div>
+
+          {/* Privacy notice */}
+          <div className="flex items-center gap-1.5 mt-3 px-1">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" stroke="var(--c-text3)" strokeWidth="2" strokeLinejoin="round"/>
+            </svg>
+            <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>Visible only to SkyLink members on your flight</p>
           </div>
         </Reveal>
         )}
@@ -311,28 +463,12 @@ export default async function HomePage() {
 
         {/* ── SkyPoints ─────────────────────────────────── */}
         <Reveal delay={60} variant="scale">
-        <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
-          <div className="rounded-2xl p-4 flex items-center gap-4 skypoints-mini-card"
-               style={{ background: "linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)", border: "1px solid #FBCFE8" }}>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                 style={{ background: "#FCE7F3" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                  fill="#F73D8A" stroke="#F73D8A" strokeWidth="1.5" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div className="flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-wide dark:text-pink-400" style={{ color: "#DB2777" }}>SkyPoints</p>
-              <p className="text-2xl font-black leading-none dark:text-pink-300" style={{ color: "#9D174D" }}>{totalPoints.toLocaleString()}</p>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full dark:bg-pink-900/40 dark:text-pink-300" style={{ background: "#FCE7F3", color: "#BE185D" }}>{tierName}</span>
-              {ptsToNext && (
-                <p className="text-[10px] mt-1 dark:text-pink-400" style={{ color: "#DB2777" }}>{ptsToNext.toLocaleString()} to next tier</p>
-              )}
-            </div>
-          </div>
-        </Link>
+          <TierProgressBar
+            totalPoints={totalPoints}
+            tierName={tierName}
+            nextTierPts={nextTierPts}
+            ptsToNext={ptsToNext}
+          />
         </Reveal>
 
         {/* ── Sky Crews ─────────────────────────────────── */}
@@ -340,7 +476,7 @@ export default async function HomePage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="section-title">Sky Crews</h3>
-            <Link href="/crews" className="text-xs text-brand font-semibold">Browse all</Link>
+            <Link href="/crews" className="text-xs text-brand font-semibold">Browse</Link>
           </div>
           {featuredCrewsWithMeta.length === 0 ? (
             <EmptyState
@@ -351,29 +487,30 @@ export default async function HomePage() {
               className="py-8"
             />
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {featuredCrewsWithMeta.map((crew, i) => {
                 const mini = CREW_MINI_THEMES[resolveCrewThemeKey(crew.id, crew.header_style)] ?? CREW_MINI_THEMES.city;
                 return (
                 <Reveal key={crew.id} delay={i * 60}>
                 <Link href={`/crews/${crew.id}`}
-                  className="card flex items-center gap-3 active:scale-[0.98] transition-transform">
-                  {/* Themed thumbnail — matches internal crew page */}
-                  <div className="w-11 h-11 rounded-2xl flex-shrink-0 overflow-hidden relative"
-                       style={{ background: mini.bg, border: `1px solid ${mini.border}` }}>
-                    <div className="absolute inset-0 pointer-events-none opacity-90">
+                  className="rounded-2xl overflow-hidden active:scale-[0.97] transition-transform"
+                  style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+                  {/* Themed thumbnail */}
+                  <div className="relative h-20 overflow-hidden"
+                       style={{ background: mini.bg }}>
+                    <div className="absolute inset-0 opacity-90">
                       {mini.mini}
                     </div>
+                    {crew.is_member && (
+                      <span className="absolute top-2 right-2 text-[9px] font-bold text-emerald-600 border border-emerald-200 bg-emerald-50 rounded-full px-2 py-0.5 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-900/60">
+                        Joined
+                      </span>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-zinc-800 dark:text-[var(--c-text1)]">{crew.name}</p>
-                    <p className="text-xs text-zinc-400 dark:text-[var(--c-text2)]">{crew.member_count} member{crew.member_count !== 1 ? "s" : ""}</p>
+                  <div className="p-2.5">
+                    <p className="text-xs font-bold leading-tight" style={{ color: "var(--c-text1)" }}>{crew.name}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>{crew.member_count} member{crew.member_count !== 1 ? "s" : ""}</p>
                   </div>
-                  {crew.is_member ? (
-                    <span className="text-[10px] font-bold text-emerald-600 border border-emerald-200 bg-emerald-50 rounded-full px-2.5 py-1 flex-shrink-0 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60">Joined</span>
-                  ) : (
-                    <span className="text-xs font-semibold text-brand border border-brand/30 rounded-full px-3 py-1.5 flex-shrink-0">Join</span>
-                  )}
                 </Link>
                 </Reveal>
                 );

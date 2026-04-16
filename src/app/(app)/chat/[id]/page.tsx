@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -44,8 +44,11 @@ function shouldShowTimestamp(curr: Message, prev: Message | undefined): boolean 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function ConversationPage() {
-  const params  = useParams();
-  const otherId = params.id as string;
+  const params       = useParams();
+  const searchParams = useSearchParams();
+  const router       = useRouter();
+  const otherId      = params.id as string;
+  const backHref     = searchParams.get("from") ?? "/chat";
 
   const [messages,      setMessages]      = useState<Message[]>([]);
   const [otherProfile,  setOtherProfile]  = useState<Profile | null>(null);
@@ -245,15 +248,16 @@ export default function ConversationPage() {
         }}
       >
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link
-            href="/chat"
+          <button
+            onClick={() => router.push(backHref)}
             className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
             style={{ background: "var(--c-muted)" }}
+            aria-label="Go back"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M15 18L9 12L15 6" stroke="#4A27E8" strokeWidth="2.2" strokeLinecap="round"/>
             </svg>
-          </Link>
+          </button>
 
           <Link href={`/profile/${otherId}`} className="relative flex-shrink-0 active:opacity-70 transition-opacity">
             {otherProfile?.avatar_url ? (

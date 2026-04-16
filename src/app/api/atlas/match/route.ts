@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const { viewerProfile, targetProfile } = await request.json();
 
     const response = await client.messages.create({
-      model: "claude-haiku-4-5",
+      model: "claude-opus-4-6",
       max_tokens: 256,
       system: `You are Atlas, an AI professional matching engine for SkyLink — a networking app for people on the same flight.
 Analyze two professionals and return ONLY a JSON object with exactly these three fields:

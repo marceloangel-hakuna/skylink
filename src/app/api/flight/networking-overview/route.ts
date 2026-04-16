@@ -56,7 +56,7 @@ Write exactly 2 punchy sentences (under 180 characters total):
 Be specific, energetic, and actionable. Plain text only.`;
 
     const response = await client.messages.create({
-      model: "claude-haiku-4-5",
+      model: "claude-opus-4-6",
       max_tokens: 140,
       messages: [{ role: "user", content: prompt }],
     });

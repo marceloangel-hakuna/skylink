@@ -25,7 +25,7 @@
   --color-accent-green:#34D399;
 
   --radius-card: 1rem;
-  --nav-height:  84px;
+  --nav-height:  calc(86px + env(safe-area-inset-bottom, 0px));
   --header-height: 60px;
   color-scheme: light;
 
@@ -91,14 +91,14 @@ body {
   margin-inline: auto;
   position: relative;
   background: var(--background);
-  /* clip does not create a scroll container (unlike hidden), so position:fixed
-     children stay anchored to the viewport on iOS Safari / WKWebView. */
-  overflow-x: clip;
 }
 
-/* Scrollable page content — height stops above the fixed nav bar */
+/* Scrollable page content — height stops above the fixed nav bar.
+   Uses 100svh (small viewport = chrome shown) instead of 100dvh so
+   the content height never changes as Safari's address bar shows/hides.
+   The fixed nav uses bottom:0 independently and is unaffected by this. */
 .page-scroll {
-  height: calc(100dvh - var(--nav-height));
+  height: calc(100svh - var(--nav-height));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;

@@ -6,6 +6,7 @@ type PageHeaderProps = {
   title: string;
   subtitle?: string;
   showBack?: boolean;
+  backHref?: string;   // explicit destination; falls back to router.back()
   action?: React.ReactNode;
   transparent?: boolean;
 };
@@ -14,6 +15,7 @@ export default function PageHeader({
   title,
   subtitle,
   showBack,
+  backHref,
   action,
   transparent,
 }: PageHeaderProps) {
@@ -31,7 +33,7 @@ export default function PageHeader({
       <div className="flex items-center gap-3 h-14">
         {showBack && (
           <button
-            onClick={() => router.back()}
+            onClick={() => backHref ? router.push(backHref) : router.back()}
             className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform flex-shrink-0"
             style={{ background: "rgba(74,39,232,0.1)" }}
             aria-label="Go back"

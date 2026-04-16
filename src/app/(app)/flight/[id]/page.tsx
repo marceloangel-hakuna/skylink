@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
-  PlaneIcon, CalendarIcon, ClockIcon, AlertTriangleIcon, CheckCircleIcon,
-  EyeOffIcon,
+  PlaneIcon, EyeOffIcon, MessageBubbleIcon,
 } from "@/components/icons/AppIcons";
+import { avatarColor, initials as getInitials } from "@/lib/utils/avatarColor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,9 +48,24 @@ type FlightData = {
 
 type Tab = "overview" | "people" | "chat";
 
-type Message = {
-  id: string; author: string; initials: string; color: string;
-  text: string; time: string; isMe: boolean;
+type FlightMessage = {
+  id: string;
+  flight_number: string;
+  departure_date: string | null;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  _pending?: boolean;
+  _failed?: boolean;
+  _tempId?: string;
+};
+
+type Profile = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string | null;
+  company: string | null;
 };
 
 // ─── Real person type ─────────────────────────────────────────────────────────
@@ -81,11 +96,7 @@ function personInitials(name: string) {
   return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
 }
 
-const INITIAL_MESSAGES: Message[] = [
-  { id: "1", author: "Sarah Chen",    initials: "SC", color: "bg-violet-100 text-violet-700", text: "Hey everyone! Anyone heading to the TechCrunch conference?", time: "10:32 AM", isMe: false },
-  { id: "2", author: "Marcus Rivera", initials: "MR", color: "bg-pink-100 text-pink-700",     text: "Yes! First time there — any tips on sessions to catch?",       time: "10:34 AM", isMe: false },
-  { id: "3", author: "Me",            initials: "ME", color: "bg-brand text-white",            text: "Definitely the AI panel at 2pm, it's always packed 🔥",        time: "10:36 AM", isMe: true  },
-];
+const OFFLINE_QUEUE_PREFIX = "skylink_fq_";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -265,7 +276,7 @@ function StatusCard({
 
 function OverviewTab({
   userFlight, flightData, networkingStatus, onStatusUpdate, updatingStatus, onDelete,
-  networkingOverview,
+  networkingOverview, people,
 }: {
   userFlight: UserFlight | null;
   flightData: FlightData | null;
@@ -274,6 +285,7 @@ function OverviewTab({
   updatingStatus: boolean;
   onDelete: () => void;
   networkingOverview: string | "loading" | null;
+  people: Person[];
 }) {
   const origin      = flightData?.origin      ?? userFlight?.origin      ?? "—";
   const destination = flightData?.destination  ?? userFlight?.destination  ?? "—";
@@ -285,18 +297,35 @@ function OverviewTab({
   const terminal    = flightData?.dep_terminal;
   const gate        = flightData?.dep_gate;
   const arrTerminal = flightData?.arr_terminal;
-  const arrGate     = flightData?.arr_gate;
   const delayed     = flightData?.delayed ?? 0;
   const airline     = flightData?.airline ?? "—";
   const airStatus   = flightData?.status ?? userFlight?.status ?? "scheduled";
 
-  const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-    scheduled: { bg: "#EEF2FF", text: "#4338CA", label: "Scheduled" },
-    active:    { bg: "#D1FAE5", text: "#059669", label: "In Flight"  },
-    landed:    { bg: "#F0FDF4", text: "#166534", label: "Landed"     },
-    cancelled: { bg: "#FEF2F2", text: "#DC2626", label: "Cancelled"  },
+  // People stats
+  const others      = people.filter(p => !p.isMe);
+  const available   = others.filter(p => p.networking_status === "available").length;
+  const busyCount   = others.filter(p => p.networking_status === "not_available").length;
+  const invisCount  = others.filter(p => p.networking_status === "invisible").length;
+  const connections = others.filter(p => p.connected).length;
+  const total       = others.length;
+
+  const statusConfig: Record<string, { label: string; dot: string; badge: string; badgeText: string }> = {
+    scheduled: { label: "Scheduled",  dot: "#6366F1", badge: "rgba(99,102,241,0.15)",  badgeText: "#A5B4FC" },
+    active:    { label: "In Flight",  dot: "#4CAF79", badge: "rgba(76,175,121,0.15)",  badgeText: "#6EE7B7" },
+    landed:    { label: "Landed",     dot: "#4CAF79", badge: "rgba(76,175,121,0.15)",  badgeText: "#6EE7B7" },
+    cancelled: { label: "Cancelled",  dot: "#EF4444", badge: "rgba(239,68,68,0.15)",   badgeText: "#FCA5A5" },
+    upcoming:  { label: "Upcoming",   dot: "#A78BFA", badge: "rgba(167,139,250,0.15)", badgeText: "#C4B5FD" },
+    completed: { label: "Completed",  dot: "#94A3B8", badge: "rgba(148,163,184,0.12)", badgeText: "#CBD5E1" },
   };
-  const sc = statusColors[airStatus] ?? statusColors.scheduled;
+  const sc = statusConfig[airStatus] ?? statusConfig.scheduled;
+
+  // Timeline events
+  const timelineEvents = [
+    { label: "Check-in",  time: "—",      done: true,  active: false },
+    { label: "Boarding",  time: depTime,   done: airStatus !== "scheduled" && airStatus !== "upcoming", active: airStatus === "scheduled" || airStatus === "upcoming" },
+    { label: "Departure", time: depTime,   done: airStatus === "active" || airStatus === "landed" || airStatus === "completed", active: false },
+    { label: "Arrival",   time: arrTime,   done: airStatus === "landed" || airStatus === "completed", active: airStatus === "active" },
+  ];
 
   return (
     <div className="px-4 py-5 flex flex-col gap-4">
@@ -308,108 +337,170 @@ function OverviewTab({
         updating={updatingStatus}
       />
 
-      {/* ── Route Card ───────────────────────── */}
-      <div className="rounded-3xl p-5 text-white overflow-hidden relative"
-           style={{ background: "linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%)" }}>
-        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute -bottom-12 -left-6 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
+      {/* ── Main Flight Card ──────────────────── */}
+      <div className="rounded-3xl overflow-hidden relative"
+           style={{ background: "linear-gradient(145deg, #1A0A50 0%, #2D1580 55%, #3D1FAF 100%)" }}>
+        {/* Decorative circles */}
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.04)" }} />
+        <div className="absolute -bottom-14 -left-8 w-36 h-36 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.03)" }} />
 
-        <div className="relative">
-          {/* Status badge */}
-          <div className="flex justify-end mb-3">
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full capitalize"
-                  style={{ background: sc.bg, color: sc.text }}>
-              {sc.label}
-              {delayed > 0 ? ` · +${delayed}m` : ""}
+        <div className="relative p-5">
+          {/* Top: flight number + status */}
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest mb-0.5">Flight</p>
+              <p className="text-base font-black text-white">{userFlight?.flight_number ?? "—"}</p>
+            </div>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full"
+                  style={{ background: sc.badge, color: sc.badgeText }}>
+              <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle" style={{ background: sc.dot }} />
+              {sc.label}{delayed > 0 ? ` · +${delayed}m` : ""}
             </span>
           </div>
 
-          {/* Airport codes */}
-          <div className="flex items-end justify-between mb-2">
+          {/* IATA codes */}
+          <div className="flex items-center justify-between mb-2">
             <div>
-              <p className="text-[38px] font-black tracking-tight leading-none">{origin}</p>
-              <p className="text-white/60 text-xs mt-1">{depCity}</p>
+              <p className="text-[42px] font-black tracking-tight leading-none text-white">{origin}</p>
+              <p className="text-white/50 text-xs mt-1">{depCity}</p>
             </div>
-            <div className="flex flex-col items-center pb-4 px-2">
-              <svg width="40" height="16" viewBox="0 0 40 16" fill="none">
-                <path d="M2 8H38M30 2L38 8L30 14" stroke="white" strokeOpacity="0.5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <p className="text-white/50 text-[10px] mt-1.5">{duration}</p>
+
+            {/* Route line with dot */}
+            <div className="flex-1 mx-4 flex flex-col items-center gap-1">
+              <div className="w-full flex items-center gap-1">
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.2)" }} />
+                <div className="w-6 h-6 flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"/>
+                  </svg>
+                </div>
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.2)" }} />
+              </div>
+              <p className="text-white/40 text-[10px]">{duration}</p>
             </div>
+
             <div className="text-right">
-              <p className="text-[38px] font-black tracking-tight leading-none">{destination}</p>
-              <p className="text-white/60 text-xs mt-1">{arrCity}</p>
+              <p className="text-[42px] font-black tracking-tight leading-none text-white">{destination}</p>
+              <p className="text-white/50 text-xs mt-1">{arrCity}</p>
             </div>
           </div>
 
-          {/* Times row */}
-          <div className="flex items-center justify-between pt-3 border-t border-white/15">
+          {/* Times + airline row */}
+          <div className="flex items-center justify-between pt-3.5 mt-1 border-t border-white/10">
             <div>
-              <p className="text-white/50 text-[10px] uppercase tracking-wider">Departs</p>
-              <p className="text-sm font-bold">{depTime}</p>
+              <p className="text-white/40 text-[9px] uppercase tracking-wider">Departs</p>
+              <p className="text-sm font-bold text-white">{depTime}</p>
             </div>
             <div className="text-center">
-              <p className="text-white/50 text-[10px] uppercase tracking-wider">Airline</p>
-              <p className="text-sm font-bold font-mono">{airline}</p>
+              <p className="text-white/40 text-[9px] uppercase tracking-wider">Airline</p>
+              <p className="text-sm font-bold text-white font-mono">{airline}</p>
             </div>
             <div className="text-right">
-              <p className="text-white/50 text-[10px] uppercase tracking-wider">Arrives</p>
-              <p className="text-sm font-bold">{arrTime}</p>
+              <p className="text-white/40 text-[9px] uppercase tracking-wider">Arrives</p>
+              <p className="text-sm font-bold text-white">{arrTime}</p>
+            </div>
+          </div>
+
+          {/* Mini info cards: Gate · Terminal · Date */}
+          <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3.5 border-t border-white/10">
+            <div className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.07)" }}>
+              <p className="text-white/40 text-[9px] uppercase tracking-wider mb-1">Gate</p>
+              <p className="text-sm font-black text-white">{gate ?? "—"}</p>
+            </div>
+            <div className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.07)" }}>
+              <p className="text-white/40 text-[9px] uppercase tracking-wider mb-1">Terminal</p>
+              <p className="text-sm font-black text-white">{terminal ? `T${terminal}` : (arrTerminal ? `T${arrTerminal}` : "—")}</p>
+            </div>
+            <div className="rounded-xl p-2.5 text-center" style={{ background: "rgba(255,255,255,0.07)" }}>
+              <p className="text-white/40 text-[9px] uppercase tracking-wider mb-1">Date</p>
+              <p className="text-[11px] font-black text-white leading-tight">
+                {userFlight?.departure_date
+                  ? new Date(userFlight.departure_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                  : "—"}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Gate / Terminal Info ──────────────── */}
-      {(terminal || gate || arrTerminal || arrGate) && (
-        <div className="grid grid-cols-2 gap-3">
-          {(terminal || gate) && (
-            <div className="rounded-2xl p-3.5" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--c-text3)" }}>Departure</p>
-              <p className="text-base font-black" style={{ color: "var(--c-text1)" }}>
-                {[terminal && `T${terminal}`, gate && `Gate ${gate}`].filter(Boolean).join(" · ")}
-              </p>
+      {/* ── People Stat Cards ─────────────────── */}
+      {total > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Networking", value: available, color: "#4CAF79", bg: "rgba(76,175,121,0.1)" },
+            { label: "Passengers", value: total,     color: "#A78BFA", bg: "rgba(167,139,250,0.1)" },
+            { label: "Connected",  value: connections, color: "#60A5FA", bg: "rgba(96,165,250,0.1)" },
+          ].map(({ label, value, color, bg }) => (
+            <div key={label} className="rounded-2xl p-3.5 flex flex-col gap-1"
+                 style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+              <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--c-text3)" }}>{label}</p>
+              <p className="text-2xl font-black leading-none" style={{ color }}>{value}</p>
+              <div className="h-1 rounded-full mt-1" style={{ background: "var(--c-muted)" }}>
+                {total > 0 && <div className="h-full rounded-full" style={{ width: `${Math.min(100, (value / total) * 100)}%`, background: bg.replace("0.1", "0.6") }} />}
+              </div>
             </div>
-          )}
-          {(arrTerminal || arrGate) && (
-            <div className="rounded-2xl p-3.5" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "var(--c-text3)" }}>Arrival</p>
-              <p className="text-base font-black" style={{ color: "var(--c-text1)" }}>
-                {[arrTerminal && `T${arrTerminal}`, arrGate && `Gate ${arrGate}`].filter(Boolean).join(" · ")}
-              </p>
-            </div>
-          )}
+          ))}
         </div>
       )}
 
-      {/* ── Flight Stats ─────────────────────── */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { label: "Duration",  value: duration,                    icon: <ClockIcon size={18} color="var(--color-brand-fg)" /> },
-          { label: "Flight",    value: userFlight?.flight_number ?? "—", icon: <PlaneIcon size={18} color="var(--color-brand-fg)" /> },
-          { label: "Date",      value: userFlight?.departure_date ?? flightData?.departure_date ?? "TBD", icon: <CalendarIcon size={18} color="var(--color-brand-fg)" /> },
-          { label: "Delayed",   value: delayed > 0 ? `+${delayed} min` : "On time", icon: delayed > 0 ? <AlertTriangleIcon size={18} color="var(--color-brand-fg)" /> : <CheckCircleIcon size={18} color="var(--color-brand-fg)" /> },
-        ].map(s => (
-          <div key={s.label} className="rounded-2xl flex items-center gap-3 p-3.5"
-               style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                 style={{ background: "rgba(74, 39, 232, 0.08)" }}>
-              {s.icon}
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--c-text3)" }}>{s.label}</p>
-              <p className="text-sm font-bold truncate" style={{ color: "var(--c-text1)" }}>{s.value}</p>
-            </div>
+      {/* ── Networking Breakdown ──────────────── */}
+      {total > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--c-text3)" }}>Networking Breakdown</p>
+          <div className="flex flex-col gap-2.5">
+            {[
+              { label: "Available",   count: available,  color: "#4CAF79", pct: total > 0 ? available / total : 0 },
+              { label: "Busy",        count: busyCount,  color: "#EAB308", pct: total > 0 ? busyCount  / total : 0 },
+              { label: "Private",     count: invisCount, color: "#94A3B8", pct: total > 0 ? invisCount / total : 0 },
+            ].map(({ label, count, color, pct }) => (
+              <div key={label} className="flex items-center gap-3">
+                <p className="text-xs w-16 flex-shrink-0" style={{ color: "var(--c-text2)" }}>{label}</p>
+                <div className="flex-1 rounded-full overflow-hidden" style={{ height: 6, background: "var(--c-muted)" }}>
+                  <div className="h-full rounded-full transition-all"
+                       style={{ width: `${pct * 100}%`, background: color }} />
+                </div>
+                <p className="text-xs font-bold w-5 text-right flex-shrink-0" style={{ color: "var(--c-text2)" }}>{count}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+      )}
+
+      {/* ── Flight Timeline ───────────────────── */}
+      <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--c-text3)" }}>Flight Timeline</p>
+        <div className="flex flex-col gap-0">
+          {timelineEvents.map((ev, i) => (
+            <div key={ev.label} className="flex items-start gap-3">
+              {/* Dot + line */}
+              <div className="flex flex-col items-center flex-shrink-0" style={{ width: 16 }}>
+                <div className="w-3.5 h-3.5 rounded-full flex-shrink-0 border-2"
+                     style={{
+                       background: ev.done ? "#4CAF79" : ev.active ? "#A78BFA" : "var(--c-muted)",
+                       borderColor: ev.done ? "#4CAF79" : ev.active ? "#A78BFA" : "var(--c-border)",
+                     }} />
+                {i < timelineEvents.length - 1 && (
+                  <div className="w-px flex-1 mt-0.5 mb-0.5" style={{ height: 20, background: ev.done ? "rgba(76,175,121,0.3)" : "var(--c-border)" }} />
+                )}
+              </div>
+              {/* Content */}
+              <div className="flex items-center justify-between w-full pb-4">
+                <p className="text-xs font-semibold" style={{ color: ev.active ? "var(--c-text1)" : ev.done ? "var(--c-text2)" : "var(--c-text3)" }}>
+                  {ev.label}
+                </p>
+                <p className="text-[11px]" style={{ color: ev.active ? "#A78BFA" : "var(--c-text3)" }}>{ev.time}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── Atlas Networking Insight ─────────── */}
       <div className="rounded-2xl p-4 atlas-insight-card" style={{ border: "1px solid var(--c-border)" }}>
-        <div className="flex items-center gap-1.5 mb-1.5">
+        <div className="flex items-center gap-1.5 mb-2">
           <span className="atlas-icon text-sm">✦</span>
-          <span className="text-sm font-black atlas-label">Atlas Insight</span>
-          <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full atlas-badge">AI</span>
+          <span className="text-sm font-black atlas-label">Atlas Tip</span>
+          <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full atlas-badge">AI</span>
         </div>
         {networkingOverview === "loading" ? (
           <div className="flex flex-col gap-1.5">
@@ -421,18 +512,75 @@ function OverviewTab({
         ) : (
           <p className="text-xs atlas-text-secondary leading-relaxed">
             {networkingStatus === "available"
-              ? "You're visible! Other SkyLink members on this flight can discover and connect with you."
+              ? "You're visible to SkyLink members on this flight. Check the People tab to connect before boarding."
               : networkingStatus === "not_available"
-              ? "You're visible but marked as busy. Others can see your profile but know you prefer not to be approached."
-              : "You're in private mode. Go Available to discover who's networking on this flight."}
+              ? "You're marked as busy. Others can see your profile but won't approach you."
+              : "You're in private mode. Tap Go Available to discover who's networking on this flight."}
           </p>
         )}
+      </div>
+
+      {/* ── Quick Actions ─────────────────────── */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--c-text3)" }}>Quick Actions</p>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            {
+              label: "Boarding Pass",
+              icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+                  <path d="M16 5V3M8 5V3M16 19v2M8 19v2M2 10h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              ),
+              color: "#A78BFA",
+              bg: "rgba(167,139,250,0.1)",
+            },
+            {
+              label: "Lounge",
+              icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 7H4C2.9 7 2 7.9 2 9v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                  <path d="M16 7V5C16 3.9 15.1 3 14 3H10C8.9 3 8 3.9 8 5v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                  <path d="M12 12v3M8 12v1M16 12v1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              ),
+              color: "#60A5FA",
+              bg: "rgba(96,165,250,0.1)",
+            },
+            {
+              label: "Share Trip",
+              icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                  <circle cx="6"  cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                  <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                  <path d="M8.59 13.51L15.42 17.49M15.41 6.51L8.59 10.49" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              ),
+              color: "#4CAF79",
+              bg: "rgba(76,175,121,0.1)",
+            },
+          ].map(({ label, icon, color, bg }) => (
+            <button
+              key={label}
+              className="rounded-2xl flex flex-col items-center gap-2 py-4 active:scale-[0.96] transition-transform"
+              style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                   style={{ background: bg, color }}>
+                {icon}
+              </div>
+              <p className="text-[10px] font-semibold text-center leading-tight" style={{ color: "var(--c-text2)" }}>{label}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Delete Flight ─────────────────────── */}
       <button
         onClick={onDelete}
-        className="w-full py-3 text-sm font-medium rounded-2xl active:scale-[0.98] transition-all mt-2"
+        className="w-full py-3 text-sm font-medium rounded-2xl active:scale-[0.98] transition-all mt-1"
         style={{ color: "#EF4444", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.14)" }}
       >
         Delete Flight
@@ -445,16 +593,17 @@ function OverviewTab({
 // ─── People Tab ───────────────────────────────────────────────────────────────
 
 function PeopleTab({
-  people, loading, networkingStatus, onConnect,
+  people, loading, networkingStatus, onConnect, flightSlug,
 }: {
   people: Person[];
   loading: boolean;
   networkingStatus: NetworkingStatus;
   onConnect: (id: string) => void;
+  flightSlug: string;
 }) {
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const router = useRouter();
+  const flightBackHref = `/flight/${flightSlug}?tab=people`;
 
-  // Your own visibility banner
   const visibilityBanner = {
     available:    { dot: "#10B981", label: "You're visible as Available", bg: "rgba(16,185,129,0.07)", border: "rgba(16,185,129,0.25)" },
     not_available:{ dot: "#EAB308", label: "You're visible as Busy",      bg: "rgba(234,179,8,0.07)",  border: "rgba(234,179,8,0.25)"  },
@@ -499,180 +648,230 @@ function PeopleTab({
         const statusTip = person.networking_status === "available" ? "Available" : "Busy";
 
         return (
-          <div key={person.id} className="rounded-2xl flex items-center gap-3 p-3.5"
-               style={{
-                 background: "var(--c-card)",
-                 border: person.isMe ? "1.5px solid #4A27E8" : "1px solid var(--c-border)",
-               }}>
-            <button
-              onClick={() => !person.isMe && setSelectedPerson(person)}
-              className={`flex items-center gap-3 flex-1 min-w-0 text-left ${!person.isMe ? "active:opacity-70 transition-opacity" : ""}`}
-            >
-              {/* Avatar with status dot */}
-              <div className="relative flex-shrink-0">
-                {person.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={person.avatar_url} alt={person.name}
-                       className="w-12 h-12 rounded-2xl object-cover" />
-                ) : (
-                  <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-sm font-black`}>
-                    {ini}
-                  </div>
-                )}
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--c-card)]"
-                      style={{ background: statusDot }} />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <p className="text-sm font-bold truncate" style={{ color: "var(--c-text1)" }}>
-                    {person.name}{person.isMe ? " (You)" : ""}
-                  </p>
-                  <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{
-                          background: person.networking_status === "available" ? "rgba(16,185,129,0.1)" : "rgba(234,179,8,0.1)",
-                          color:      person.networking_status === "available" ? "#059669" : "#B45309",
-                        }}>
-                    {statusTip}
-                  </span>
+          <div
+            key={person.id}
+            onClick={() => !person.isMe && router.push(`/profile/${person.id}?from=${encodeURIComponent(flightBackHref)}`)}
+            className={`rounded-2xl flex items-center gap-3 p-3.5 ${!person.isMe ? "active:opacity-75 transition-opacity cursor-pointer" : ""}`}
+            style={{
+              background: "var(--c-card)",
+              border: person.isMe ? "1.5px solid #4A27E8" : "1px solid var(--c-border)",
+            }}
+          >
+            {/* Avatar with status dot */}
+            <div className="relative flex-shrink-0">
+              {person.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={person.avatar_url} alt={person.name}
+                     className="w-12 h-12 rounded-2xl object-cover" />
+              ) : (
+                <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-sm font-black`}>
+                  {ini}
                 </div>
-                {(person.role || person.company) && (
-                  <p className="text-xs truncate" style={{ color: "var(--c-text2)" }}>
-                    {[person.role, person.company].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-              </div>
-            </button>
+              )}
+              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--c-card)]"
+                    style={{ background: statusDot }} />
+            </div>
 
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <p className="text-sm font-bold truncate" style={{ color: "var(--c-text1)" }}>
+                  {person.name}{person.isMe ? " (You)" : ""}
+                </p>
+                <span className="flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{
+                        background: person.networking_status === "available" ? "rgba(16,185,129,0.1)" : "rgba(234,179,8,0.1)",
+                        color:      person.networking_status === "available" ? "#059669" : "#B45309",
+                      }}>
+                  {statusTip}
+                </span>
+              </div>
+              {(person.role || person.company) && (
+                <p className="text-xs truncate" style={{ color: "var(--c-text2)" }}>
+                  {[person.role, person.company].filter(Boolean).join(" · ")}
+                </p>
+              )}
+            </div>
+
+            {/* Right-side action */}
             {person.isMe ? (
               <span className="flex-shrink-0 text-[10px] font-semibold px-3 py-1.5 rounded-full"
                     style={{ background: "rgba(74,39,232,0.08)", color: "var(--color-brand-fg)" }}>
                 You
               </span>
             ) : (
-              <button
-                onClick={() => onConnect(person.id)}
-                className="flex-shrink-0 text-xs font-semibold px-3 py-2 rounded-full transition-all active:scale-95"
-                style={person.connected
-                  ? { border: "1px solid #34D399", color: "#059669", background: "rgba(52,211,153,0.1)" }
-                  : { background: "#4A27E8", color: "white" }}
-              >
-                {person.connected ? "Connected ✓" : "Connect"}
-              </button>
+              <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                {person.connected && (
+                  <button
+                    onClick={() => router.push(`/chat/${person.id}?from=${encodeURIComponent(flightBackHref)}`)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                    style={{ background: "rgba(74,39,232,0.1)" }}
+                    aria-label="Send message"
+                  >
+                    <MessageBubbleIcon size={15} color="#4A27E8" />
+                  </button>
+                )}
+                <button
+                  onClick={() => onConnect(person.id)}
+                  className="flex-shrink-0 text-xs font-semibold px-3 py-2 rounded-full transition-all active:scale-95"
+                  style={person.connected
+                    ? { border: "1px solid #34D399", color: "#059669", background: "rgba(52,211,153,0.1)" }
+                    : { background: "#4A27E8", color: "white" }}
+                >
+                  {person.connected ? "Connected ✓" : "Connect"}
+                </button>
+              </div>
             )}
           </div>
         );
       })}
-
-      {/* Person detail sheet */}
-      {selectedPerson && (
-        <>
-          <div className="fixed inset-0 bg-black/50 z-[55] backdrop-blur-sm" onClick={() => setSelectedPerson(null)} />
-          <div className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-3xl"
-               style={{ background: "var(--c-card)", paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 16px)", boxShadow: "0 -8px 40px rgba(0,0,0,0.2)" }}>
-            <div className="pt-3 pb-1 flex justify-center">
-              <div className="w-10 h-1 rounded-full" style={{ background: "var(--c-border)" }} />
-            </div>
-            <div className="px-5 pt-4 pb-2 flex flex-col gap-4">
-              <div className="flex items-center gap-4">
-                <div className="relative flex-shrink-0">
-                  {selectedPerson.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={selectedPerson.avatar_url} alt={selectedPerson.name}
-                         className="w-16 h-16 rounded-2xl object-cover" />
-                  ) : (
-                    <div className={`w-16 h-16 rounded-2xl ${personAvatarColor(selectedPerson.id)} flex items-center justify-center text-xl font-black`}>
-                      {personInitials(selectedPerson.name)}
-                    </div>
-                  )}
-                  <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-[var(--c-card)]"
-                        style={{ background: selectedPerson.networking_status === "available" ? "#10B981" : "#EAB308" }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-lg font-black" style={{ color: "var(--c-text1)" }}>{selectedPerson.name}</p>
-                  {(selectedPerson.role || selectedPerson.company) && (
-                    <p className="text-sm" style={{ color: "var(--c-text2)" }}>
-                      {[selectedPerson.role, selectedPerson.company].filter(Boolean).join(" · ")}
-                    </p>
-                  )}
-                  <span className="inline-block mt-1 text-[11px] font-bold px-2 py-0.5 rounded-full"
-                        style={{
-                          background: selectedPerson.networking_status === "available" ? "rgba(16,185,129,0.1)" : "rgba(234,179,8,0.1)",
-                          color: selectedPerson.networking_status === "available" ? "#059669" : "#B45309",
-                        }}>
-                    {selectedPerson.networking_status === "available" ? "Available" : "Busy"}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { onConnect(selectedPerson.id); setSelectedPerson(null); }}
-                  className="flex-1 py-3 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
-                  style={{ background: selectedPerson.connected ? "var(--c-muted)" : "#4A27E8", color: selectedPerson.connected ? "var(--c-text2)" : "white" }}
-                >
-                  {selectedPerson.connected ? "Connected ✓" : "Connect"}
-                </button>
-                <button
-                  onClick={() => setSelectedPerson(null)}
-                  className="flex-1 py-3 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
-                  style={{ background: "var(--c-muted)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
 
 // ─── Chat Tab ─────────────────────────────────────────────────────────────────
 
+function shouldShowTs(curr: FlightMessage, prev: FlightMessage | undefined): boolean {
+  if (!prev) return true;
+  return new Date(curr.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60_000;
+}
+
+function shouldShowSenderName(curr: FlightMessage, prev: FlightMessage | undefined, myId: string): boolean {
+  if (curr.sender_id === myId) return false;
+  if (!prev) return true;
+  return prev.sender_id !== curr.sender_id;
+}
+
 function ChatTab({
-  messages, inputText, setInputText, onSend, messagesEndRef, flightLabel,
+  messages, inputText, setInputText, onSend, messagesEndRef,
+  flightNumber, flightLabel, myId, profileCache, loading, sending,
+  passengerCount, onShowPeople,
 }: {
-  messages: Message[];
+  messages: FlightMessage[];
   inputText: string;
   setInputText: (s: string) => void;
   onSend: () => void;
   messagesEndRef: React.RefObject<HTMLDivElement>;
+  flightNumber: string;
   flightLabel: string;
+  myId: string;
+  profileCache: React.MutableRefObject<Map<string, Profile>>;
+  loading: boolean;
+  sending: boolean;
+  passengerCount: number;
+  onShowPeople: () => void;
 }) {
   return (
     <>
-      <div className="px-4 pt-4 flex flex-col gap-3" style={{ paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px) + 72px)" }}>
-        <div className="flex justify-center">
-          <span className="text-[11px] text-zinc-400 bg-white dark:bg-[#18172A] rounded-full px-3 py-1 shadow-sm border border-surface-border dark:border-[#2E2C4A]">
-            {flightLabel}
-          </span>
+      {/* Messages scroll area */}
+      <div className="px-4 pt-3 flex flex-col gap-0.5" style={{ paddingBottom: "calc(var(--nav-height) + 68px)", background: "var(--background)" }}>
+        {/* Passenger count pill */}
+        <div className="flex justify-center mb-2">
+          <button
+            onClick={onShowPeople}
+            className="flex items-center gap-1.5 text-[11px] rounded-full px-3 py-1 shadow-sm active:scale-95 transition-transform"
+            style={{ background: "var(--c-card)", color: "var(--c-text3)", border: "1px solid var(--c-border)" }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <span>{passengerCount > 0 ? `${passengerCount} passenger${passengerCount !== 1 ? "s" : ""}` : flightLabel}</span>
+            {passengerCount > 0 && <span style={{ color: "var(--color-brand)", fontWeight: 700 }}>· See all</span>}
+          </button>
         </div>
 
-        {messages.map(msg => (
-          <div key={msg.id} className={`flex gap-2 ${msg.isMe ? "flex-row-reverse" : ""}`}>
-            {!msg.isMe && (
-              <div className={`w-8 h-8 rounded-xl ${msg.color} flex items-center justify-center text-[10px] font-black flex-shrink-0 mt-1`}>
-                {msg.initials}
-              </div>
-            )}
-            <div className={`max-w-[75%] flex flex-col ${msg.isMe ? "items-end" : "items-start"}`}>
-              {!msg.isMe && (
-                <p className="text-[10px] text-zinc-400 font-semibold mb-1 ml-0.5">{msg.author}</p>
-              )}
-              <div className={`rounded-2xl px-3.5 py-2.5 ${msg.isMe ? "rounded-tr-sm" : "rounded-tl-sm bg-white dark:bg-[#211F35] shadow-sm border border-surface-border dark:border-[#2E2C4A]"}`}
-                   style={msg.isMe ? { background: "#4A27E8" } : undefined}>
-                <p className="text-sm leading-relaxed" style={{ color: msg.isMe ? "white" : "var(--c-text1)" }}>{msg.text}</p>
-              </div>
-              <p className="text-[10px] text-zinc-400 mt-1 mx-0.5">{msg.time}</p>
-            </div>
+        {/* Loading */}
+        {loading && (
+          <div className="flex justify-center py-12">
+            <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--color-brand)", borderTopColor: "transparent" }} />
           </div>
-        ))}
+        )}
+
+        {/* Empty state */}
+        {!loading && messages.length === 0 && (
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(74,39,232,0.12), rgba(107,74,240,0.08))" }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z" fill="var(--color-brand)" />
+              </svg>
+            </div>
+            <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>Flight {flightNumber} Chat</p>
+            <p className="text-xs leading-relaxed max-w-[220px]" style={{ color: "var(--c-text3)" }}>
+              All passengers on this flight can chat here. Be the first to say hello! ✈️
+            </p>
+          </div>
+        )}
+
+        {/* Message list */}
+        {!loading && messages.map((msg, i) => {
+          const isMe = msg.sender_id === myId;
+          const prev = messages[i - 1];
+          const showTs = shouldShowTs(msg, prev);
+          const showSender = shouldShowSenderName(msg, prev, myId);
+          const senderProfile = profileCache.current.get(msg.sender_id);
+          const senderName = senderProfile?.full_name ?? null;
+          const color = avatarColor(senderName);
+          const inits = getInitials(senderName);
+          const isContinuation = !isMe && !showSender && !showTs;
+
+          return (
+            <div key={msg.id}>
+              {showTs && (
+                <div className="flex justify-center my-3">
+                  <span className="text-[10px] rounded-full px-2.5 py-1" style={{ background: "var(--c-card)", color: "var(--c-text3)", border: "1px solid var(--c-border)" }}>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              )}
+              {showSender && !isMe && (
+                <p className="text-[11px] font-semibold ml-10 mb-0.5 mt-2" style={{ color: "var(--c-text3)" }}>
+                  {senderName ?? "Passenger"}
+                </p>
+              )}
+              <div className={`flex items-end gap-2 mb-0.5 ${isMe ? "justify-end" : "justify-start"}`}>
+                {!isMe && (
+                  <div className="flex-shrink-0 w-7 self-end">
+                    {(showSender || showTs) ? (
+                      senderProfile?.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={senderProfile.avatar_url} alt={senderName ?? ""} className="w-7 h-7 rounded-full object-cover" />
+                      ) : (
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${color}`}>{inits}</div>
+                      )
+                    ) : isContinuation ? (
+                      <div className="w-7" />
+                    ) : (
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${color}`}>{inits}</div>
+                    )}
+                  </div>
+                )}
+                <div
+                  className={`max-w-[72%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed
+                    ${isMe ? "rounded-br-sm text-white" : "rounded-bl-sm shadow-sm"}
+                    ${msg._pending ? "opacity-70" : ""}
+                    ${msg._failed ? "opacity-50" : ""}`}
+                  style={isMe
+                    ? { background: "#4A27E8" }
+                    : { background: "var(--c-card)", color: "var(--c-text1)", border: "1px solid var(--c-border)" }
+                  }
+                >
+                  {msg.content}
+                  {msg._pending && <span className="ml-1.5 text-[11px]">⏳</span>}
+                  {msg._failed && <span className="ml-1.5 text-[11px]">⚠️</span>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
         <div ref={messagesEndRef} className="h-1" />
       </div>
 
-      <div className="fixed left-1/2 -translate-x-1/2 w-full max-w-[430px] border-t px-4 py-3 z-30"
-           style={{ bottom: "calc(64px + env(safe-area-inset-bottom, 0px))", background: "var(--c-card)", borderColor: "var(--c-border)" }}>
+      {/* Input bar — fixed above the nav */}
+      <div className="fixed left-1/2 -translate-x-1/2 w-full max-w-[430px] border-t px-4 py-3 z-40"
+           style={{ bottom: "var(--nav-height)", background: "var(--c-card)", borderColor: "var(--c-border)" }}>
         <div className="flex gap-2 items-center">
           <input
             type="text"
@@ -685,7 +884,7 @@ function ChatTab({
           />
           <button
             onClick={onSend}
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || sending}
             className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform disabled:opacity-40"
             style={{ background: "#4A27E8" }}
           >
@@ -702,9 +901,13 @@ function ChatTab({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function FlightDashboardPage() {
-  const params  = useParams();
-  const router  = useRouter();
-  const rawSlug = (params.id as string) ?? "";
+  const params       = useParams();
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const rawSlug      = (params.id as string) ?? "";
+
+  // Restore tab from URL (e.g. when navigating back from profile/chat)
+  const initialTab   = (searchParams.get("tab") as Tab | null) ?? "overview";
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [userFlight,       setUserFlight]       = useState<UserFlight | null>(null);
@@ -715,19 +918,25 @@ export default function FlightDashboardPage() {
   const [showPrompt,       setShowPrompt]       = useState(false);
   const [showDelete,       setShowDelete]       = useState(false);
   const [deleting,         setDeleting]         = useState(false);
-  const [activeTab,        setActiveTab]        = useState<Tab>("overview");
+  const [activeTab,        setActiveTab]        = useState<Tab>(initialTab);
   const [people,            setPeople]            = useState<Person[]>([]);
   const [peopleLoading,     setPeopleLoading]     = useState(false);
   const [userId,            setUserId]            = useState<string>("");
-  const [messages,          setMessages]          = useState<Message[]>(INITIAL_MESSAGES);
+  const [messages,          setMessages]          = useState<FlightMessage[]>([]);
   const [inputText,         setInputText]         = useState("");
+  const [chatLoading,       setChatLoading]       = useState(false);
+  const [chatSending,       setChatSending]       = useState(false);
+  const [isChatOnline,      setIsChatOnline]      = useState(true);
   const [networkingOverview, setNetworkingOverview] = useState<string | "loading" | null>(null);
 
   const supabase           = useRef(createClient());
-  const channelRef         = useRef<RealtimeChannel | null>(null);
+  const chatChannelRef     = useRef<RealtimeChannel | null>(null);
   const peopleChannelRef   = useRef<RealtimeChannel | null>(null);
   const messagesEndRef     = useRef<HTMLDivElement>(null);
   const overviewFetched    = useRef(false);
+  const profileCache       = useRef<Map<string, Profile>>(new Map());
+  const myIdRef            = useRef<string>("");
+  const chatInitDone       = useRef(false);
 
   // ── Load user flight + AirLabs data ───────────────────────────────────────
   const load = useCallback(async () => {
@@ -735,6 +944,7 @@ export default function FlightDashboardPage() {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return;
     setUserId(user.id);
+    myIdRef.current = user.id;
 
     // Find matching flight by normalizing slug → flight number
     const normalized = rawSlug.replace(/-/g, "").toUpperCase();
@@ -790,59 +1000,25 @@ export default function FlightDashboardPage() {
     setPeopleLoading(true);
     const sb = supabase.current;
 
-    // Normalize flight number and build a deduplicated list of formats to query
-    const flightNum = userFlight.flight_number.replace(/\s+/g, "").toUpperCase();
-    const flightNumsRaw = [flightNum, userFlight.flight_number];
-    const flightNums = flightNumsRaw.filter((v, i, a) => a.indexOf(v) === i);
-
-    // Fetch all users on same flight using .in() so both normalized and stored formats match
-    const { data: flightmates, error: flightmatesErr } = await sb
-      .from("user_flights")
-      .select("user_id, networking_status")
-      .in("flight_number", flightNums)
-      .in("status", ["upcoming", "active", "completed"]);
-
-    // If the query errored (e.g. networking_status column missing), fall back without status filter
-    if (flightmatesErr) {
-      const { data: fallback } = await sb
-        .from("user_flights")
-        .select("user_id")
-        .in("flight_number", flightNums)
-        .in("status", ["upcoming", "active", "completed"]);
-      const idsRaw = (fallback ?? []).map(f => f.user_id);
-      const ids = idsRaw.filter((v, i, a) => a.indexOf(v) === i);
-      if (!ids.length) { setPeople([]); setPeopleLoading(false); return; }
-      const [{ data: profiles }, { data: conns }] = await Promise.all([
-        sb.from("profiles").select("id, full_name, avatar_url, role, company").in("id", ids),
-        sb.from("connections").select("requester_id, receiver_id").or(`requester_id.eq.${userId},receiver_id.eq.${userId}`).eq("status", "accepted"),
-      ]);
-      const connectedIds = new Set((conns ?? []).map((c: { requester_id: string; receiver_id: string }) => c.requester_id === userId ? c.receiver_id : c.requester_id));
-      const all = (profiles ?? []).map((p: { id: string; full_name: string | null; avatar_url: string | null; role: string | null; company: string | null }) => ({
-        id: p.id, name: p.full_name ?? "Traveler", role: p.role, company: p.company, avatar_url: p.avatar_url,
-        networking_status: (p.id === userId ? networkingStatus : "available") as NetworkingStatus,
-        connected: connectedIds.has(p.id), isMe: p.id === userId,
-      }));
-      all.sort((a, b) => (a.isMe ? -1 : b.isMe ? 1 : 0));
-      setPeople(all); setPeopleLoading(false); return;
+    // Use server-side API (service-role key) to bypass RLS and see all users on flight
+    let ids: string[] = [];
+    let statusMap: Record<string, string> = {};
+    try {
+      const res = await fetch("/api/flight/people", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flightNumber: userFlight.flight_number, userId }),
+      });
+      const data = await res.json();
+      ids = data.ids ?? [];
+      statusMap = data.statusMap ?? {};
+    } catch {
+      setPeople([]);
+      setPeopleLoading(false);
+      return;
     }
 
-    // Deduplicate by user_id (in case .or() returns duplicate rows), prefer non-invisible status
-    const byUser = new Map<string, { user_id: string; networking_status: string }>();
-    for (const f of flightmates ?? []) {
-      const existing = byUser.get(f.user_id);
-      if (!existing || existing.networking_status === "invisible") byUser.set(f.user_id, f);
-    }
-    const deduped = Array.from(byUser.values());
-
-    // Always include self, exclude others who are invisible
-    const visible = deduped.filter(
-      f => f.user_id === userId || f.networking_status !== "invisible"
-    );
-
-    if (!visible.length) { setPeople([]); setPeopleLoading(false); return; }
-
-    const ids       = visible.map(f => f.user_id);
-    const statusMap = Object.fromEntries(visible.map(f => [f.user_id, f.networking_status as NetworkingStatus]));
+    if (!ids.length) { setPeople([]); setPeopleLoading(false); return; }
 
     const [{ data: profiles }, { data: conns }] = await Promise.all([
       sb.from("profiles").select("id, full_name, avatar_url, role, company").in("id", ids),
@@ -862,12 +1038,11 @@ export default function FlightDashboardPage() {
       role:              p.role,
       company:           p.company,
       avatar_url:        p.avatar_url,
-      networking_status: (p.id === userId ? networkingStatus : statusMap[p.id]) ?? "available" as NetworkingStatus,
+      networking_status: (p.id === userId ? networkingStatus : (statusMap[p.id] ?? "available")) as NetworkingStatus,
       connected:         connectedIds.has(p.id),
       isMe:              p.id === userId,
     }));
 
-    // Put self first, then others
     all.sort((a, b) => (a.isMe ? -1 : b.isMe ? 1 : 0));
     setPeople(all);
     setPeopleLoading(false);
@@ -942,17 +1117,103 @@ export default function FlightDashboardPage() {
       .catch(() => setNetworkingOverview(null));
   }, [people, userFlight, userId]);
 
-  // ── Realtime chat ──────────────────────────────────────────────────────────
+  // ── Online / offline detection ────────────────────────────────────────────
   useEffect(() => {
-    const channel = supabase.current
-      .channel(`flight-chat:${rawSlug}`)
-      .on("broadcast", { event: "message" }, ({ payload }) => {
-        setMessages(prev => [...prev, { ...(payload as Message), isMe: false }]);
-      })
-      .subscribe();
-    channelRef.current = channel;
-    return () => { supabase.current.removeChannel(channel); };
-  }, [rawSlug]);
+    const handleOnline = () => setIsChatOnline(true);
+    const handleOffline = () => setIsChatOnline(false);
+    setIsChatOnline(navigator.onLine);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // ── Chat init: load messages + realtime subscription ─────────────────────
+  useEffect(() => {
+    if (!userFlight || !userId || chatInitDone.current) return;
+    chatInitDone.current = true;
+    const sb = supabase.current;
+    const flightNum = userFlight.flight_number.replace(/\s+/g, "").toUpperCase();
+    const depDate = userFlight.departure_date ?? "";
+    const fKey = `${flightNum}_${depDate}`;
+
+    setChatLoading(true);
+
+    async function initChat() {
+      // Cache own profile
+      if (!profileCache.current.has(userId)) {
+        const { data: prof } = await sb.from("profiles")
+          .select("id, full_name, avatar_url, role, company")
+          .eq("id", userId).single();
+        if (prof) profileCache.current.set(userId, prof);
+      }
+
+      // Load existing messages
+      const { data: msgs } = await sb.from("flight_messages")
+        .select("*")
+        .eq("flight_number", flightNum)
+        .eq("departure_date", depDate)
+        .order("created_at", { ascending: true });
+
+      const fetched = (msgs ?? []) as FlightMessage[];
+
+      // Pre-fetch sender profiles
+      const senderIds = Array.from(new Set(
+        fetched.map((m: FlightMessage) => m.sender_id).filter((id: string) => id !== userId)
+      ));
+      if (senderIds.length > 0) {
+        const { data: profs } = await sb.from("profiles")
+          .select("id, full_name, avatar_url, role, company")
+          .in("id", senderIds);
+        for (const p of (profs ?? [])) profileCache.current.set(p.id, p);
+      }
+
+      setMessages(fetched);
+      setChatLoading(false);
+
+      // ── Realtime subscription ─────────────────────────────────────────
+      const channel = sb
+        .channel(`flight_msg:${fKey}`)
+        .on(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          "postgres_changes" as any,
+          { event: "INSERT", schema: "public", table: "flight_messages", filter: `flight_number=eq.${flightNum}` },
+          async (payload: { new: FlightMessage }) => {
+            const msg = payload.new;
+            if (msg.departure_date !== depDate) return;
+            if (msg.sender_id === myIdRef.current) return;
+
+            if (!profileCache.current.has(msg.sender_id)) {
+              const { data: prof } = await sb.from("profiles")
+                .select("id, full_name, avatar_url, role, company")
+                .eq("id", msg.sender_id).single();
+              if (prof) profileCache.current.set(prof.id, prof);
+            }
+
+            setMessages(prev => {
+              if (prev.some(m => m.id === msg.id)) return prev;
+              return [...prev, msg];
+            });
+          }
+        )
+        .subscribe();
+
+      chatChannelRef.current = channel;
+    }
+
+    initChat();
+
+    return () => {
+      if (chatChannelRef.current) {
+        sb.removeChannel(chatChannelRef.current);
+        chatChannelRef.current = null;
+      }
+      chatInitDone.current = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userFlight?.id, userId]);
 
   useEffect(() => {
     if (activeTab === "chat") {
@@ -1017,22 +1278,51 @@ export default function FlightDashboardPage() {
   };
 
   const handleSend = async () => {
-    if (!inputText.trim()) return;
-    const now = new Date();
-    const outgoing: Message = {
-      id:       Date.now().toString(),
-      author:   "Me",
-      initials: "ME",
-      color:    "bg-brand text-white",
-      text:     inputText.trim(),
-      time:     now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      isMe:     true,
-    };
-    setMessages(prev => [...prev, outgoing]);
+    const text = inputText.trim();
+    if (!text || !userFlight || !userId || chatSending) return;
     setInputText("");
-    if (channelRef.current) {
-      await channelRef.current.send({ type: "broadcast", event: "message", payload: outgoing });
+
+    const flightNum = userFlight.flight_number.replace(/\s+/g, "").toUpperCase();
+    const depDate = userFlight.departure_date ?? "";
+    const fKey = `${flightNum}_${depDate}`;
+    const storageKey = `${OFFLINE_QUEUE_PREFIX}${fKey}`;
+
+    if (!isChatOnline) {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        const queue: string[] = raw ? JSON.parse(raw) : [];
+        queue.push(text);
+        localStorage.setItem(storageKey, JSON.stringify(queue));
+      } catch { /* ignore */ }
+      const tempId = `temp-${Date.now()}`;
+      setMessages(prev => [...prev, {
+        id: tempId, flight_number: flightNum, departure_date: depDate,
+        sender_id: userId, content: text, created_at: new Date().toISOString(),
+        _pending: true, _tempId: tempId,
+      }]);
+      return;
     }
+
+    setChatSending(true);
+    const tempId = `temp-${Date.now()}`;
+    setMessages(prev => [...prev, {
+      id: tempId, flight_number: flightNum, departure_date: depDate,
+      sender_id: userId, content: text, created_at: new Date().toISOString(),
+      _pending: true, _tempId: tempId,
+    }]);
+
+    const { data: saved, error } = await supabase.current
+      .from("flight_messages")
+      .insert({ flight_number: flightNum, departure_date: depDate, sender_id: userId, content: text })
+      .select().single();
+
+    if (error) {
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, _pending: false, _failed: true } : m));
+      setInputText(text);
+    } else if (saved) {
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...saved } : m));
+    }
+    setChatSending(false);
   };
 
   // ── Derived display values ─────────────────────────────────────────────────
@@ -1070,9 +1360,10 @@ export default function FlightDashboardPage() {
   }
 
   return (
-    <div className="animate-fade-in" style={{
-      paddingBottom: activeTab === "chat" ? 0 : "calc(64px + env(safe-area-inset-bottom, 0px) + 8px)"
-    }}>
+    <div
+      className="animate-fade-in"
+      style={{ paddingBottom: activeTab === "chat" ? 0 : "calc(var(--nav-height) + 8px)" }}
+    >
 
       {/* ── Sticky header ──────────────────────── */}
       <div className="sticky top-0 z-30 border-b" style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}>
@@ -1135,6 +1426,7 @@ export default function FlightDashboardPage() {
           updatingStatus={updatingStatus}
           onDelete={() => setShowDelete(true)}
           networkingOverview={networkingOverview}
+          people={people}
         />
       )}
       {activeTab === "people" && (
@@ -1143,6 +1435,7 @@ export default function FlightDashboardPage() {
           loading={peopleLoading}
           networkingStatus={networkingStatus}
           onConnect={handleConnect}
+          flightSlug={rawSlug}
         />
       )}
       {activeTab === "chat" && (
@@ -1152,7 +1445,14 @@ export default function FlightDashboardPage() {
           setInputText={setInputText}
           onSend={handleSend}
           messagesEndRef={messagesEndRef}
+          flightNumber={flightNumber}
           flightLabel={flightLabel}
+          myId={userId}
+          profileCache={profileCache}
+          loading={chatLoading}
+          sending={chatSending}
+          passengerCount={people.length}
+          onShowPeople={() => setActiveTab("people")}
         />
       )}
 

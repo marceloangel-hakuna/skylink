@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
+import { SpinnerIcon } from "@/components/icons/AppIcons";
+import { avatarColor, initials } from "@/lib/utils/avatarColor";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const INTEREST_LABELS: Record<string, string> = {
@@ -21,17 +23,6 @@ const TAG_STYLES: Record<Tag, string> = {
   Investor: "bg-amber-100 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-900/60",
   Friend:   "bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60",
 };
-
-const AVATAR_COLORS = [
-  "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
-  "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
-  "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
-  "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
-  "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-  "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
-];
 
 const PLACEHOLDERS = [
   { id: "ph1", full_name: "Sarah Chen",    role: "CTO",             company: "Vertex AI",   interests: ["ai_ml","saas","product"],  match: 94 },
@@ -68,12 +59,6 @@ type Connection = {
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-function avatarColor(name: string) {
-  return AVATAR_COLORS[(name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % AVATAR_COLORS.length];
-}
-function initials(name: string) {
-  return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
-}
 function calcMatch(mine: string[], theirs: string[], hint?: number) {
   if (hint) return hint;
   if (!mine.length || !theirs.length) return 60;
@@ -195,7 +180,7 @@ function ProfileSheet({ user, match, isConnected, isSent, onConnect, onClose }: 
                 href={`/chat/${user.id}`}
                 onClick={onClose}
                 className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold text-center active:scale-95 transition-transform"
-                style={{ background: "#4A27E8" }}
+                style={{ background: "var(--color-brand)" }}
               >
                 Message
               </Link>
@@ -215,7 +200,7 @@ function ProfileSheet({ user, match, isConnected, isSent, onConnect, onClose }: 
             <button
               onClick={onConnect}
               className="w-full py-3 rounded-2xl text-white text-sm font-semibold active:scale-95 transition-transform"
-              style={{ background: "#4A27E8" }}>
+              style={{ background: "var(--color-brand)" }}>
               Connect
             </button>
           )}
@@ -276,10 +261,7 @@ function ConnectModal({ user, myName, myInterests, onSend, onClose, sending }: {
           <button onClick={() => onSend(msg)} disabled={sending || !msg.trim()}
             className="flex-1 py-3 rounded-2xl bg-brand text-white text-sm font-semibold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2">
             {sending
-              ? <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeOpacity="0.3"/>
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                </svg>
+              ? <SpinnerIcon size={16} color="white" />
               : "Send Request"}
           </button>
         </div>
@@ -456,11 +438,18 @@ export default function NetworkPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <svg className="animate-spin w-7 h-7 text-brand" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25"/>
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-          </svg>
+        <div className="px-4 flex flex-col gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="card animate-pulse flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl flex-shrink-0" style={{ background: "var(--c-muted)" }} />
+              <div className="flex-1 flex flex-col gap-2">
+                <div className="h-3.5 rounded-full w-2/3" style={{ background: "var(--c-muted)" }} />
+                <div className="h-3 rounded-full w-1/2" style={{ background: "var(--c-muted)" }} />
+                <div className="h-3 rounded-full w-3/4" style={{ background: "var(--c-muted)" }} />
+              </div>
+              <div className="w-20 h-8 rounded-2xl flex-shrink-0" style={{ background: "var(--c-muted)" }} />
+            </div>
+          ))}
         </div>
 
       ) : tab === "discover" ? (
@@ -516,7 +505,7 @@ export default function NetworkPage() {
                       ? { border: "1px solid #34D399", color: "#059669", background: "rgba(52,211,153,0.08)" }
                       : isSent
                       ? { border: "1px solid #34D399", color: "#059669", background: "rgba(52,211,153,0.08)" }
-                      : { background: "#4A27E8", color: "white" }
+                      : { background: "var(--color-brand)", color: "white" }
                   }
                 >
                   {isConnected ? "Connected" : isSent ? "Sent ✓" : "Connect"}
@@ -587,7 +576,7 @@ export default function NetworkPage() {
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                         <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
-                          stroke="#4A27E8" strokeWidth="1.8" strokeLinejoin="round"/>
+                          stroke="var(--color-brand-fg)" strokeWidth="1.8" strokeLinejoin="round"/>
                       </svg>
                     </Link>
                     <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1 rounded-full dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60">

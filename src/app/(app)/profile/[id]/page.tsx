@@ -19,7 +19,14 @@ function initials(name: string | null) {
   return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
 }
 
-export default async function PublicProfilePage({ params }: { params: { id: string } }) {
+export default async function PublicProfilePage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams?: { from?: string };
+}) {
+  const backHref = searchParams?.from || undefined;
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -62,7 +69,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
   if (!profile) {
     return (
       <div className="animate-fade-in pb-6">
-        <PageHeader title="Profile" showBack />
+        <PageHeader title="Profile" showBack backHref={backHref} />
         <div className="px-4 pt-8 flex flex-col items-center gap-3 text-center">
           <div className="w-20 h-20 rounded-3xl flex items-center justify-center font-black text-3xl"
                style={{ background: "var(--c-muted)", color: "var(--c-text3)" }}>?</div>
@@ -105,7 +112,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
 
   return (
     <div className="animate-fade-in pb-6">
-      <PageHeader title="Profile" showBack />
+      <PageHeader title="Profile" showBack backHref={backHref} />
 
       <div className="px-4 pt-4 flex flex-col gap-4">
 
@@ -152,7 +159,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
                   </svg>
                   Connected
                 </button>
-                <Link href={`/chat/${params.id}`}
+                <Link href={`/chat/${params.id}?from=${encodeURIComponent(`/profile/${params.id}`)}`}
                   className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center flex items-center justify-center"
                   style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1.5px solid var(--c-border)" }}>
                   Message
@@ -165,7 +172,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
                   style={{ background: "var(--c-muted)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}>
                   Request Sent
                 </button>
-                <Link href={`/chat/${params.id}`}
+                <Link href={`/chat/${params.id}?from=${encodeURIComponent(`/profile/${params.id}`)}`}
                   className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center flex items-center justify-center"
                   style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1.5px solid var(--c-border)" }}>
                   Message
@@ -174,7 +181,7 @@ export default async function PublicProfilePage({ params }: { params: { id: stri
             ) : (
               <>
                 <ConnectButton targetId={params.id} targetName={profile.full_name ?? "them"} />
-                <Link href={`/chat/${params.id}`}
+                <Link href={`/chat/${params.id}?from=${encodeURIComponent(`/profile/${params.id}`)}`}
                   className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center flex items-center justify-center"
                   style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1.5px solid var(--c-border)" }}>
                   Message
