@@ -160,9 +160,12 @@ export default async function PublicProfilePage({
                   Connected
                 </button>
                 <Link href={`/chat/${params.id}?from=${encodeURIComponent(`/profile/${params.id}`)}`}
-                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center flex items-center justify-center"
+                  className="w-12 rounded-2xl text-sm font-semibold text-center flex items-center justify-center flex-shrink-0"
                   style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1.5px solid var(--c-border)" }}>
-                  Message
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
+                          stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                  </svg>
                 </Link>
               </>
             ) : isSent ? (
@@ -173,18 +176,24 @@ export default async function PublicProfilePage({
                   Request Sent
                 </button>
                 <Link href={`/chat/${params.id}?from=${encodeURIComponent(`/profile/${params.id}`)}`}
-                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center flex items-center justify-center"
+                  className="w-12 rounded-2xl text-sm font-semibold text-center flex items-center justify-center flex-shrink-0"
                   style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1.5px solid var(--c-border)" }}>
-                  Message
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
+                          stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                  </svg>
                 </Link>
               </>
             ) : (
               <>
                 <ConnectButton targetId={params.id} targetName={profile.full_name ?? "them"} />
                 <Link href={`/chat/${params.id}?from=${encodeURIComponent(`/profile/${params.id}`)}`}
-                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center flex items-center justify-center"
+                  className="w-12 rounded-2xl text-sm font-semibold text-center flex items-center justify-center flex-shrink-0"
                   style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1.5px solid var(--c-border)" }}>
-                  Message
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
+                          stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                  </svg>
                 </Link>
               </>
             )}

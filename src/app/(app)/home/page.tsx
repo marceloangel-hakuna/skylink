@@ -8,18 +8,12 @@ import PullToRefresh from "@/components/PullToRefresh";
 
 export const dynamic = "force-dynamic";
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const C = {
+// ── Brand tokens (mode-agnostic) ────────────────────────────────────────────
+const B = {
   teal:   "#2DD4A8",
   purple: "#7C6AF5",
   amber:  "#F5A623",
   pink:   "#E8567F",
-  text1:  "#F0F0F2",
-  text2:  "#9399A8",
-  text3:  "#5C6170",
-  card:   "#161922",
-  bg:     "#0D0F14",
-  border: "rgba(255,255,255,0.07)",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -79,17 +73,18 @@ function whyMatch(viewer: { role: string | null; company: string | null }, candi
   return parts.length > 0 ? parts.join(", ") : "Similar professional background";
 }
 
-// ── Match Ring ────────────────────────────────────────────────────────────────
-function MatchRing({ score }: { score: number }) {
+// ── Match Ring — color matches avatar ─────────────────────────────────────────
+function MatchRing({ score, color }: { score: number; color: string }) {
   if (score < 60) return null;
-  const color = score >= 85 ? C.teal : score >= 70 ? C.purple : C.amber;
   const r = 22;
   const circ = 2 * Math.PI * r;
   const dash = (score / 100) * circ;
+  // Parse color to make a transparent track version
+  const trackColor = color + "22";
   return (
     <div className="relative flex-shrink-0" style={{ width: 54, height: 54 }}>
       <svg width={54} height={54} viewBox="0 0 54 54" style={{ transform: "rotate(-90deg)", position: "absolute", inset: 0 }}>
-        <circle cx={27} cy={27} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+        <circle cx={27} cy={27} r={r} fill="none" stroke={trackColor} strokeWidth="3" />
         <circle cx={27} cy={27} r={r} fill="none" stroke={color} strokeWidth="3"
           strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
       </svg>
@@ -104,49 +99,69 @@ function MatchRing({ score }: { score: number }) {
 function FlightArc({ duration }: { duration: string | null }) {
   return (
     <div className="relative flex-1 flex flex-col items-center justify-start" style={{ height: 64 }}>
-      {/* SVG arc path */}
-      <svg
-        width="100%"
-        height="44"
-        viewBox="0 0 200 44"
-        preserveAspectRatio="none"
-        fill="none"
-        style={{ overflow: "visible" }}
-      >
-        {/* Dashed arc */}
-        <path
-          d="M 4 40 Q 100 4 196 40"
-          stroke="rgba(124,106,245,0.30)"
-          strokeWidth="1.5"
-          strokeDasharray="5 4"
-          fill="none"
-        />
-        {/* Endpoint dots */}
+      <svg width="100%" height="44" viewBox="0 0 200 44" preserveAspectRatio="none" fill="none" style={{ overflow: "visible" }}>
+        <path d="M 4 40 Q 100 4 196 40" stroke="rgba(124,106,245,0.30)" strokeWidth="1.5" strokeDasharray="5 4" fill="none"/>
         <circle cx="4"   cy="40" r="3" fill="rgba(124,106,245,0.4)" />
         <circle cx="196" cy="40" r="3" fill="rgba(124,106,245,0.4)" />
       </svg>
-
-      {/* Plane icon at arc peak (midpoint ≈ top center) */}
-      <div
-        className="absolute"
-        style={{ top: -2, left: "50%", transform: "translateX(-50%)" }}
-      >
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: "rgba(124,106,245,0.15)", border: "1px solid rgba(124,106,245,0.3)" }}
-        >
+      <div className="absolute" style={{ top: -2, left: "50%", transform: "translateX(-50%)" }}>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center"
+             style={{ background: "rgba(124,106,245,0.15)", border: "1px solid rgba(124,106,245,0.3)" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#7C6AF5">
             <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"/>
           </svg>
         </div>
       </div>
-
-      {/* Duration below */}
       {duration && (
-        <p className="text-[10px] font-medium mt-1" style={{ color: C.text3 }}>{duration}</p>
+        <p className="text-[10px] font-medium mt-1" style={{ color: "var(--c-text3)" }}>{duration}</p>
       )}
     </div>
   );
+}
+
+// ── Event helpers ─────────────────────────────────────────────────────────────
+type DestEvent = { id: string; title: string; category: string; start: string; rank: number };
+
+function eventCategoryColor(cat: string): string {
+  if (cat === "concerts") return "#E8567F";
+  if (cat === "sports") return "#2DD4A8";
+  if (cat === "conferences") return "#7C6AF5";
+  if (cat === "expos") return "#F5A623";
+  if (cat === "festivals") return "#E8567F";
+  if (cat === "performing-arts") return "#60A5FA";
+  return "#7C6AF5";
+}
+
+function eventCategoryIcon(cat: string) {
+  const color = eventCategoryColor(cat);
+  if (cat === "concerts" || cat === "festivals" || cat === "performing-arts") return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+  if (cat === "sports") return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8"/>
+      <path d="M12 3c0 4.97-4.03 9-9 9M12 21c0-4.97 4.03-9 9-9M3 12h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  );
+  if (cat === "conferences" || cat === "expos") return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="4" width="18" height="16" rx="2" stroke={color} strokeWidth="1.8"/>
+      <path d="M8 4V2M16 4V2M3 10h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  );
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function formatEventDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } catch { return iso; }
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -226,10 +241,77 @@ export default async function HomePage() {
     ? await supabase.from("profiles").select("id, full_name, avatar_url, role, company, bio, interests").in("id", flightmateIds)
     : { data: [] };
 
-  // Discover profiles to show when no flightmates (or as additional content)
   const { data: discoverProfiles } = flightmateIds.length === 0
     ? await supabase.from("profiles").select("id, full_name, avatar_url, role, company, interests").neq("id", uid).not("role", "is", null).limit(4)
     : { data: [] };
+
+  // ── Fetch destination events ────────────────────────────────────────────────
+  let destEvents: DestEvent[] = [];
+  let destCityLabel: string | null = arrCity ?? flightDest;
+
+  if (flightDest && process.env.PREDICTHQ_API_KEY) {
+    try {
+      const PHQ_KEY  = process.env.PREDICTHQ_API_KEY;
+      const PHQ_BASE = "https://api.predicthq.com/v1";
+
+      // Resolve destination IATA → place ID
+      let placeId: string | null = null;
+
+      const airportUrl = new URL(`${PHQ_BASE}/places/`);
+      airportUrl.searchParams.set("q", flightDest);
+      airportUrl.searchParams.set("type", "airport");
+      airportUrl.searchParams.set("limit", "1");
+      const airportRes = await fetch(airportUrl.toString(), {
+        headers: { Authorization: `Bearer ${PHQ_KEY}` },
+        next: { revalidate: 86400 },
+      });
+      if (airportRes.ok) {
+        const aj = await airportRes.json() as { results?: Array<{ id: string; name: string }> };
+        placeId = aj.results?.[0]?.id ?? null;
+        destCityLabel = aj.results?.[0]?.name ?? destCityLabel;
+      }
+
+      if (!placeId && arrCity) {
+        const localUrl = new URL(`${PHQ_BASE}/places/`);
+        localUrl.searchParams.set("q", arrCity);
+        localUrl.searchParams.set("type", "locality");
+        localUrl.searchParams.set("limit", "1");
+        const localRes = await fetch(localUrl.toString(), {
+          headers: { Authorization: `Bearer ${PHQ_KEY}` },
+          next: { revalidate: 86400 },
+        });
+        if (localRes.ok) {
+          const lj = await localRes.json() as { results?: Array<{ id: string; name: string }> };
+          placeId = lj.results?.[0]?.id ?? null;
+          destCityLabel = lj.results?.[0]?.name ?? destCityLabel;
+        }
+      }
+
+      if (placeId) {
+        const today = new Date();
+        const start = today.toISOString().split("T")[0];
+        const endDt = new Date(today);
+        endDt.setDate(endDt.getDate() + 14);
+        const end = endDt.toISOString().split("T")[0];
+
+        const evUrl = new URL(`${PHQ_BASE}/events/`);
+        evUrl.searchParams.set("place.scope", placeId);
+        evUrl.searchParams.set("start.gte", start);
+        evUrl.searchParams.set("start.lte", end);
+        evUrl.searchParams.set("sort", "-rank");
+        evUrl.searchParams.set("limit", "5");
+
+        const evRes = await fetch(evUrl.toString(), {
+          headers: { Authorization: `Bearer ${PHQ_KEY}` },
+          next: { revalidate: 3600 },
+        });
+        if (evRes.ok) {
+          const ej = await evRes.json() as { results?: DestEvent[] };
+          destEvents = ej.results ?? [];
+        }
+      }
+    } catch { /* events unavailable */ }
+  }
 
   const viewerForAtlas = viewerProfileRow ?? { id: uid, full_name: user?.user_metadata?.full_name ?? null, role: null, company: null, bio: null, interests: null };
   const meta      = user?.user_metadata ?? {};
@@ -239,7 +321,6 @@ export default async function HomePage() {
   const { initials: myInitials } = formatName(fullName as string);
   const flightSlug = flightNumber ? flightNumber.replace(/\s+/g, "").toLowerCase() : null;
 
-  // Boarding countdown
   let boardingLabel: string | null = null;
   if (depTime && flightDate) {
     const now = new Date();
@@ -285,7 +366,7 @@ export default async function HomePage() {
               </>
             ) : (
               <>
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: C.text3 }} />
+                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "var(--c-text3)" }} />
                 No active flight
               </>
             )}
@@ -299,7 +380,7 @@ export default async function HomePage() {
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="var(--c-text2)" strokeWidth="1.8" strokeLinecap="round"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="var(--c-text2)" strokeWidth="1.8" strokeLinecap="round"/>
           </svg>
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full" style={{ background: C.pink }} />
+          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full" style={{ background: B.pink }} />
         </Link>
       </div>
 
@@ -312,15 +393,15 @@ export default async function HomePage() {
             <div className="p-5">
               {/* Label + boarding badge */}
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: C.text3 }}>
+                <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--c-text3)" }}>
                   Upcoming Flight
                 </p>
                 {boardingLabel && (
                   <span className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-full"
-                        style={{ background: "rgba(45,212,168,0.12)", color: C.teal, border: `1px solid rgba(45,212,168,0.25)` }}>
+                        style={{ background: "rgba(45,212,168,0.12)", color: B.teal, border: `1px solid rgba(45,212,168,0.25)` }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke={C.teal} strokeWidth="2"/>
-                      <path d="M12 7v5l3 3" stroke={C.teal} strokeWidth="2" strokeLinecap="round"/>
+                      <circle cx="12" cy="12" r="10" stroke={B.teal} strokeWidth="2"/>
+                      <path d="M12 7v5l3 3" stroke={B.teal} strokeWidth="2" strokeLinecap="round"/>
                     </svg>
                     {boardingLabel}
                   </span>
@@ -329,40 +410,37 @@ export default async function HomePage() {
 
               {/* Flight number + date/gate */}
               <div className="flex items-baseline justify-between mb-5">
-                <p className="text-2xl font-black" style={{ color: C.text1 }}>{flightNumber}</p>
-                <p className="text-sm" style={{ color: C.text2 }}>
+                <p className="text-2xl font-black" style={{ color: "var(--c-text1)" }}>{flightNumber}</p>
+                <p className="text-sm" style={{ color: "var(--c-text2)" }}>
                   {[dateLabel, gate && `Gate ${gate}`].filter(Boolean).join(" · ")}
                 </p>
               </div>
 
               {/* IATA arc row */}
               <div className="flex items-end gap-3 mb-5">
-                {/* Origin */}
                 <div className="flex-shrink-0" style={{ minWidth: 72 }}>
-                  <p className="text-[46px] font-black tracking-tight leading-none" style={{ color: C.text1 }}>
+                  <p className="text-[46px] font-black tracking-tight leading-none" style={{ color: "var(--c-text1)" }}>
                     {flightOrigin ?? "—"}
                   </p>
                   {depCity && (
-                    <p className="text-xs mt-0.5 truncate" style={{ color: C.text2, maxWidth: 80 }}>{depCity}</p>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--c-text2)", maxWidth: 80 }}>{depCity}</p>
                   )}
                   {depTime && (
-                    <p className="text-sm font-semibold mt-0.5" style={{ color: C.text2 }}>{depTime}</p>
+                    <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--c-text2)" }}>{depTime}</p>
                   )}
                 </div>
 
-                {/* Arc */}
                 <FlightArc duration={flightDuration} />
 
-                {/* Destination */}
                 <div className="flex-shrink-0 text-right" style={{ minWidth: 72 }}>
-                  <p className="text-[46px] font-black tracking-tight leading-none" style={{ color: C.text1 }}>
+                  <p className="text-[46px] font-black tracking-tight leading-none" style={{ color: "var(--c-text1)" }}>
                     {flightDest ?? "—"}
                   </p>
                   {arrCity && (
-                    <p className="text-xs mt-0.5 truncate" style={{ color: C.text2, maxWidth: 80, textAlign: "right", marginLeft: "auto" }}>{arrCity}</p>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--c-text2)", maxWidth: 80, textAlign: "right", marginLeft: "auto" }}>{arrCity}</p>
                   )}
                   {arrTime && (
-                    <p className="text-sm font-semibold mt-0.5" style={{ color: C.text2 }}>{arrTime}</p>
+                    <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--c-text2)" }}>{arrTime}</p>
                   )}
                 </div>
               </div>
@@ -374,43 +452,46 @@ export default async function HomePage() {
                     {
                       label: "Dashboard",
                       href: flightSlug ? `/flight/${flightSlug}` : "/flight",
+                      color: B.purple,
                       icon: (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
-                          <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
-                          <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
-                          <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <rect x="3" y="3" width="7" height="7" rx="1.5" stroke={B.purple} strokeWidth="1.8"/>
+                          <rect x="14" y="3" width="7" height="7" rx="1.5" stroke={B.purple} strokeWidth="1.8"/>
+                          <rect x="3" y="14" width="7" height="7" rx="1.5" stroke={B.purple} strokeWidth="1.8"/>
+                          <rect x="14" y="14" width="7" height="7" rx="1.5" stroke={B.purple} strokeWidth="1.8"/>
                         </svg>
                       ),
                     },
                     {
                       label: "Seat map",
                       href: flightSlug ? `/flight/${flightSlug}/seatmap` : "/flight",
+                      color: B.teal,
                       icon: (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <rect x="2" y="4" width="9" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
-                          <rect x="13" y="4" width="9" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
-                          <rect x="2" y="13" width="9" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
-                          <rect x="13" y="13" width="9" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <rect x="2" y="4" width="9" height="6" rx="1.5" stroke={B.teal} strokeWidth="1.8"/>
+                          <rect x="13" y="4" width="9" height="6" rx="1.5" stroke={B.teal} strokeWidth="1.8"/>
+                          <rect x="2" y="13" width="9" height="6" rx="1.5" stroke={B.teal} strokeWidth="1.8"/>
+                          <rect x="13" y="13" width="9" height="6" rx="1.5" stroke={B.teal} strokeWidth="1.8"/>
                         </svg>
                       ),
                     },
                     {
                       label: "Pass",
-                      href: flightSlug ? `/flight/${flightSlug}` : "/flight",
+                      href: flightSlug ? `/flight/${flightSlug}/pass` : "/flight",
+                      color: B.pink,
                       icon: (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
-                          <path d="M16 5V3M8 5V3M16 19v2M8 19v2M2 10h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <rect x="2" y="5" width="20" height="14" rx="2" stroke={B.pink} strokeWidth="1.8"/>
+                          <path d="M16 5V3M8 5V3M16 19v2M8 19v2M2 10h20" stroke={B.pink} strokeWidth="1.8" strokeLinecap="round"/>
                         </svg>
                       ),
                     },
-                  ].map(({ label, href, icon }) => (
+                  ].map(({ label, href, icon, color }) => (
                     <Link
                       key={label}
                       href={href}
                       className="flex flex-col items-center gap-1.5 py-3.5 rounded-2xl active:scale-95 transition-transform"
-                      style={{ background: "var(--c-muted)", color: "var(--c-text2)" }}
+                      style={{ background: `${color}14`, color }}
                     >
                       {icon}
                       <span className="text-[10px] font-semibold">{label}</span>
@@ -433,6 +514,43 @@ export default async function HomePage() {
         )}
         </div>
 
+        {/* ── Events at destination ────────────────── */}
+        {destEvents.length > 0 && (
+          <Reveal delay={20}>
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>
+                  Events at {destCityLabel ?? flightDest}
+                </h3>
+                <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                      style={{ background: "rgba(124,106,245,0.12)", color: B.purple }}>
+                  Next 14 days
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {destEvents.slice(0, 4).map(ev => {
+                  const col = eventCategoryColor(ev.category);
+                  return (
+                    <div key={ev.id} className="rounded-2xl p-3.5 flex items-center gap-3"
+                         style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                           style={{ background: `${col}18` }}>
+                        {eventCategoryIcon(ev.category)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold leading-tight truncate" style={{ color: "var(--c-text1)" }}>{ev.title}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--c-text3)" }}>
+                          {formatEventDate(ev.start)} · <span className="capitalize">{ev.category.replace(/-/g, " ")}</span>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </Reveal>
+        )}
+
         {/* ── Atlas AI insight ────────────────────── */}
         <div className="stagger-2">
           <AtlasHomeSuggestion viewerProfile={viewerForAtlas} candidates={flightmateProfiles ?? []} />
@@ -446,8 +564,8 @@ export default async function HomePage() {
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>People on your flight</h3>
                   <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "rgba(124,106,245,0.15)", color: C.purple }}>
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: C.purple }} />
+                        style={{ background: "rgba(124,106,245,0.15)", color: B.purple }}>
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: B.purple }} />
                     AI matched
                   </span>
                 </div>
@@ -478,17 +596,17 @@ export default async function HomePage() {
                           <div className="flex items-center gap-1.5">
                             <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{display}</p>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                              <path d="M9 12L11 14L15 10M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z" stroke={C.teal} strokeWidth="2" strokeLinecap="round"/>
+                              <path d="M9 12L11 14L15 10M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C16.97 3 21 7.03 21 12Z" stroke={B.teal} strokeWidth="2" strokeLinecap="round"/>
                             </svg>
                           </div>
                           <p className="text-xs mt-0.5 truncate" style={{ color: "var(--c-text2)" }}>
                             {[p.role, p.company].filter(Boolean).join(", ")}
                           </p>
                         </div>
-                        <MatchRing score={pct} />
+                        <MatchRing score={pct} color={ac.text} />
                       </div>
-                      <p className="text-xs mt-2.5 leading-relaxed" style={{ color: C.text3 }}>
-                        <span className="font-semibold" style={{ color: C.text2 }}>Why: </span>{why}
+                      <p className="text-xs mt-2.5 leading-relaxed" style={{ color: "var(--c-text3)" }}>
+                        <span className="font-semibold" style={{ color: "var(--c-text2)" }}>Why: </span>{why}
                       </p>
                     </Link>
                   );
@@ -497,11 +615,11 @@ export default async function HomePage() {
 
               <div className="flex items-center gap-2 mt-3 px-1">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" stroke={C.text3} strokeWidth="2" strokeLinejoin="round"/>
+                  <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" stroke="var(--c-text3)" strokeWidth="2" strokeLinejoin="round"/>
                 </svg>
-                <p className="text-[10px]" style={{ color: C.text3 }}>
+                <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>
                   Only opt-in passengers shown.{" "}
-                  <Link href="/profile#privacy" className="underline" style={{ color: C.teal }}>Privacy settings</Link>
+                  <Link href="/profile#privacy" className="underline" style={{ color: B.teal }}>Privacy settings</Link>
                 </p>
               </div>
             </div>
@@ -514,7 +632,12 @@ export default async function HomePage() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>Professionals on SkyLink</h3>
+                  <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>People you might know</h3>
+                  <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: "rgba(124,106,245,0.15)", color: B.purple }}>
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: B.purple }} />
+                    AI matched
+                  </span>
                 </div>
                 <Link href="/network"
                   className="text-xs font-semibold px-3 py-1.5 rounded-full active:opacity-70"
@@ -543,10 +666,10 @@ export default async function HomePage() {
                             {[p.role, p.company].filter(Boolean).join(", ")}
                           </p>
                         </div>
-                        <MatchRing score={pct} />
+                        <MatchRing score={pct} color={ac.text} />
                       </div>
                       {pct >= 60 && (
-                        <p className="text-xs mt-2.5 leading-relaxed" style={{ color: "#5C6170" }}>
+                        <p className="text-xs mt-2.5 leading-relaxed" style={{ color: "var(--c-text3)" }}>
                           <span className="font-semibold" style={{ color: "var(--c-text2)" }}>Why: </span>{why}
                         </p>
                       )}
@@ -556,11 +679,11 @@ export default async function HomePage() {
               </div>
               <div className="flex items-center gap-2 mt-3 px-1">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" stroke="#5C6170" strokeWidth="2" strokeLinejoin="round"/>
+                  <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" stroke="var(--c-text3)" strokeWidth="2" strokeLinejoin="round"/>
                 </svg>
-                <p className="text-[10px]" style={{ color: "#5C6170" }}>
+                <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>
                   Only opted-in members are shown.{" "}
-                  <Link href="/profile#privacy" className="underline" style={{ color: "#2DD4A8" }}>Privacy settings</Link>
+                  <Link href="/profile#privacy" className="underline" style={{ color: B.teal }}>Privacy settings</Link>
                 </p>
               </div>
             </div>
@@ -571,12 +694,12 @@ export default async function HomePage() {
         <Reveal delay={60} variant="scale">
           <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
             <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: C.text3 }}>SkyPoints</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--c-text3)" }}>SkyPoints</p>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-baseline gap-2">
                   <p className="text-4xl font-black" style={{ color: "var(--c-text1)" }}>{totalPoints.toLocaleString()}</p>
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "rgba(245,166,35,0.18)", color: C.amber }}>{tierName}</span>
+                        style={{ background: "rgba(245,166,35,0.18)", color: B.amber }}>{tierName}</span>
                 </div>
                 <div className="text-right">
                   {ptsToNext && (
@@ -584,11 +707,11 @@ export default async function HomePage() {
                       {ptsToNext.toLocaleString()} to {tierName === "Bronze" ? "Silver" : tierName === "Silver" ? "Gold" : "Platinum"}
                     </p>
                   )}
-                  <p className="text-[11px] mt-0.5" style={{ color: C.teal }}>+50 this flight</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: B.teal }}>+50 this flight</p>
                 </div>
               </div>
               <div className="rounded-full overflow-hidden" style={{ height: 5, background: "var(--c-muted)" }}>
-                <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: C.amber }} />
+                <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: B.amber }} />
               </div>
             </div>
           </Link>
