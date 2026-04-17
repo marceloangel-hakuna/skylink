@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
@@ -197,77 +198,82 @@ function StatusCard({
   onUpdate: (s: NetworkingStatus) => void;
   updating: boolean;
 }) {
-  const configs = {
-    available: {
-      bg:     "rgba(16, 185, 129, 0.08)",
-      border: "rgba(16, 185, 129, 0.3)",
-      dot:    "#10B981",
-      icon:   <span className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: "#10B981", display: "inline-block" }} />,
-      label:  "Available for Networking",
-      sub:    "SkyLink members on this flight can see you",
-      other:  [
-        { s: "not_available" as NetworkingStatus, label: "Mark Busy" },
-        { s: "invisible"     as NetworkingStatus, label: "Go Private" },
-      ],
-    },
-    not_available: {
-      bg:     "rgba(234, 179, 8, 0.08)",
-      border: "rgba(234, 179, 8, 0.3)",
-      dot:    "#EAB308",
-      icon:   <span className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: "#EAB308", display: "inline-block" }} />,
-      label:  "Visible but Busy",
-      sub:    "Others can see you but know you're not available",
-      other:  [
-        { s: "available" as NetworkingStatus, label: "Go Available" },
-        { s: "invisible" as NetworkingStatus, label: "Go Private"   },
-      ],
-    },
-    invisible: {
-      bg:     "var(--c-muted)",
-      border: "var(--c-border)",
-      dot:    "#94A3B8",
-      icon:   <EyeOffIcon size={18} color="var(--c-text3)" />,
-      label:  "Private Mode",
-      sub:    "You're invisible to other members on this flight",
-      other:  [
-        { s: "available"     as NetworkingStatus, label: "Go Available" },
-        { s: "not_available" as NetworkingStatus, label: "Mark Busy"    },
-      ],
-    },
-  };
+  // Compact pill — shown when user has already opted into a visible status
+  if (status === "available") {
+    return (
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl"
+           style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#10B981", boxShadow: "0 0 6px #10B981" }} />
+          <span className="text-xs font-semibold" style={{ color: "#059669" }}>Available for networking</span>
+        </div>
+        <div className="flex gap-1.5">
+          <button onClick={() => onUpdate("not_available")} disabled={updating}
+                  className="text-[10px] font-medium px-2.5 py-1 rounded-xl active:scale-95 transition-transform disabled:opacity-40"
+                  style={{ background: "var(--c-muted)", color: "var(--c-text3)", border: "1px solid var(--c-border)" }}>
+            Busy
+          </button>
+          <button onClick={() => onUpdate("invisible")} disabled={updating}
+                  className="text-[10px] font-medium px-2.5 py-1 rounded-xl active:scale-95 transition-transform disabled:opacity-40"
+                  style={{ background: "var(--c-muted)", color: "var(--c-text3)", border: "1px solid var(--c-border)" }}>
+            Private
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  const cfg = configs[status];
+  if (status === "not_available") {
+    return (
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl"
+           style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.2)" }}>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#EAB308" }} />
+          <span className="text-xs font-semibold" style={{ color: "#B45309" }}>Visible · Busy</span>
+        </div>
+        <div className="flex gap-1.5">
+          <button onClick={() => onUpdate("available")} disabled={updating}
+                  className="text-[10px] font-medium px-2.5 py-1 rounded-xl active:scale-95 transition-transform disabled:opacity-40"
+                  style={{ background: "rgba(16,185,129,0.12)", color: "#059669", border: "1px solid rgba(16,185,129,0.2)" }}>
+            Available
+          </button>
+          <button onClick={() => onUpdate("invisible")} disabled={updating}
+                  className="text-[10px] font-medium px-2.5 py-1 rounded-xl active:scale-95 transition-transform disabled:opacity-40"
+                  style={{ background: "var(--c-muted)", color: "var(--c-text3)", border: "1px solid var(--c-border)" }}>
+            Private
+          </button>
+        </div>
+      </div>
+    );
+  }
 
+  // Invisible/private — show the full prompt to encourage going available
   return (
-    <div className="rounded-2xl p-4" style={{ background: cfg.bg, border: `1.5px solid ${cfg.border}` }}>
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="text-lg">{cfg.icon}</span>
-          <div>
-            <p className="text-sm font-black" style={{ color: "var(--c-text1)" }}>{cfg.label}</p>
-            <p className="text-xs mt-0.5" style={{ color: "var(--c-text3)" }}>{cfg.sub}</p>
-          </div>
+    <div className="rounded-2xl p-4" style={{ background: "var(--c-muted)", border: "1px solid var(--c-border)" }}>
+      <div className="flex items-center gap-2.5 mb-3">
+        <EyeOffIcon size={18} color="var(--c-text3)" />
+        <div>
+          <p className="text-sm font-black" style={{ color: "var(--c-text1)" }}>Private Mode</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--c-text3)" }}>Other SkyLink members can&apos;t see you on this flight</p>
         </div>
         {updating && (
-          <svg className="animate-spin w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none">
+          <svg className="animate-spin w-4 h-4 flex-shrink-0 ml-auto" viewBox="0 0 24 24" fill="none">
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3"/>
             <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
           </svg>
         )}
       </div>
-
       <div className="flex gap-2">
-        {cfg.other.map(({ s, label }) => (
-          <button
-            key={s}
-            onClick={() => onUpdate(s)}
-            disabled={updating}
-            className="flex-1 text-xs font-semibold py-2 rounded-xl transition-all active:scale-[0.97] disabled:opacity-40"
-            style={{ background: "var(--c-card)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}
-          >
-            {label}
-          </button>
-        ))}
+        <button onClick={() => onUpdate("available")} disabled={updating}
+                className="flex-1 text-xs font-semibold py-2.5 rounded-xl transition-all active:scale-[0.97] disabled:opacity-40"
+                style={{ background: "rgba(16,185,129,0.12)", color: "#059669", border: "1px solid rgba(16,185,129,0.25)" }}>
+          Go Available
+        </button>
+        <button onClick={() => onUpdate("not_available")} disabled={updating}
+                className="flex-1 text-xs font-semibold py-2.5 rounded-xl transition-all active:scale-[0.97] disabled:opacity-40"
+                style={{ background: "var(--c-card)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}>
+          Mark Busy
+        </button>
       </div>
     </div>
   );
@@ -291,7 +297,7 @@ function inferIndustry(role: string | null): string {
 
 function OverviewTab({
   userFlight, flightData, networkingStatus, onStatusUpdate, updatingStatus, onDelete,
-  networkingOverview, people, destEvents, destCity,
+  networkingOverview, people, destEvents, destCity, flightSlug,
 }: {
   userFlight: UserFlight | null;
   flightData: FlightData | null;
@@ -303,6 +309,7 @@ function OverviewTab({
   people: Person[];
   destEvents: DestEvent[] | "loading" | null;
   destCity: string | null;
+  flightSlug: string;
 }) {
   const origin      = flightData?.origin      ?? userFlight?.origin      ?? "—";
   const destination = flightData?.destination  ?? userFlight?.destination  ?? "—";
@@ -393,33 +400,45 @@ function OverviewTab({
             </span>
           </div>
 
-          {/* IATA codes */}
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-[52px] font-black tracking-tight leading-none" style={{ color: "var(--c-text1)" }}>{origin}</p>
-              {terminal && <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>Terminal {terminal}</p>}
-              <p className="text-base font-semibold mt-1" style={{ color: "var(--c-text2)" }}>{depTime}</p>
+          {/* IATA codes with arc */}
+          <div className="flex items-end gap-2 mb-4">
+            {/* Origin */}
+            <div className="flex-shrink-0" style={{ minWidth: 76 }}>
+              <p className="text-[50px] font-black tracking-tight leading-none" style={{ color: "var(--c-text1)" }}>{origin}</p>
+              {(terminal || depCity) && (
+                <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>{terminal ? `Terminal ${terminal}` : depCity}</p>
+              )}
+              <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--c-text2)" }}>{depTime}</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--c-text3)" }}>{depCity}</p>
             </div>
 
-            {/* Center: progress dot + duration */}
-            <div className="flex flex-col items-center gap-1.5 mx-2">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ color: "#7C6AF5" }}>
-                <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z" fill="currentColor"/>
+            {/* Arc */}
+            <div className="relative flex-1 flex flex-col items-center justify-start" style={{ height: 68 }}>
+              <svg width="100%" height="44" viewBox="0 0 200 44" preserveAspectRatio="none" fill="none" style={{ overflow: "visible" }}>
+                <path d="M 4 40 Q 100 4 196 40" stroke="rgba(124,106,245,0.30)" strokeWidth="1.5" strokeDasharray="5 4" fill="none"/>
+                <circle cx="4"   cy="40" r="3" fill="rgba(124,106,245,0.4)"/>
+                <circle cx="196" cy="40" r="3" fill="rgba(124,106,245,0.4)"/>
               </svg>
-              <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>{duration}</p>
+              <div className="absolute" style={{ top: -2, left: "50%", transform: "translateX(-50%)" }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                     style={{ background: "rgba(124,106,245,0.15)", border: "1px solid rgba(124,106,245,0.3)" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#7C6AF5">
+                    <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"/>
+                  </svg>
+                </div>
+              </div>
+              <p className="text-[10px] font-medium mt-1" style={{ color: "var(--c-text3)" }}>{duration}</p>
             </div>
 
-            <div className="text-right">
-              <p className="text-[52px] font-black tracking-tight leading-none" style={{ color: "var(--c-text1)" }}>{destination}</p>
-              {arrTerminal && <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>Terminal {arrTerminal}</p>}
-              <p className="text-base font-semibold mt-1" style={{ color: "var(--c-text2)" }}>{arrTime}</p>
+            {/* Destination */}
+            <div className="flex-shrink-0 text-right" style={{ minWidth: 76 }}>
+              <p className="text-[50px] font-black tracking-tight leading-none" style={{ color: "var(--c-text1)" }}>{destination}</p>
+              {(arrTerminal || arrCity) && (
+                <p className="text-xs mt-0.5" style={{ color: "var(--c-text2)" }}>{arrTerminal ? `Terminal ${arrTerminal}` : arrCity}</p>
+              )}
+              <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--c-text2)" }}>{arrTime}</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--c-text3)" }}>{arrCity}</p>
             </div>
-          </div>
-
-          {/* City names below IATA */}
-          <div className="flex justify-between mb-4">
-            <p className="text-xs" style={{ color: "var(--c-text2)" }}>{depCity}</p>
-            <p className="text-xs text-right" style={{ color: "var(--c-text2)" }}>{arrCity}</p>
           </div>
 
           {/* Mini info cards: Aircraft · Gate · Seat */}
@@ -474,18 +493,18 @@ function OverviewTab({
               AI insights
             </span>
           </div>
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2">
             {industryEntries.map(([ind, count]) => {
               const color = INDUSTRY_COLORS[ind] ?? "#5C6170";
               const pct = total > 0 ? count / total : 0;
               return (
                 <div key={ind} className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                  <p className="text-xs w-20 flex-shrink-0" style={{ color: "var(--c-text2)" }}>{ind}</p>
-                  <div className="flex-1 rounded-full overflow-hidden" style={{ height: 5, background: "var(--c-muted)" }}>
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct * 100}%`, background: color }} />
+                  <p className="text-xs w-16 flex-shrink-0 font-medium" style={{ color: "var(--c-text2)" }}>{ind}</p>
+                  <div className="flex-1 rounded-xl overflow-hidden" style={{ height: 28, background: "var(--c-muted)" }}>
+                    <div className="h-full rounded-xl transition-all" style={{ width: `${pct * 100}%`, background: color, minWidth: 4 }} />
                   </div>
-                  <p className="text-xs font-bold w-5 text-right flex-shrink-0" style={{ color: "var(--c-text2)" }}>{count}</p>
+                  <p className="text-sm font-black w-6 text-right flex-shrink-0" style={{ color: "var(--c-text2)" }}>{count}</p>
                 </div>
               );
             })}
@@ -500,21 +519,27 @@ function OverviewTab({
           {timelineEvents.map((ev, i) => (
             <div key={ev.label} className="flex items-start gap-3">
               {/* Dot + line */}
-              <div className="flex flex-col items-center flex-shrink-0" style={{ width: 16 }}>
-                <div className="w-3.5 h-3.5 rounded-full flex-shrink-0 border-2"
-                     style={{
-                       background: ev.done ? "#2DD4A8" : ev.active ? "#7C6AF5" : "var(--c-muted)",
-                       borderColor: ev.done ? "#2DD4A8" : ev.active ? "#7C6AF5" : "var(--c-border)",
-                       boxShadow: ev.active ? "0 0 8px rgba(124,106,245,0.5)" : "none",
-                     }} />
+              <div className="flex flex-col items-center flex-shrink-0" style={{ width: 20 }}>
+                {ev.active ? (
+                  <div className="relative flex-shrink-0" style={{ width: 20, height: 20 }}>
+                    <div className="absolute inset-0 rounded-full" style={{ background: "rgba(124,106,245,0.25)", border: "2px solid #7C6AF5", boxShadow: "0 0 10px rgba(124,106,245,0.5)" }} />
+                    <div className="absolute inset-[4px] rounded-full" style={{ background: "#7C6AF5" }} />
+                  </div>
+                ) : (
+                  <div className="w-4 h-4 rounded-full flex-shrink-0"
+                       style={{
+                         background: ev.done ? "#2DD4A8" : "var(--c-muted)",
+                         border: `2px solid ${ev.done ? "#2DD4A8" : "var(--c-border)"}`,
+                       }} />
+                )}
                 {i < timelineEvents.length - 1 && (
-                  <div className="w-px flex-1 mt-0.5 mb-0.5" style={{ height: 28, background: ev.done ? "rgba(45,212,168,0.3)" : "var(--c-border)" }} />
+                  <div className="flex-1 mt-0.5 mb-0.5" style={{ width: 2, minHeight: 24, background: ev.done ? "rgba(45,212,168,0.4)" : "var(--c-border)" }} />
                 )}
               </div>
               {/* Content */}
               <div className="flex-1 pb-5">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold" style={{ color: ev.active ? "var(--c-text1)" : ev.done ? "var(--c-text2)" : "var(--c-text3)" }}>
+                  <p className={`font-semibold ${ev.active ? "text-sm" : "text-xs"}`} style={{ color: ev.active ? "var(--c-text1)" : ev.done ? "var(--c-text2)" : "var(--c-text3)" }}>
                     {ev.label}
                   </p>
                   {ev.done ? (
@@ -529,9 +554,21 @@ function OverviewTab({
                   <p className="text-[10px] mt-0.5" style={{ color: "var(--c-text3)" }}>{ev.sub}</p>
                 )}
                 {ev.matchCount !== undefined && ev.matchCount > 0 && (
-                  <p className="text-[10px] mt-1 font-semibold" style={{ color: "#7C6AF5" }}>
-                    {ev.matchCount} match{ev.matchCount !== 1 ? "es" : ""} boarding with you
-                  </p>
+                  <div className="flex items-center justify-between mt-2 px-3 py-2 rounded-xl"
+                       style={{ background: "var(--c-muted)", border: "1px solid var(--c-border)" }}>
+                    <div className="flex items-center gap-2">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <circle cx="9" cy="7" r="3" stroke="#7C6AF5" strokeWidth="1.8"/>
+                        <path d="M3 20C3 17.24 5.69 15 9 15s6 2.24 6 5" stroke="#7C6AF5" strokeWidth="1.8" strokeLinecap="round"/>
+                      </svg>
+                      <span className="text-xs font-semibold" style={{ color: "var(--c-text1)" }}>
+                        {ev.matchCount} match{ev.matchCount !== 1 ? "es" : ""} boarding with you
+                      </span>
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 18L15 12L9 6" stroke="var(--c-text3)" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
                 )}
               </div>
             </div>
@@ -581,13 +618,13 @@ function OverviewTab({
         </p>
       </div>
 
-      {/* ── Quick Actions ─────────────────────── */}
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--c-text3)" }}>Quick Actions</p>
         <div className="grid grid-cols-3 gap-3">
           {[
             {
               label: "Boarding Pass",
+              href: `/flight/${flightSlug}/pass`,
               icon: (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/>
@@ -599,6 +636,7 @@ function OverviewTab({
             },
             {
               label: "Lounge",
+              href: null,
               icon: (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path d="M20 7H4C2.9 7 2 7.9 2 9v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
@@ -611,9 +649,10 @@ function OverviewTab({
             },
             {
               label: "Share Trip",
+              href: null,
               icon: (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="1.8"/>
+                  <circle cx="18" cy="5"  r="3" stroke="currentColor" strokeWidth="1.8"/>
                   <circle cx="6"  cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
                   <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="1.8"/>
                   <path d="M8.59 13.51L15.42 17.49M15.41 6.51L8.59 10.49" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
@@ -622,19 +661,30 @@ function OverviewTab({
               color: "#E8567F",
               bg: "rgba(232,86,127,0.1)",
             },
-          ].map(({ label, icon, color, bg }) => (
-            <button
-              key={label}
-              className="rounded-2xl flex flex-col items-center gap-2 py-4 active:scale-[0.96] transition-transform"
-              style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}
-            >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                   style={{ background: bg, color }}>
-                {icon}
-              </div>
-              <p className="text-[10px] font-semibold text-center leading-tight" style={{ color: "var(--c-text2)" }}>{label}</p>
-            </button>
-          ))}
+          ].map(({ label, href, icon, color, bg }) => {
+            const content = (
+              <>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                     style={{ background: bg, color }}>
+                  {icon}
+                </div>
+                <p className="text-[10px] font-semibold text-center leading-tight" style={{ color: "var(--c-text2)" }}>{label}</p>
+              </>
+            );
+            return href ? (
+              <Link key={label} href={href}
+                    className="rounded-2xl flex flex-col items-center gap-2 py-4 active:scale-[0.96] transition-transform"
+                    style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+                {content}
+              </Link>
+            ) : (
+              <button key={label}
+                      className="rounded-2xl flex flex-col items-center gap-2 py-4 active:scale-[0.96] transition-transform"
+                      style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+                {content}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1608,6 +1658,7 @@ export default function FlightDashboardPage() {
           people={people}
           destEvents={destEvents}
           destCity={destCity}
+          flightSlug={rawSlug}
         />
       )}
       {activeTab === "people" && (

@@ -226,6 +226,11 @@ export default async function HomePage() {
     ? await supabase.from("profiles").select("id, full_name, avatar_url, role, company, bio, interests").in("id", flightmateIds)
     : { data: [] };
 
+  // Discover profiles to show when no flightmates (or as additional content)
+  const { data: discoverProfiles } = flightmateIds.length === 0
+    ? await supabase.from("profiles").select("id, full_name, avatar_url, role, company, interests").neq("id", uid).not("role", "is", null).limit(4)
+    : { data: [] };
+
   const viewerForAtlas = viewerProfileRow ?? { id: uid, full_name: user?.user_metadata?.full_name ?? null, role: null, company: null, bio: null, interests: null };
   const meta      = user?.user_metadata ?? {};
   const fullName  = meta.full_name ?? meta.name ?? "Traveler";
@@ -497,6 +502,65 @@ export default async function HomePage() {
                 <p className="text-[10px]" style={{ color: C.text3 }}>
                   Only opt-in passengers shown.{" "}
                   <Link href="/profile#privacy" className="underline" style={{ color: C.teal }}>Privacy settings</Link>
+                </p>
+              </div>
+            </div>
+          </Reveal>
+        )}
+
+        {/* ── Discover Professionals ─────────────── */}
+        {(discoverProfiles ?? []).length > 0 && (flightmateProfiles ?? []).length === 0 && (
+          <Reveal delay={50}>
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>Professionals on SkyLink</h3>
+                </div>
+                <Link href="/network"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full active:opacity-70"
+                  style={{ border: `1px solid var(--c-border)`, color: "var(--c-text1)" }}>
+                  See all
+                </Link>
+              </div>
+              <div className="flex flex-col gap-3">
+                {(discoverProfiles ?? []).map((p) => {
+                  const { initials, display } = formatName(p.full_name ?? null);
+                  const pct = matchScore(viewerForAtlas, p);
+                  const why = whyMatch(viewerForAtlas, p);
+                  const ac  = avatarColor(p.full_name ?? p.id);
+                  return (
+                    <Link key={p.id} href={`/profile/${p.id}`}
+                      className="block rounded-2xl p-4 active:opacity-80 transition-opacity"
+                      style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0"
+                             style={{ background: ac.bg, color: ac.text }}>
+                          {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold" style={{ color: "var(--c-text1)" }}>{display}</p>
+                          <p className="text-xs mt-0.5 truncate" style={{ color: "var(--c-text2)" }}>
+                            {[p.role, p.company].filter(Boolean).join(", ")}
+                          </p>
+                        </div>
+                        <MatchRing score={pct} />
+                      </div>
+                      {pct >= 60 && (
+                        <p className="text-xs mt-2.5 leading-relaxed" style={{ color: "#5C6170" }}>
+                          <span className="font-semibold" style={{ color: "var(--c-text2)" }}>Why: </span>{why}
+                        </p>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-2 mt-3 px-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" stroke="#5C6170" strokeWidth="2" strokeLinejoin="round"/>
+                </svg>
+                <p className="text-[10px]" style={{ color: "#5C6170" }}>
+                  Only opted-in members are shown.{" "}
+                  <Link href="/profile#privacy" className="underline" style={{ color: "#2DD4A8" }}>Privacy settings</Link>
                 </p>
               </div>
             </div>

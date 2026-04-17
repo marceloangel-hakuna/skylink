@@ -8,7 +8,7 @@ const navItems = [
     href: "/home",
     label: "Home",
     icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <path d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V16H9V21H4C3.45 21 3 20.55 3 20V10.5Z"
           fill={active ? "#7C6AF5" : "none"} stroke={active ? "#7C6AF5" : "currentColor"} strokeWidth="1.8" strokeLinejoin="round"/>
       </svg>
@@ -18,7 +18,7 @@ const navItems = [
     href: "/flight",
     label: "Flights",
     icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"
           fill={active ? "#7C6AF5" : "none"} stroke={active ? "#7C6AF5" : "currentColor"} strokeWidth="1.6" strokeLinejoin="round"/>
       </svg>
@@ -28,7 +28,7 @@ const navItems = [
     href: "/network",
     label: "Network",
     icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <circle cx="9" cy="7" r="3" fill={active ? "#7C6AF5" : "none"} stroke={active ? "#7C6AF5" : "currentColor"} strokeWidth="1.8"/>
         <circle cx="17" cy="11" r="3" fill={active ? "#7C6AF5" : "none"} stroke={active ? "#7C6AF5" : "currentColor"} strokeWidth="1.8"/>
         <path d="M3 20C3 17.24 5.69 15 9 15C10.21 15 11.34 15.34 12.29 15.91" stroke={active ? "#7C6AF5" : "currentColor"} strokeWidth="1.8" strokeLinecap="round"/>
@@ -40,7 +40,7 @@ const navItems = [
     href: "/chat",
     label: "Chat",
     icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z"
           fill={active ? "#7C6AF5" : "none"} stroke={active ? "#7C6AF5" : "currentColor"} strokeWidth="1.8" strokeLinejoin="round"/>
       </svg>
@@ -50,7 +50,7 @@ const navItems = [
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
+  const router   = useRouter();
 
   useEffect(() => {
     navItems.forEach(({ href }) => router.prefetch(href));
@@ -61,22 +61,27 @@ export default function BottomNav() {
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 pointer-events-none"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      {/* Gradient that fades page content into nav area — no hard edge */}
+      {/* Page-content fade — blends scrolled content into the nav area seamlessly */}
       <div
-        className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
+        className="absolute inset-x-0 bottom-0 pointer-events-none"
         style={{
-          background: "linear-gradient(to top, var(--background) 45%, transparent 100%)",
+          height: 96,
+          background: "linear-gradient(to top, var(--background) 40%, transparent)",
         }}
       />
+
+      {/* Frosted-glass pill — truly transparent, content shows through */}
       <div
-        className="relative mx-4 my-3 flex items-center justify-around rounded-[28px] px-2 pointer-events-auto"
+        className="relative mx-4 my-3 flex items-center justify-around pointer-events-auto"
         style={{
-          height: 62,
-          background: "var(--nav-bg)",
-          border: "1px solid var(--nav-border)",
-          boxShadow: "0 2px 16px rgba(0,0,0,0.10)",
-          backdropFilter: "blur(28px)",
-          WebkitBackdropFilter: "blur(28px)",
+          height: 64,
+          borderRadius: 32,
+          /* Glass: near-invisible fill, only blur + border define it */
+          background: "var(--nav-glass)",
+          border: "1px solid var(--nav-glass-border)",
+          backdropFilter: "blur(32px) saturate(180%)",
+          WebkitBackdropFilter: "blur(32px) saturate(180%)",
+          boxShadow: "0 1px 12px rgba(0,0,0,0.08)",
         }}
       >
         {navItems.map(({ href, label, icon }) => {
@@ -85,17 +90,24 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 h-full rounded-2xl transition-all active:scale-90"
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90"
               style={{
+                height: 52,
+                /* Active inner pill: radius = outer 32 − top/bottom margin 6 = 26 */
+                borderRadius: 26,
+                margin: "6px 3px",
                 color: active ? "#7C6AF5" : "var(--nav-inactive)",
-                background: active ? "rgba(124,106,245,0.12)" : "transparent",
-                margin: "6px 2px",
+                background: active ? "rgba(124,106,245,0.14)" : "transparent",
               }}
             >
               {icon(active)}
               <span
-                className={`text-[10px] ${active ? "font-bold" : "font-medium"}`}
-                style={{ color: active ? "#7C6AF5" : "var(--nav-inactive)" }}
+                style={{
+                  fontSize: 10,
+                  fontWeight: active ? 700 : 500,
+                  color: active ? "#7C6AF5" : "var(--nav-inactive)",
+                  lineHeight: 1.2,
+                }}
               >
                 {label}
               </span>

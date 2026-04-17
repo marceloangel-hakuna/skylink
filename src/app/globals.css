@@ -10,8 +10,8 @@
   --c-muted:     #F0F2F5;
   --c-border:    #E5E7EB;
   --c-text1:     #0D0F14;
-  --c-text2:     #6B7280;
-  --c-text3:     #9CA3AF;
+  --c-text2:     #4B5563;
+  --c-text3:     #6B7280;
   --glass-bg:    rgba(255,255,255,0.92);
   --color-brand:       #7C6AF5;
   --color-brand-dark:  #6355E0;
@@ -25,7 +25,9 @@
   --header-height: 60px;
   color-scheme: light;
   --nav-bg:       rgba(255,255,255,0.90);
-  --nav-border:   rgba(0,0,0,0.08);
+  --nav-border:   rgba(0,0,0,0.06);
+  --nav-glass:    rgba(255,255,255,0.55);
+  --nav-glass-border: rgba(0,0,0,0.10);
   --nav-active:   #7C6AF5;
   --nav-inactive: #9CA3AF;
 }
@@ -45,6 +47,8 @@ html.dark {
 
   --nav-bg:       rgba(16,18,26,0.90);
   --nav-border:   rgba(255,255,255,0.08);
+  --nav-glass:    rgba(20,22,30,0.55);
+  --nav-glass-border: rgba(255,255,255,0.09);
   --nav-active:   #7C6AF5;
   --nav-inactive: #5C6170;
 }
