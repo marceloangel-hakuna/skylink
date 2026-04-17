@@ -1,29 +1,42 @@
-const DOTS = [
-  { color: "#F73D8A", delay: "0s" },
-  { color: "#F5B81C", delay: "0.18s" },
-  { color: "#14D9A4", delay: "0.36s" },
-];
-
 export default function AppLoading() {
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center"
+      className="fixed inset-0 flex flex-col items-center justify-center gap-6"
       style={{ background: "var(--background)", maxWidth: 430, margin: "0 auto" }}
     >
-      <div className="flex gap-2.5">
-        {DOTS.map((dot, i) => (
-          <div
-            key={i}
-            className="w-2.5 h-2.5 rounded-full animate-bounce"
-            style={{
-              background: dot.color,
-              animationDelay: dot.delay,
-              animationDuration: "0.9s",
-              boxShadow: `0 3px 10px ${dot.color}70`,
-            }}
-          />
-        ))}
+      {/* Radar rings */}
+      <div className="relative flex items-center justify-center" style={{ width: 72, height: 72 }}>
+        {/* Outer ring */}
+        <div
+          className="absolute rounded-full border"
+          style={{
+            width: 72, height: 72,
+            borderColor: "rgba(124,106,245,0.15)",
+            animation: "ping 2s cubic-bezier(0,0,0.2,1) infinite",
+          }}
+        />
+        {/* Mid ring */}
+        <div
+          className="absolute rounded-full border"
+          style={{
+            width: 48, height: 48,
+            borderColor: "rgba(124,106,245,0.25)",
+            animation: "ping 2s cubic-bezier(0,0,0.2,1) infinite 0.4s",
+          }}
+        />
+        {/* Core */}
+        <div
+          className="relative rounded-full flex items-center justify-center"
+          style={{ width: 28, height: 28, background: "rgba(124,106,245,0.15)", border: "1.5px solid rgba(124,106,245,0.5)" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#7C6AF5">
+            <path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z"/>
+          </svg>
+        </div>
       </div>
+      <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: "var(--c-text3)", letterSpacing: "0.15em" }}>
+        SkyLink
+      </p>
     </div>
   );
 }

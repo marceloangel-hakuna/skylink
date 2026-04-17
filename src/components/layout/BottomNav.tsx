@@ -58,18 +58,27 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50"
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 pointer-events-none"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="mx-4 my-3 flex items-center justify-around rounded-[28px] px-2"
-           style={{
-             height: 62,
-             background: "var(--nav-bg)",
-             border: "1px solid var(--nav-border)",
-             boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-             backdropFilter: "blur(24px)",
-             WebkitBackdropFilter: "blur(24px)",
-           }}>
+      {/* Gradient that fades page content into nav area — no hard edge */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-32 pointer-events-none"
+        style={{
+          background: "linear-gradient(to top, var(--background) 45%, transparent 100%)",
+        }}
+      />
+      <div
+        className="relative mx-4 my-3 flex items-center justify-around rounded-[28px] px-2 pointer-events-auto"
+        style={{
+          height: 62,
+          background: "var(--nav-bg)",
+          border: "1px solid var(--nav-border)",
+          boxShadow: "0 2px 16px rgba(0,0,0,0.10)",
+          backdropFilter: "blur(28px)",
+          WebkitBackdropFilter: "blur(28px)",
+        }}
+      >
         {navItems.map(({ href, label, icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -84,8 +93,10 @@ export default function BottomNav() {
               }}
             >
               {icon(active)}
-              <span className={`text-[10px] ${active ? "font-bold" : "font-medium"}`}
-                    style={{ color: active ? "#7C6AF5" : "var(--nav-inactive)" }}>
+              <span
+                className={`text-[10px] ${active ? "font-bold" : "font-medium"}`}
+                style={{ color: active ? "#7C6AF5" : "var(--nav-inactive)" }}
+              >
                 {label}
               </span>
             </Link>

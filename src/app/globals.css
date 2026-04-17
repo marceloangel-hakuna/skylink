@@ -24,7 +24,7 @@
   --nav-height:  calc(86px + env(safe-area-inset-bottom, 0px));
   --header-height: 60px;
   color-scheme: light;
-  --nav-bg:       rgba(255,255,255,0.95);
+  --nav-bg:       rgba(255,255,255,0.90);
   --nav-border:   rgba(0,0,0,0.08);
   --nav-active:   #7C6AF5;
   --nav-inactive: #9CA3AF;
@@ -43,7 +43,7 @@ html.dark {
   --glass-bg:    rgba(13,15,20,0.97);
   color-scheme: dark;
 
-  --nav-bg:       rgba(22,25,34,0.97);
+  --nav-bg:       rgba(16,18,26,0.90);
   --nav-border:   rgba(255,255,255,0.08);
   --nav-active:   #7C6AF5;
   --nav-inactive: #5C6170;
@@ -95,9 +95,6 @@ body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scrollbar-width: none;
-  /* Fade content into the floating nav */
-  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 52px), transparent 100%);
-  mask-image: linear-gradient(to bottom, black calc(100% - 52px), transparent 100%);
 }
 .page-scroll::-webkit-scrollbar { display: none; }
 

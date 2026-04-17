@@ -639,7 +639,7 @@ function OverviewTab({
       </div>
 
       {/* ── Destination Events ────────────────── */}
-      {destEvents !== null && (
+      {(destEvents === "loading" || (Array.isArray(destEvents) && destEvents.length > 0)) && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--c-text3)" }}>
@@ -1266,7 +1266,18 @@ export default function FlightDashboardPage() {
     if (eventsFetched.current) return;
     const dest = flightData?.destination ?? userFlight?.destination;
     const city = flightData?.arr_city;
-    const date = flightData?.departure_date ?? userFlight?.departure_date;
+    let rawDate = flightData?.departure_date ?? userFlight?.departure_date;
+    // If departure date is in the past (> 1 day), use today
+    if (rawDate) {
+      const stored = new Date(rawDate + "T00:00:00");
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      if (stored < yesterday) {
+        rawDate = new Date().toISOString().split("T")[0];
+      }
+    }
+    const date = rawDate;
     if (!dest || !date) return;
     eventsFetched.current = true;
     setDestEvents("loading");

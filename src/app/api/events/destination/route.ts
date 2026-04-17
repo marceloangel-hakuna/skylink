@@ -14,83 +14,97 @@ export type DestEvent = {
   labels:     string[];
 };
 
-// Accept either ?city=Los+Angeles or ?iata=LAX (falls back to IATA→city lookup)
+async function lookupPlaceId(query: string, type: string): Promise<{ id: string; name: string } | null> {
+  const url = new URL(`${PHQ_BASE}/places/`);
+  url.searchParams.set("q",     query);
+  url.searchParams.set("type",  type);
+  url.searchParams.set("limit", "1");
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${PHQ_KEY}` },
+    next:    { revalidate: 86400 },
+  });
+  if (!res.ok) return null;
+  const json = await res.json() as { results?: Array<{ id: string; name: string }> };
+  if (!json.results?.[0]) return null;
+  return json.results[0];
+}
+
+// Accept either ?city=Los+Angeles or ?iata=LAX
 export async function GET(req: NextRequest) {
   if (!PHQ_KEY) return NextResponse.json({ events: [] });
 
   const { searchParams } = req.nextUrl;
   const city = searchParams.get("city")?.trim();
   const iata = searchParams.get("iata")?.trim()?.toUpperCase();
-  const date = searchParams.get("date"); // YYYY-MM-DD
+  let date = searchParams.get("date"); // YYYY-MM-DD
 
   if ((!city && !iata) || !date) return NextResponse.json({ events: [] });
 
+  // If the date is in the past (> 1 day ago), use today so test flights still surface events
   try {
-    // ── Step 1: resolve city name → PredictHQ place ID ──────────────────────
-    const query = city ?? iata!;
+    const stored = new Date(date + "T00:00:00");
+    const today  = new Date();
+    today.setHours(0, 0, 0, 0);
+    const oneDayAgo = new Date(today);
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    if (stored < oneDayAgo) {
+      date = today.toISOString().split("T")[0];
+    }
+  } catch { /* use original date */ }
 
-    const placesUrl = new URL(`${PHQ_BASE}/places/`);
-    placesUrl.searchParams.set("q",     query);
-    placesUrl.searchParams.set("type",  city ? "locality" : "airport");
-    placesUrl.searchParams.set("limit", "1");
+  try {
+    // Step 1: resolve city/IATA → PredictHQ place ID
+    let place: { id: string; name: string } | null = null;
 
-    const placesRes = await fetch(placesUrl.toString(), {
-      headers: { Authorization: `Bearer ${PHQ_KEY}` },
-      next:    { revalidate: 86400 },   // cache 24h — place IDs don't change
-    });
-
-    if (!placesRes.ok) return NextResponse.json({ events: [] });
-
-    const placesJson = await placesRes.json() as {
-      results?: Array<{ id: string; name: string; type: string; location?: number[] }>;
-    };
-
-    let placeId: string | null = null;
-    let cityName = city ?? iata ?? "";
-
-    if (placesJson.results?.[0]) {
-      const p = placesJson.results[0];
-      placeId  = p.id;
-      cityName = p.name;
-
-      // For airports: we want city-level events, so climb up to the locality
-      // PredictHQ airports have a parent locality — use the airport place ID
-      // directly since PHQ's place.scope works for airports too
+    if (city) {
+      // Try locality first (most reliable)
+      place = await lookupPlaceId(city, "locality");
     }
 
-    if (!placeId) return NextResponse.json({ events: [] });
+    if (!place && iata) {
+      // Try airport type
+      place = await lookupPlaceId(iata, "airport");
+    }
 
-    // ── Step 2: fetch events in [date, date+7] ───────────────────────────────
-    const start = date;
-    const endDt = new Date(date + "T00:00:00");
-    endDt.setDate(endDt.getDate() + 7);
+    if (!place && iata) {
+      // Fallback: try the IATA code as a locality name
+      place = await lookupPlaceId(iata, "locality");
+    }
+
+    if (!place) return NextResponse.json({ events: [] });
+
+    // Step 2: fetch events in [date, date+14]
+    const start = date!;
+    const endDt = new Date(date! + "T00:00:00");
+    endDt.setDate(endDt.getDate() + 14);
     const end = endDt.toISOString().split("T")[0];
 
     const eventsUrl = new URL(`${PHQ_BASE}/events/`);
-    eventsUrl.searchParams.set("place.scope",    placeId);
-    eventsUrl.searchParams.set("start.gte",      start);
-    eventsUrl.searchParams.set("start.lte",      end);
-    eventsUrl.searchParams.set("sort",           "-rank");
-    eventsUrl.searchParams.set("limit",          "8");
-    eventsUrl.searchParams.set("state",          "active");
+    eventsUrl.searchParams.set("place.scope", place.id);
+    eventsUrl.searchParams.set("start.gte",   start);
+    eventsUrl.searchParams.set("start.lte",   end);
+    eventsUrl.searchParams.set("sort",        "-rank");
+    eventsUrl.searchParams.set("limit",       "10");
+    // Removed state=active filter — gets all confirmed future events
 
     const eventsRes = await fetch(eventsUrl.toString(), {
       headers: { Authorization: `Bearer ${PHQ_KEY}` },
-      next:    { revalidate: 3600 },  // cache 1h
+      next:    { revalidate: 3600 },
     });
 
     if (!eventsRes.ok) return NextResponse.json({ events: [] });
 
     const eventsJson = await eventsRes.json() as {
       results?: Array<{
-        id:              string;
-        title:           string;
-        category:        string;
-        start:           string;
-        end:             string;
-        rank:            number;
-        phq_attendance:  number | null;
-        labels:          string[];
+        id:             string;
+        title:          string;
+        category:       string;
+        start:          string;
+        end:            string;
+        rank:           number;
+        phq_attendance: number | null;
+        labels:         string[];
       }>;
     };
 
@@ -105,7 +119,7 @@ export async function GET(req: NextRequest) {
       labels:     e.labels ?? [],
     }));
 
-    return NextResponse.json({ events, city: cityName });
+    return NextResponse.json({ events, city: place.name });
   } catch {
     return NextResponse.json({ events: [] });
   }
