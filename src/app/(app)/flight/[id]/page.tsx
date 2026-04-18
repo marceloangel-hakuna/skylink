@@ -299,6 +299,7 @@ function inferIndustry(role: string | null): string {
 function OverviewTab({
   userFlight, flightData, networkingStatus, onStatusUpdate, updatingStatus, onDelete,
   networkingOverview, people, destEvents, destCity, flightSlug,
+  eventInterests, myGoingEventIds,
 }: {
   userFlight: UserFlight | null;
   flightData: FlightData | null;
@@ -311,6 +312,8 @@ function OverviewTab({
   destEvents: DestEvent[] | "loading" | null;
   destCity: string | null;
   flightSlug: string;
+  eventInterests: Record<string, GoingUser[]>;
+  myGoingEventIds: Set<string>;
 }) {
   const origin      = flightData?.origin      ?? userFlight?.origin      ?? "—";
   const destination = flightData?.destination  ?? userFlight?.destination  ?? "—";
@@ -1127,9 +1130,7 @@ export default function FlightDashboardPage() {
   const [networkingOverview, setNetworkingOverview] = useState<string | "loading" | null>(null);
   const [destEvents,         setDestEvents]         = useState<DestEvent[] | "loading" | null>(null);
   const [destCity,           setDestCity]           = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [eventInterests,     setEventInterests]     = useState<Record<string, GoingUser[]>>({});
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [myGoingEventIds,    setMyGoingEventIds]    = useState<Set<string>>(new Set());
   const eventsFetched      = useRef(false);
   const interestsFetched   = useRef(false);
@@ -1689,6 +1690,8 @@ export default function FlightDashboardPage() {
           destEvents={destEvents}
           destCity={destCity}
           flightSlug={rawSlug}
+          eventInterests={eventInterests}
+          myGoingEventIds={myGoingEventIds}
         />
       )}
       {activeTab === "people" && (
