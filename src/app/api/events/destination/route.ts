@@ -4,14 +4,15 @@ const PHQ_KEY  = process.env.PREDICTHQ_API_KEY;
 const PHQ_BASE = "https://api.predicthq.com/v1";
 
 export type DestEvent = {
-  id:         string;
-  title:      string;
-  category:   string;
-  start:      string;   // ISO
-  end:        string;
-  rank:       number;
-  attendance: number | null;
-  labels:     string[];
+  id:          string;
+  title:       string;
+  category:    string;
+  start:       string;   // ISO
+  end:         string;
+  rank:        number;
+  attendance:  number | null;
+  labels:      string[];
+  description?: string;
 };
 
 async function lookupPlaceId(query: string, type: string): Promise<{ id: string; name: string } | null> {
@@ -105,17 +106,19 @@ export async function GET(req: NextRequest) {
         rank:           number;
         phq_attendance: number | null;
         labels:         string[];
+        description?:   string;
       }>;
     };
 
     const events: DestEvent[] = (eventsJson.results ?? []).map(e => ({
-      id:         e.id,
-      title:      e.title,
-      category:   e.category,
-      start:      e.start,
-      end:        e.end,
-      rank:       e.rank,
-      attendance: e.phq_attendance,
+      id:          e.id,
+      title:       e.title,
+      category:    e.category,
+      start:       e.start,
+      end:         e.end,
+      rank:        e.rank,
+      attendance:  e.phq_attendance,
+      description: e.description,
       labels:     e.labels ?? [],
     }));
 
