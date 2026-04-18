@@ -121,20 +121,26 @@ function FlightArc({ duration }: { duration: string | null }) {
 }
 
 // ── Event helpers ─────────────────────────────────────────────────────────────
-type DestEvent = { id: string; title: string; category: string; start: string; rank: number };
+type DestEvent = { id: string; title: string; category: string; start: string; rank: number; description?: string };
 
 // Rotating palette — ensures consecutive events have distinct colors
 const EVENT_PALETTE = ["#7C6AF5", "#2DD4A8", "#E8567F", "#F5A623", "#60A5FA"];
 function eventColor(index: number) { return EVENT_PALETTE[index % EVENT_PALETTE.length]; }
 
-// Tech-priority sort: conferences/expos/academic first, then rest
+// Build a mixed list: tech-first but ensure category diversity
 const TECH_CATS = new Set(["conferences", "expos", "academic", "community"]);
-function sortEventsTechFirst(events: DestEvent[]): DestEvent[] {
-  return [...events].sort((a, b) => {
-    const at = TECH_CATS.has(a.category) ? 0 : 1;
-    const bt = TECH_CATS.has(b.category) ? 0 : 1;
-    return at - bt || b.rank - a.rank;
-  });
+function mixEvents(events: DestEvent[]): DestEvent[] {
+  const tech = events.filter(e => TECH_CATS.has(e.category)).sort((a, b) => b.rank - a.rank);
+  const ent  = events.filter(e => !TECH_CATS.has(e.category)).sort((a, b) => b.rank - a.rank);
+  // Interleave: 2 tech, 1 entertainment, repeat — gives tech priority with variety
+  const out: DestEvent[] = [];
+  let ti = 0, ei = 0;
+  while (out.length < 5 && (ti < tech.length || ei < ent.length)) {
+    if (ti < tech.length) out.push(tech[ti++]);
+    if (out.length < 5 && ti < tech.length) out.push(tech[ti++]);
+    if (out.length < 5 && ei < ent.length) out.push(ent[ei++]);
+  }
+  return out;
 }
 
 function eventIcon(cat: string, color: string) {
@@ -307,7 +313,7 @@ export default async function HomePage() {
         evUrl.searchParams.set("start.gte", start);
         evUrl.searchParams.set("start.lte", end);
         evUrl.searchParams.set("sort", "-rank");
-        evUrl.searchParams.set("limit", "5");
+        evUrl.searchParams.set("limit", "20");
 
         const evRes = await fetch(evUrl.toString(), {
           headers: { Authorization: `Bearer ${PHQ_KEY}` },
@@ -690,37 +696,36 @@ export default async function HomePage() {
 
         {/* ── Events at destination ────────────────── */}
         {destEvents.length > 0 && (() => {
-          const sorted = sortEventsTechFirst(destEvents).slice(0, 5);
+          const mixed = mixEvents(destEvents);
           return (
-            <Reveal delay={70}>
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>
-                    Events at {destCityLabel ?? flightDest}
-                  </h3>
-                  <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
-                        style={{ background: "rgba(124,106,245,0.12)", color: B.purple }}>
-                    Next 14 days
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2">
-                  {sorted.map((ev, i) => {
-                    const col = eventColor(i);
-                    return (
-                      <EventInterestCard
-                        key={ev.id}
-                        id={ev.id}
-                        title={ev.title}
-                        category={ev.category}
-                        start={ev.start}
-                        color={col}
-                        icon={eventIcon(ev.category, col)}
-                      />
-                    );
-                  })}
-                </div>
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>
+                  Events at {destCityLabel ?? flightDest}
+                </h3>
+                <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                      style={{ background: "rgba(124,106,245,0.12)", color: B.purple }}>
+                  Next 14 days
+                </span>
               </div>
-            </Reveal>
+              <div className="flex flex-col gap-2">
+                {mixed.map((ev, i) => {
+                  const col = eventColor(i);
+                  return (
+                    <EventInterestCard
+                      key={ev.id}
+                      id={ev.id}
+                      title={ev.title}
+                      category={ev.category}
+                      start={ev.start}
+                      color={col}
+                      icon={eventIcon(ev.category, col)}
+                      description={ev.description}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           );
         })()}
 
