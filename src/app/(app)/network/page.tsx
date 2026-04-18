@@ -244,8 +244,8 @@ function ConnectModal({ user, myName, myInterests, onSend, onClose, sending }: {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-amber-500 text-sm leading-none">✦</span>
-          <span className="text-[11px] font-semibold text-amber-600">Atlas suggested opening — edit freely</span>
+          <span className="atlas-icon text-sm leading-none">✦</span>
+          <span className="text-[11px] font-semibold atlas-text-secondary">Atlas suggested opening — edit freely</span>
         </div>
 
         <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={4}

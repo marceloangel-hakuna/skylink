@@ -76,7 +76,7 @@ function NotifIcon({ type, actorName, actorAvatar }: {
   const configs: Record<NotifType, { icon: React.ReactNode; bg: string; iconColor: string; darkClass: string }> = {
     connection: { icon: <ConnectionNotifIcon size={20} />, bg: "#EEF2FF", iconColor: "#4F46E5", darkClass: "dark:bg-indigo-900/25" },
     message:    { icon: <MessageNotifIcon   size={20} />, bg: "#F0FDF4", iconColor: "#059669", darkClass: "dark:bg-emerald-900/25" },
-    atlas:      { icon: <AtlasSparkleIcon   size={20} />, bg: "#FFFBEB", iconColor: "#D97706", darkClass: "dark:bg-amber-900/20"  },
+    atlas:      { icon: <AtlasSparkleIcon   size={20} />, bg: "#EEF2FF", iconColor: "#6366F1", darkClass: "dark:bg-indigo-900/25" },
     crew:       { icon: <CrewNotifIcon      size={20} />, bg: "#F5F3FF", iconColor: "#7C3AED", darkClass: "dark:bg-violet-900/25" },
     flight:     { icon: <FlightNotifIcon    size={20} />, bg: "#FFF7ED", iconColor: "#EA580C", darkClass: "dark:bg-orange-900/20" },
   };
