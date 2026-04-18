@@ -144,24 +144,40 @@ function mixEvents(events: DestEvent[]): DestEvent[] {
 }
 
 function eventIcon(cat: string, color: string) {
-  if (cat === "concerts" || cat === "festivals" || cat === "performing-arts") return (
+  // Music / entertainment
+  if (cat === "concerts" || cat === "performing-arts") return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"
             stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
+  // Festivals — tent/flag icon
+  if (cat === "festivals") return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M4 22V2l14 5-14 5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+  // Sports — ball
   if (cat === "sports") return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8"/>
       <path d="M12 3c0 4.97-4.03 9-9 9M12 21c0-4.97 4.03-9 9-9M3 12h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
     </svg>
   );
-  if (cat === "conferences" || cat === "expos" || cat === "academic") return (
+  // Conferences / expos — calendar
+  if (cat === "conferences" || cat === "expos") return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="4" width="18" height="16" rx="2" stroke={color} strokeWidth="1.8"/>
       <path d="M8 4V2M16 4V2M3 10h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
     </svg>
   );
+  // Academic — graduation cap
+  if (cat === "academic") return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M12 3L1 9l11 6 9-4.91V17M5 13.18v4L12 21l7-3.82v-4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+  // Community — people
   if (cat === "community") return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
@@ -169,7 +185,7 @@ function eventIcon(cat: string, color: string) {
       <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
     </svg>
   );
-  // Default: star/general
+  // Default: star
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
@@ -308,21 +324,31 @@ export default async function HomePage() {
         endDt.setDate(endDt.getDate() + 14);
         const end = endDt.toISOString().split("T")[0];
 
-        const evUrl = new URL(`${PHQ_BASE}/events/`);
-        evUrl.searchParams.set("place.scope", placeId);
-        evUrl.searchParams.set("start.gte", start);
-        evUrl.searchParams.set("start.lte", end);
-        evUrl.searchParams.set("sort", "-rank");
-        evUrl.searchParams.set("limit", "20");
+        // Fetch multiple category groups in parallel for diversity
+        const CATS_TECH = "conferences,expos,academic,community";
+        const CATS_ENT  = "concerts,festivals,performing-arts,sports";
 
-        const evRes = await fetch(evUrl.toString(), {
-          headers: { Authorization: `Bearer ${PHQ_KEY}` },
-          next: { revalidate: 3600 },
-        });
-        if (evRes.ok) {
-          const ej = await evRes.json() as { results?: DestEvent[] };
-          destEvents = ej.results ?? [];
-        }
+        const fetchCat = async (cats: string) => {
+          const u = new URL(`${PHQ_BASE}/events/`);
+          u.searchParams.set("place.scope", placeId!);
+          u.searchParams.set("category", cats);
+          u.searchParams.set("start.gte", start);
+          u.searchParams.set("start.lte", end);
+          u.searchParams.set("sort", "-rank");
+          u.searchParams.set("limit", "10");
+          const r = await fetch(u.toString(), {
+            headers: { Authorization: `Bearer ${PHQ_KEY}` },
+            next: { revalidate: 3600 },
+          });
+          if (r.ok) {
+            const j = await r.json() as { results?: DestEvent[] };
+            return j.results ?? [];
+          }
+          return [];
+        };
+
+        const [techEv, entEv] = await Promise.all([fetchCat(CATS_TECH), fetchCat(CATS_ENT)]);
+        destEvents = [...techEv, ...entEv];
       }
     } catch { /* events unavailable */ }
   }

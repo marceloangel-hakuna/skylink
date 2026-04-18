@@ -733,9 +733,14 @@ function OverviewTab({
             }).slice(0, 5);
 
             function evIcon(cat: string, color: string) {
-              if (cat === "concerts" || cat === "festivals" || cat === "performing-arts") return (
+              if (cat === "concerts" || cat === "performing-arts") return (
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                   <path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              );
+              if (cat === "festivals") return (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 22V2l14 5-14 5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               );
               if (cat === "sports") return (
@@ -744,10 +749,15 @@ function OverviewTab({
                   <path d="M12 3c0 4.97-4.03 9-9 9M12 21c0-4.97 4.03-9 9-9M3 12h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
                 </svg>
               );
-              if (cat === "conferences" || cat === "expos" || cat === "academic") return (
+              if (cat === "conferences" || cat === "expos") return (
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="4" width="18" height="16" rx="2" stroke={color} strokeWidth="1.8"/>
                   <path d="M8 4V2M16 4V2M3 10h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              );
+              if (cat === "academic") return (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 3L1 9l11 6 9-4.91V17M5 13.18v4L12 21l7-3.82v-4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               );
               if (cat === "community") return (
