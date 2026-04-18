@@ -89,12 +89,11 @@ body {
   background: var(--background);
 }
 
-/* Scrollable page content — height stops above the fixed nav bar.
-   Uses 100svh (small viewport = chrome shown) instead of 100dvh so
-   the content height never changes as Safari's address bar shows/hides.
-   The fixed nav uses bottom:0 independently and is unaffected by this. */
+/* Scrollable page content — full viewport height so content flows behind
+   the floating nav pill (no gap = no opaque background visible behind it).
+   Pages use pb-[120px] to keep content above the nav. */
 .page-scroll {
-  height: calc(100svh - var(--nav-height));
+  height: 100svh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;

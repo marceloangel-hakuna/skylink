@@ -450,7 +450,7 @@ function OverviewTab({
               { label: "Gate", value: gate ?? "—", href: null, icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M3 9h18M9 21V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
               )},
-              { label: "Seat", value: "14C", href: `/${flightSlug}/seatmap`, icon: (
+              { label: "Seat", value: "14C", href: `/flight/${flightSlug}/seatmap`, icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8"/></svg>
               )},
             ].map(({ label, value, href, icon }) => {
