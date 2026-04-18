@@ -353,6 +353,36 @@ export default async function HomePage() {
     } catch { /* events unavailable */ }
   }
 
+  // ── Fetch event interests for this flight ───────────────────────────────────
+  type GoingUser = { userId: string; fullName: string; avatarUrl: string | null };
+  const eventInterests: Record<string, GoingUser[]> = {};
+  const myEventIds = new Set<string>();
+
+  if (destEvents.length > 0 && flightNumber) {
+    try {
+      const eventIds = destEvents.map(e => e.id);
+      const { data: rows } = await supabase
+        .from("event_interests")
+        .select("event_id, user_id, profiles(full_name, avatar_url)")
+        .eq("flight_number", flightNumber)
+        .in("event_id", eventIds);
+
+      for (const row of rows ?? []) {
+        if (row.user_id === uid) {
+          myEventIds.add(row.event_id);
+        } else {
+          const profile = row.profiles as unknown as { full_name: string | null; avatar_url: string | null } | null;
+          if (!eventInterests[row.event_id]) eventInterests[row.event_id] = [];
+          eventInterests[row.event_id].push({
+            userId: row.user_id,
+            fullName: profile?.full_name ?? "Unknown",
+            avatarUrl: profile?.avatar_url ?? null,
+          });
+        }
+      }
+    } catch { /* interests unavailable */ }
+  }
+
   const viewerForAtlas = viewerProfileRow ?? { id: uid, full_name: user?.user_metadata?.full_name ?? null, role: null, company: null, bio: null, interests: null };
   const meta      = user?.user_metadata ?? {};
   const fullName  = meta.full_name ?? meta.name ?? "Traveler";
@@ -747,6 +777,11 @@ export default async function HomePage() {
                       color={col}
                       icon={eventIcon(ev.category, col)}
                       description={ev.description}
+                      flightNumber={flightNumber ?? undefined}
+                      departureDate={flightDate ?? undefined}
+                      flightChatKey={flightSlug && flightDate ? `${flightSlug}_${flightDate}` : undefined}
+                      initialGoing={myEventIds.has(ev.id)}
+                      goingUsers={eventInterests[ev.id] ?? []}
                     />
                   );
                 })}

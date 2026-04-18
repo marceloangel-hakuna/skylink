@@ -10,6 +10,7 @@ import {
 } from "@/components/icons/AppIcons";
 import { avatarColor, initials as getInitials } from "@/lib/utils/avatarColor";
 import type { DestEvent } from "@/app/api/events/destination/route";
+import EventInterestCard, { type GoingUser } from "@/components/EventInterestCard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -723,7 +724,6 @@ function OverviewTab({
               <p className="text-xs" style={{ color: "var(--c-text3)" }}>No major events found near your arrival date.</p>
             </div>
           ) : (() => {
-            // Tech-first sort, rotating palette
             const EVENT_PALETTE = ["#7C6AF5", "#2DD4A8", "#E8567F", "#F5A623", "#60A5FA"];
             const TECH_CATS = new Set(["conferences", "expos", "academic", "community"]);
             const sorted = [...destEvents].sort((a, b) => {
@@ -733,66 +733,39 @@ function OverviewTab({
             }).slice(0, 5);
 
             function evIcon(cat: string, color: string) {
-              if (cat === "concerts" || cat === "performing-arts") return (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              );
-              if (cat === "festivals") return (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 22V2l14 5-14 5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              );
-              if (cat === "sports") return (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8"/>
-                  <path d="M12 3c0 4.97-4.03 9-9 9M12 21c0-4.97 4.03-9 9-9M3 12h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
-                </svg>
-              );
-              if (cat === "conferences" || cat === "expos") return (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="4" width="18" height="16" rx="2" stroke={color} strokeWidth="1.8"/>
-                  <path d="M8 4V2M16 4V2M3 10h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
-                </svg>
-              );
-              if (cat === "academic") return (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 3L1 9l11 6 9-4.91V17M5 13.18v4L12 21l7-3.82v-4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              );
-              if (cat === "community") return (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
-                  <circle cx="9" cy="7" r="4" stroke={color} strokeWidth="1.8"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
-                </svg>
-              );
-              return (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              );
+              if (cat === "concerts" || cat === "performing-arts") return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+              if (cat === "festivals") return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 22V2l14 5-14 5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+              if (cat === "sports") return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8"/><path d="M12 3c0 4.97-4.03 9-9 9M12 21c0-4.97 4.03-9 9-9M3 12h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></svg>;
+              if (cat === "conferences" || cat === "expos") return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke={color} strokeWidth="1.8"/><path d="M8 4V2M16 4V2M3 10h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></svg>;
+              if (cat === "academic") return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3L1 9l11 6 9-4.91V17M5 13.18v4L12 21l7-3.82v-4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+              if (cat === "community") return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke={color} strokeWidth="1.8"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></svg>;
+              return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
             }
+
+            const fn = userFlight?.flight_number;
+            const depDate = flightData?.departure_date ?? userFlight?.departure_date ?? undefined;
+            const chatKey = fn ? `${fn.replace(/\s+/g, "").toLowerCase()}_${depDate}` : undefined;
 
             return (
               <div className="flex flex-col gap-2">
                 {sorted.map((ev, i) => {
                   const col = EVENT_PALETTE[i % EVENT_PALETTE.length];
-                  const dateStr = new Date(ev.start).toLocaleDateString("en-US", { month: "short", day: "numeric" });
                   return (
-                    <div key={ev.id} className="rounded-2xl p-3.5 flex items-center gap-3"
-                         style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                           style={{ background: `${col}18` }}>
-                        {evIcon(ev.category, col)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold leading-tight line-clamp-1" style={{ color: "var(--c-text1)" }}>{ev.title}</p>
-                        <p className="text-xs mt-0.5" style={{ color: "var(--c-text3)" }}>
-                          {dateStr} · <span className="capitalize">{ev.category.replace(/-/g, " ")}</span>
-                        </p>
-                      </div>
-                    </div>
+                    <EventInterestCard
+                      key={ev.id}
+                      id={ev.id}
+                      title={ev.title}
+                      category={ev.category}
+                      start={ev.start}
+                      color={col}
+                      icon={evIcon(ev.category, col)}
+                      description={ev.description}
+                      flightNumber={fn ?? undefined}
+                      departureDate={depDate}
+                      flightChatKey={chatKey}
+                      initialGoing={myGoingEventIds.has(ev.id)}
+                      goingUsers={eventInterests[ev.id] ?? []}
+                    />
                   );
                 })}
               </div>
@@ -1154,7 +1127,12 @@ export default function FlightDashboardPage() {
   const [networkingOverview, setNetworkingOverview] = useState<string | "loading" | null>(null);
   const [destEvents,         setDestEvents]         = useState<DestEvent[] | "loading" | null>(null);
   const [destCity,           setDestCity]           = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [eventInterests,     setEventInterests]     = useState<Record<string, GoingUser[]>>({});
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [myGoingEventIds,    setMyGoingEventIds]    = useState<Set<string>>(new Set());
   const eventsFetched      = useRef(false);
+  const interestsFetched   = useRef(false);
 
   const supabase           = useRef(createClient());
   const chatChannelRef     = useRef<RealtimeChannel | null>(null);
@@ -1378,6 +1356,25 @@ export default function FlightDashboardPage() {
       .catch(() => setDestEvents([]));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flightData?.destination, userFlight?.destination, flightData?.departure_date, userFlight?.departure_date]);
+
+  // ── Fetch event interests once events are loaded ──────────────────────────
+  useEffect(() => {
+    if (interestsFetched.current) return;
+    if (!Array.isArray(destEvents) || destEvents.length === 0) return;
+    const fn = userFlight?.flight_number;
+    if (!fn) return;
+    interestsFetched.current = true;
+
+    const eventIds = destEvents.map(e => e.id).join(",");
+    fetch(`/api/events/interest?flightNumber=${encodeURIComponent(fn)}&eventIds=${encodeURIComponent(eventIds)}`)
+      .then(r => r.json())
+      .then(({ interests, myEventIds }: { interests: Record<string, GoingUser[]>; myEventIds: string[] }) => {
+        setEventInterests(interests ?? {});
+        setMyGoingEventIds(new Set(myEventIds ?? []));
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destEvents, userFlight?.flight_number]);
 
   // ── Online / offline detection ────────────────────────────────────────────
   useEffect(() => {
