@@ -61,27 +61,17 @@ export default function BottomNav() {
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 pointer-events-none"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      {/* Page-content fade — blends scrolled content into the nav area seamlessly */}
-      <div
-        className="absolute inset-x-0 bottom-0 pointer-events-none"
-        style={{
-          height: 96,
-          background: "linear-gradient(to top, var(--background) 40%, transparent)",
-        }}
-      />
-
-      {/* Frosted-glass pill — truly transparent, content shows through */}
+      {/* Floating frosted-glass pill — no background container, purely the blur + border */}
       <div
         className="relative mx-4 my-3 flex items-center justify-around pointer-events-auto"
         style={{
           height: 64,
           borderRadius: 32,
-          /* Glass: near-invisible fill, only blur + border define it */
           background: "var(--nav-glass)",
           border: "1px solid var(--nav-glass-border)",
-          backdropFilter: "blur(32px) saturate(180%)",
-          WebkitBackdropFilter: "blur(32px) saturate(180%)",
-          boxShadow: "0 1px 12px rgba(0,0,0,0.08)",
+          backdropFilter: "blur(48px) saturate(200%)",
+          WebkitBackdropFilter: "blur(48px) saturate(200%)",
+          boxShadow: "0 4px 32px rgba(0,0,0,0.10), 0 1px 6px rgba(0,0,0,0.06)",
         }}
       >
         {navItems.map(({ href, label, icon }) => {
@@ -93,11 +83,10 @@ export default function BottomNav() {
               className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90"
               style={{
                 height: 52,
-                /* Active inner pill: radius = outer 32 − top/bottom margin 6 = 26 */
                 borderRadius: 26,
                 margin: "6px 3px",
                 color: active ? "#7C6AF5" : "var(--nav-inactive)",
-                background: active ? "rgba(124,106,245,0.14)" : "transparent",
+                background: active ? "rgba(124,106,245,0.16)" : "transparent",
               }}
             >
               {icon(active)}

@@ -5,6 +5,7 @@ import AtlasHomeSuggestion from "@/components/AtlasHomeSuggestion";
 import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
 import PullToRefresh from "@/components/PullToRefresh";
+import EventInterestCard from "@/components/EventInterestCard";
 
 export const dynamic = "force-dynamic";
 
@@ -122,21 +123,25 @@ function FlightArc({ duration }: { duration: string | null }) {
 // ── Event helpers ─────────────────────────────────────────────────────────────
 type DestEvent = { id: string; title: string; category: string; start: string; rank: number };
 
-function eventCategoryColor(cat: string): string {
-  if (cat === "concerts") return "#E8567F";
-  if (cat === "sports") return "#2DD4A8";
-  if (cat === "conferences") return "#7C6AF5";
-  if (cat === "expos") return "#F5A623";
-  if (cat === "festivals") return "#E8567F";
-  if (cat === "performing-arts") return "#60A5FA";
-  return "#7C6AF5";
+// Rotating palette — ensures consecutive events have distinct colors
+const EVENT_PALETTE = ["#7C6AF5", "#2DD4A8", "#E8567F", "#F5A623", "#60A5FA"];
+function eventColor(index: number) { return EVENT_PALETTE[index % EVENT_PALETTE.length]; }
+
+// Tech-priority sort: conferences/expos/academic first, then rest
+const TECH_CATS = new Set(["conferences", "expos", "academic", "community"]);
+function sortEventsTechFirst(events: DestEvent[]): DestEvent[] {
+  return [...events].sort((a, b) => {
+    const at = TECH_CATS.has(a.category) ? 0 : 1;
+    const bt = TECH_CATS.has(b.category) ? 0 : 1;
+    return at - bt || b.rank - a.rank;
+  });
 }
 
-function eventCategoryIcon(cat: string) {
-  const color = eventCategoryColor(cat);
+function eventIcon(cat: string, color: string) {
   if (cat === "concerts" || cat === "festivals" || cat === "performing-arts") return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"
+            stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
   if (cat === "sports") return (
@@ -145,23 +150,26 @@ function eventCategoryIcon(cat: string) {
       <path d="M12 3c0 4.97-4.03 9-9 9M12 21c0-4.97 4.03-9 9-9M3 12h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
     </svg>
   );
-  if (cat === "conferences" || cat === "expos") return (
+  if (cat === "conferences" || cat === "expos" || cat === "academic") return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="4" width="18" height="16" rx="2" stroke={color} strokeWidth="1.8"/>
       <path d="M8 4V2M16 4V2M3 10h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
     </svg>
   );
-  return (
+  if (cat === "community") return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+      <circle cx="9" cy="7" r="4" stroke={color} strokeWidth="1.8"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
     </svg>
   );
-}
-
-function formatEventDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  } catch { return iso; }
+  // Default: star/general
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+            stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -514,43 +522,6 @@ export default async function HomePage() {
         )}
         </div>
 
-        {/* ── Events at destination ────────────────── */}
-        {destEvents.length > 0 && (
-          <Reveal delay={20}>
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>
-                  Events at {destCityLabel ?? flightDest}
-                </h3>
-                <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
-                      style={{ background: "rgba(124,106,245,0.12)", color: B.purple }}>
-                  Next 14 days
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                {destEvents.slice(0, 4).map(ev => {
-                  const col = eventCategoryColor(ev.category);
-                  return (
-                    <div key={ev.id} className="rounded-2xl p-3.5 flex items-center gap-3"
-                         style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                           style={{ background: `${col}18` }}>
-                        {eventCategoryIcon(ev.category)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold leading-tight truncate" style={{ color: "var(--c-text1)" }}>{ev.title}</p>
-                        <p className="text-xs mt-0.5" style={{ color: "var(--c-text3)" }}>
-                          {formatEventDate(ev.start)} · <span className="capitalize">{ev.category.replace(/-/g, " ")}</span>
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </Reveal>
-        )}
-
         {/* ── Atlas AI insight ────────────────────── */}
         <div className="stagger-2">
           <AtlasHomeSuggestion viewerProfile={viewerForAtlas} candidates={flightmateProfiles ?? []} />
@@ -691,7 +662,7 @@ export default async function HomePage() {
         )}
 
         {/* ── SkyPoints ──────────────────────────── */}
-        <Reveal delay={60} variant="scale">
+        <Reveal delay={55} variant="scale">
           <Link href="/rewards" className="block active:scale-[0.98] transition-transform">
             <div className="rounded-2xl p-4" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
               <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--c-text3)" }}>SkyPoints</p>
@@ -716,6 +687,42 @@ export default async function HomePage() {
             </div>
           </Link>
         </Reveal>
+
+        {/* ── Events at destination ────────────────── */}
+        {destEvents.length > 0 && (() => {
+          const sorted = sortEventsTechFirst(destEvents).slice(0, 5);
+          return (
+            <Reveal delay={70}>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-black" style={{ color: "var(--c-text1)" }}>
+                    Events at {destCityLabel ?? flightDest}
+                  </h3>
+                  <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                        style={{ background: "rgba(124,106,245,0.12)", color: B.purple }}>
+                    Next 14 days
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {sorted.map((ev, i) => {
+                    const col = eventColor(i);
+                    return (
+                      <EventInterestCard
+                        key={ev.id}
+                        id={ev.id}
+                        title={ev.title}
+                        category={ev.category}
+                        start={ev.start}
+                        color={col}
+                        icon={eventIcon(ev.category, col)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </Reveal>
+          );
+        })()}
 
       </div>
     </div>

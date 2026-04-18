@@ -444,22 +444,36 @@ function OverviewTab({
           {/* Mini info cards: Aircraft · Gate · Seat */}
           <div className="grid grid-cols-3 gap-2 pt-4" style={{ borderTop: "1px solid var(--c-border)" }}>
             {[
-              { label: "Aircraft", value: airline, icon: (
+              { label: "Aircraft", value: airline, href: null, icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 16V14L13 9V3.5C13 2.67 12.33 2 11.5 2C10.67 2 10 2.67 10 3.5V9L2 14V16L10 13.5V19L8 20.5V22L11.5 21L15 22V20.5L13 19V13.5L21 16Z" fill="currentColor"/></svg>
               )},
-              { label: "Gate", value: gate ?? "—", icon: (
+              { label: "Gate", value: gate ?? "—", href: null, icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M3 9h18M9 21V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
               )},
-              { label: "Seat", value: "14C", icon: (
+              { label: "Seat", value: "14C", href: `/${flightSlug}/seatmap`, icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8"/></svg>
               )},
-            ].map(({ label, value, icon }) => (
-              <div key={label} className="rounded-2xl p-3 text-center" style={{ background: "var(--c-muted)" }}>
-                <div className="flex justify-center mb-1" style={{ color: "var(--c-text3)" }}>{icon}</div>
-                <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: "var(--c-text3)" }}>{label}</p>
-                <p className="text-xs font-black" style={{ color: "var(--c-text1)" }}>{value}</p>
-              </div>
-            ))}
+            ].map(({ label, value, href, icon }) => {
+              const inner = (
+                <>
+                  <div className="flex justify-center mb-1" style={{ color: href ? "#7C6AF5" : "var(--c-text3)" }}>{icon}</div>
+                  <p className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: "var(--c-text3)" }}>{label}</p>
+                  <p className="text-xs font-black" style={{ color: href ? "#7C6AF5" : "var(--c-text1)" }}>{value}</p>
+                  {href && <p className="text-[8px] mt-0.5" style={{ color: "#7C6AF5" }}>View map ›</p>}
+                </>
+              );
+              return href ? (
+                <Link key={label} href={href}
+                  className="rounded-2xl p-3 text-center active:scale-95 transition-transform"
+                  style={{ background: "rgba(124,106,245,0.08)", border: "1px solid rgba(124,106,245,0.2)" }}>
+                  {inner}
+                </Link>
+              ) : (
+                <div key={label} className="rounded-2xl p-3 text-center" style={{ background: "var(--c-muted)" }}>
+                  {inner}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -708,63 +722,72 @@ function OverviewTab({
             <div className="rounded-2xl p-4 text-center" style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
               <p className="text-xs" style={{ color: "var(--c-text3)" }}>No major events found near your arrival date.</p>
             </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {destEvents.map(ev => {
-                const catIcon: Record<string, string> = {
-                  concerts:         "🎵",
-                  conferences:      "💼",
-                  festivals:        "🎪",
-                  sports:           "⚽",
-                  community:        "🤝",
-                  expos:            "🏛️",
-                  academic:         "📚",
-                  "school-holidays":"🏖️",
-                  "public-holidays":"🎉",
-                  performing_arts:  "🎭",
-                  airport:          "✈️",
-                  terror_attack:    "⚠️",
-                };
-                const icon = catIcon[ev.category] ?? "📅";
-                const evDate = new Date(ev.start);
-                const dateStr = evDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                const attendStr = ev.attendance
-                  ? ev.attendance >= 1000 ? `${Math.round(ev.attendance / 1000)}K expected` : `${ev.attendance} expected`
-                  : null;
+          ) : (() => {
+            // Tech-first sort, rotating palette
+            const EVENT_PALETTE = ["#7C6AF5", "#2DD4A8", "#E8567F", "#F5A623", "#60A5FA"];
+            const TECH_CATS = new Set(["conferences", "expos", "academic", "community"]);
+            const sorted = [...destEvents].sort((a, b) => {
+              const at = TECH_CATS.has(a.category) ? 0 : 1;
+              const bt = TECH_CATS.has(b.category) ? 0 : 1;
+              return at - bt || b.rank - a.rank;
+            }).slice(0, 5);
 
-                return (
-                  <div key={ev.id} className="rounded-2xl p-3.5 flex items-start gap-3"
-                       style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
-                         style={{ background: "var(--c-muted)" }}>
-                      {icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold leading-tight" style={{ color: "var(--c-text1)" }}>{ev.title}</p>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-[10px] font-medium" style={{ color: "var(--c-text3)" }}>{dateStr}</span>
-                        {attendStr && (
-                          <>
-                            <span style={{ color: "var(--c-border)" }}>·</span>
-                            <span className="text-[10px] font-medium" style={{ color: "var(--c-text3)" }}>{attendStr}</span>
-                          </>
-                        )}
-                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full capitalize"
-                              style={{ background: "var(--c-muted)", color: "var(--c-text3)" }}>
-                          {ev.category.replace(/-/g, " ")}
-                        </span>
+            function evIcon(cat: string, color: string) {
+              if (cat === "concerts" || cat === "festivals" || cat === "performing-arts") return (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              );
+              if (cat === "sports") return (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8"/>
+                  <path d="M12 3c0 4.97-4.03 9-9 9M12 21c0-4.97 4.03-9 9-9M3 12h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              );
+              if (cat === "conferences" || cat === "expos" || cat === "academic") return (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="16" rx="2" stroke={color} strokeWidth="1.8"/>
+                  <path d="M8 4V2M16 4V2M3 10h18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              );
+              if (cat === "community") return (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+                  <circle cx="9" cy="7" r="4" stroke={color} strokeWidth="1.8"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={color} strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              );
+              return (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              );
+            }
+
+            return (
+              <div className="flex flex-col gap-2">
+                {sorted.map((ev, i) => {
+                  const col = EVENT_PALETTE[i % EVENT_PALETTE.length];
+                  const dateStr = new Date(ev.start).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                  return (
+                    <div key={ev.id} className="rounded-2xl p-3.5 flex items-center gap-3"
+                         style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                           style={{ background: `${col}18` }}>
+                        {evIcon(ev.category, col)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold leading-tight line-clamp-1" style={{ color: "var(--c-text1)" }}>{ev.title}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--c-text3)" }}>
+                          {dateStr} · <span className="capitalize">{ev.category.replace(/-/g, " ")}</span>
+                        </p>
                       </div>
                     </div>
-                    <div className="flex-shrink-0 flex flex-col items-end gap-1">
-                      <span className="text-[10px] font-bold" style={{ color: "#A78BFA" }}>
-                        #{ev.rank}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 

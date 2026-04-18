@@ -26,7 +26,7 @@
   color-scheme: light;
   --nav-bg:       rgba(255,255,255,0.90);
   --nav-border:   rgba(0,0,0,0.06);
-  --nav-glass:    rgba(255,255,255,0.55);
+  --nav-glass:    rgba(255,255,255,0.18);
   --nav-glass-border: rgba(0,0,0,0.10);
   --nav-active:   #7C6AF5;
   --nav-inactive: #9CA3AF;
@@ -47,8 +47,8 @@ html.dark {
 
   --nav-bg:       rgba(16,18,26,0.90);
   --nav-border:   rgba(255,255,255,0.08);
-  --nav-glass:    rgba(20,22,30,0.55);
-  --nav-glass-border: rgba(255,255,255,0.09);
+  --nav-glass:    rgba(255,255,255,0.06);
+  --nav-glass-border: rgba(255,255,255,0.14);
   --nav-active:   #7C6AF5;
   --nav-inactive: #5C6170;
 }
