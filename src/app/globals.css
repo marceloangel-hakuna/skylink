@@ -2,57 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── CSS custom properties ─────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   DESIGN SYSTEM — SkyLink 2028
+   Philosophy: depth over flatness, agents have identity,
+   typography is the hero, motion communicates meaning.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Tokens — light mode ───────────────────────────────── */
 :root {
-  --background:  #F8F9FB;
-  --foreground:  #0D0F14;
+  --background:  #F3F5FA;
+  --foreground:  #08091A;
   --c-card:      #FFFFFF;
-  --c-muted:     #F0F2F5;
-  --c-border:    #E5E7EB;
-  --c-text1:     #0D0F14;
-  --c-text2:     #4B5563;
-  --c-text3:     #6B7280;
+  --c-muted:     #EAEDF5;
+  --c-border:    #DCE0EC;
+  --c-text1:     #08091A;
+  --c-text2:     #44506A;
+  --c-text3:     #6875A0;
+
   --glass-bg:    rgba(255,255,255,0.92);
+
   --color-brand:       #7C6AF5;
-  --color-brand-dark:  #6355E0;
+  --color-brand-dark:  #5B48D6;
   --color-brand-light: #9B8BFF;
   --color-brand-fg:    #7C6AF5;
   --color-accent-pink: #E8567F;
   --color-accent-gold: #F5A623;
-  --color-accent-green:#2DD4A8;
+  --color-accent-teal: #2DD4A8;
+
   --radius-card: 1rem;
-  --nav-height:  calc(86px + env(safe-area-inset-bottom, 0px));
-  --header-height: 60px;
+  --nav-height:  calc(80px + env(safe-area-inset-bottom, 0px));
+  --header-height: 64px;
   color-scheme: light;
-  --nav-bg:       rgba(255,255,255,0.90);
-  --nav-border:   rgba(0,0,0,0.06);
-  --nav-glass:    rgba(248,249,251,0.72);
-  --nav-glass-border: rgba(0,0,0,0.08);
+
+  --nav-glass:        rgba(243,245,250,0.82);
+  --nav-glass-border: rgba(0,0,0,0.07);
   --nav-active:   #7C6AF5;
   --nav-inactive: #9CA3AF;
 }
 
+/* ── Tokens — dark mode (void aesthetic) ──────────────── */
 html.dark {
-  --background:  #0D0F14;
-  --foreground:  #F0F0F2;
-  --c-card:      #161922;
-  --c-muted:     #1E2330;
-  --c-border:    rgba(255,255,255,0.07);
-  --c-text1:     #F0F0F2;
-  --c-text2:     #9399A8;
-  --c-text3:     #5C6170;
-  --color-brand-fg: #7C6AF5;
-  --glass-bg:    rgba(13,15,20,0.97);
+  --background:  #060810;
+  --foreground:  #ECEAF0;
+  --c-card:      #0C0F1A;
+  --c-muted:     #131825;
+  --c-border:    rgba(255,255,255,0.055);
+  --c-text1:     #ECEAF0;
+  --c-text2:     #8590A6;
+  --c-text3:     #4E5870;
+
+  --glass-bg:    rgba(6,8,16,0.97);
+  --color-brand-fg: #9B8BFF;
   color-scheme: dark;
 
-  --nav-bg:       rgba(16,18,26,0.90);
-  --nav-border:   rgba(255,255,255,0.08);
-  --nav-glass:    rgba(22,25,34,0.65);
-  --nav-glass-border: rgba(255,255,255,0.10);
-  --nav-active:   #7C6AF5;
-  --nav-inactive: #5C6170;
+  --nav-glass:        rgba(6,8,16,0.80);
+  --nav-glass-border: rgba(255,255,255,0.09);
+  --nav-active:   #9B8BFF;
+  --nav-inactive: #4E5870;
 }
 
+/* ── Reset & base ────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -62,12 +71,9 @@ html {
   height: 100%;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  background: #FAFAFA; /* First-paint background before JS runs */
+  background: #F3F5FA;
 }
-
-html.dark {
-  background: #0D0F14; /* First-paint dark background */
-}
+html.dark { background: #060810; }
 
 body {
   min-height: 100%;
@@ -89,9 +95,6 @@ body {
   background: var(--background);
 }
 
-/* Scrollable page content — full viewport height so content flows behind
-   the floating nav pill (no gap = no opaque background visible behind it).
-   Pages use pb-[120px] to keep content above the nav. */
 .page-scroll {
   height: 100svh;
   overflow-y: auto;
@@ -100,45 +103,50 @@ body {
   scrollbar-width: none;
 }
 .page-scroll::-webkit-scrollbar { display: none; }
-
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
 .pt-safe { padding-top:    env(safe-area-inset-top,    0px); }
 
-/* ── Utility components ─────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   COMPONENT CLASSES
+   ═══════════════════════════════════════════════════════ */
+
 @layer components {
   .btn-primary {
     @apply text-white font-semibold rounded-full
-           px-5 py-2.5 text-sm active:scale-95 transition-all
+           px-5 py-3 text-[14px] active:scale-95 transition-all
            disabled:opacity-50 disabled:cursor-not-allowed;
     background-color: var(--color-brand);
+    letter-spacing: -0.01em;
   }
 
   .btn-secondary {
     @apply font-semibold rounded-full
-           px-5 py-2.5 text-sm border
+           px-5 py-3 text-[14px] border
            active:scale-95 transition-all
            disabled:opacity-50 disabled:cursor-not-allowed;
     color: var(--color-brand);
     background: var(--c-card);
     border-color: var(--c-border);
+    letter-spacing: -0.01em;
   }
 
   .btn-ghost {
-    @apply font-semibold text-sm active:opacity-70 transition-opacity;
+    @apply font-semibold text-[14px] active:opacity-70 transition-opacity;
     color: var(--color-brand);
   }
 
   .card {
-    @apply rounded-2xl shadow-card p-4;
+    @apply rounded-2xl;
     background: var(--c-card);
     border: 1px solid var(--c-border);
+    padding: 20px;
   }
 
   .input-field {
-    @apply w-full rounded-xl px-4 py-3 text-sm placeholder:text-zinc-400
+    @apply w-full rounded-xl px-4 py-3 text-[14px] placeholder:opacity-40
            focus:outline-none focus:ring-2 focus:border-transparent transition;
     background: var(--c-muted);
     border: 1px solid var(--c-border);
@@ -147,31 +155,166 @@ body {
   }
 
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold;
   }
 
   .section-title {
-    @apply text-[15px] font-bold tracking-tight;
+    @apply text-[17px] font-black tracking-tight;
     color: var(--c-text1);
+    letter-spacing: -0.02em;
   }
 
-  .bottom-nav-item {
-    @apply flex flex-col items-center justify-center gap-0.5
-           flex-1 py-2 transition-colors active:scale-90;
+  .label-caps {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     color: var(--c-text3);
   }
-
-  .bottom-nav-item.active {
-    color: var(--color-brand);
-  }
 }
 
-/* ── Gradient helpers ───────────────────────────────────── */
-.gradient-brand {
-  background: linear-gradient(135deg, #3418C8 0%, #4A27E8 60%, #6B4AF0 100%);
+/* ═══════════════════════════════════════════════════════
+   CARD ELEVATION — dark mode depth via shadow not color
+   ═══════════════════════════════════════════════════════ */
+
+html.dark .card {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 2px 24px rgba(0,0,0,0.55),
+    0 1px 0   rgba(255,255,255,0.03) inset;
+  border-color: rgba(255,255,255,0.055);
 }
 
-/* ── Dark-mode overrides for hardcoded light gradients ─── */
+/* ═══════════════════════════════════════════════════════
+   GRADIENT TEXT — brand, agents
+   ═══════════════════════════════════════════════════════ */
+
+.text-brand-gradient {
+  background: linear-gradient(135deg, #7C6AF5 0%, #9B8BFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-atlas-gradient {
+  background: linear-gradient(135deg, #7C6AF5, #A78BFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ═══════════════════════════════════════════════════════
+   AGENT FEED CARDS — each agent has a visual identity
+   ═══════════════════════════════════════════════════════ */
+
+/* Atlas — indigo/purple, AI networking intelligence */
+.feed-atlas {
+  border-left: 2px solid #7C6AF5;
+  background: var(--c-card);
+}
+html.dark .feed-atlas {
+  background: linear-gradient(135deg, rgba(107,74,240,0.08) 0%, var(--c-card) 60%);
+}
+
+/* Compass — teal, logistics & navigation */
+.feed-compass {
+  border-left: 2px solid #2DD4A8;
+  background: var(--c-card);
+}
+html.dark .feed-compass {
+  background: linear-gradient(135deg, rgba(45,212,168,0.06) 0%, var(--c-card) 60%);
+}
+
+/* Bridge — blue, connections & intros */
+.feed-bridge {
+  border-left: 2px solid #60A5FA;
+  background: var(--c-card);
+}
+html.dark .feed-bridge {
+  background: linear-gradient(135deg, rgba(96,165,250,0.06) 0%, var(--c-card) 60%);
+}
+
+/* Vault — amber, travel finances */
+.feed-vault {
+  border-left: 2px solid #F5A623;
+  background: var(--c-card);
+}
+html.dark .feed-vault {
+  background: linear-gradient(135deg, rgba(245,166,35,0.06) 0%, var(--c-card) 60%);
+}
+
+/* Pulse — pink, network health */
+.feed-pulse {
+  border-left: 2px solid #E8567F;
+  background: var(--c-card);
+}
+html.dark .feed-pulse {
+  background: linear-gradient(135deg, rgba(232,86,127,0.06) 0%, var(--c-card) 60%);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ATLAS SUGGESTION CARD — premium AI insight surface
+   ═══════════════════════════════════════════════════════ */
+
+.atlas-suggestion-card,
+.atlas-insight-card {
+  background: linear-gradient(145deg, #EFEDFF 0%, #E5E1FF 50%, #EBF0FF 100%);
+  border: 1px solid rgba(124,106,245,0.28);
+  box-shadow:
+    0 4px 32px rgba(124,106,245,0.14),
+    0 1px 4px  rgba(124,106,245,0.08);
+  animation: atlasBreath 5s ease-in-out infinite;
+}
+
+.atlas-icon           { color: #6366F1; }
+.atlas-label          { color: #3730A3; }
+.atlas-badge          { background: #C7D2FE; color: #3730A3; border: 1px solid rgba(99,102,241,0.3); }
+.atlas-text-primary   { color: #312E81; }
+.atlas-text-secondary { color: #4338CA; }
+.atlas-skeleton       { background: rgba(99,102,241,0.12); }
+.atlas-avatar         { background: #C7D2FE; color: #3730A3; }
+.atlas-btn-primary    { background: linear-gradient(135deg, #5B48D6, #7C6AF5); }
+.atlas-btn-secondary  { background: white; color: #4338CA; border-color: rgba(99,102,241,0.3); }
+.atlas-progress-track { background: #C7D2FE; }
+.atlas-progress-fill  { background: linear-gradient(90deg, #6366F1, #818CF8); }
+.atlas-score-badge    { background: linear-gradient(135deg, #5B48D6, #7C6AF5); color: #fff; }
+.atlas-icebreaker     { background: #EEF2FF; border: 1px solid rgba(99,102,241,0.2); }
+.atlas-donut-track    { stroke: #C7D2FE; }
+.atlas-donut-fill     { stroke: #6366F1; }
+
+/* ── Atlas — dark mode ──────────────────────────────── */
+html.dark .atlas-suggestion-card,
+html.dark .atlas-insight-card {
+  background: linear-gradient(145deg, rgba(107,74,240,0.14) 0%, rgba(74,39,232,0.07) 50%, rgba(107,74,240,0.10) 100%) !important;
+  border-color: rgba(124,106,245,0.22) !important;
+  box-shadow:
+    0 0 0 1px rgba(155,139,255,0.06) inset,
+    0 4px 48px rgba(107,74,240,0.32),
+    0 1px 0   rgba(155,139,255,0.06) inset !important;
+  animation: atlasBreathDark 5s ease-in-out infinite !important;
+}
+
+html.dark .atlas-icon           { color: #A78BFA; }
+html.dark .atlas-label          { color: #C4B5FD; }
+html.dark .atlas-badge          { background: rgba(107,74,240,0.2); color: #C4B5FD; border: 1px solid rgba(107,74,240,0.4); }
+html.dark .atlas-text-primary   { color: #DDD6FE; }
+html.dark .atlas-text-secondary { color: #A78BFA; }
+html.dark .atlas-skeleton       { background: rgba(107,74,240,0.12); }
+html.dark .atlas-avatar         { background: rgba(107,74,240,0.2); color: #C4B5FD; }
+html.dark .atlas-btn-primary    { background: linear-gradient(135deg, #4A27E8, #6B4AF0); }
+html.dark .atlas-btn-secondary  { background: rgba(107,74,240,0.1); color: #C4B5FD; border-color: rgba(107,74,240,0.3); }
+html.dark .atlas-progress-track { background: rgba(107,74,240,0.2); }
+html.dark .atlas-progress-fill  { background: linear-gradient(90deg, #6B4AF0, #8B5CF6); }
+html.dark .atlas-score-badge    { background: linear-gradient(135deg, #4A27E8, #6B4AF0); }
+html.dark .atlas-icebreaker     { background: rgba(74,39,232,0.1); border: 1px solid rgba(107,74,240,0.22); }
+html.dark .atlas-donut-track    { stroke: rgba(107,74,240,0.2); }
+html.dark .atlas-donut-fill     { stroke: #6B4AF0; }
+html.dark .flight-atlas-insight { background: rgba(74,39,232,0.1) !important; }
+html.dark .skypoints-mini-card  {
+  background: linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(219,39,119,0.08) 100%) !important;
+  border-color: rgba(236,72,153,0.2) !important;
+}
+html.dark .crew-icon-bg  { background: var(--c-muted) !important; }
 html.dark .rewards-balance-card {
   background: linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(219,39,119,0.08) 100%) !important;
   border-color: rgba(236,72,153,0.2) !important;
@@ -180,73 +323,11 @@ html.dark .rewards-balance-card .rewards-earn-strip {
   background: rgba(236,72,153,0.06) !important;
   border-top-color: rgba(236,72,153,0.15) !important;
 }
-/* ── Atlas card — light mode (soft indigo / AI premium) ────── */
-.atlas-suggestion-card,
-.atlas-insight-card {
-  background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
-  border-color: rgba(99,102,241,0.35);
-  box-shadow: 0 0 0 1px rgba(99,102,241,0.12), 0 4px 24px rgba(99,102,241,0.18), 0 1px 4px rgba(99,102,241,0.1);
-  animation: atlasGlow 3s ease-in-out infinite;
-}
-.atlas-icon           { color: #6366F1; }
-.atlas-label          { color: #3730A3; }
-.atlas-badge          { background: #C7D2FE; color: #3730A3; border: 1px solid rgba(99,102,241,0.3); }
-.atlas-text-primary   { color: #312E81; }
-.atlas-text-secondary { color: #4338CA; }
-.atlas-skeleton       { background: rgba(99,102,241,0.15); }
-.atlas-avatar         { background: #C7D2FE; color: #3730A3; }
-.atlas-btn-primary    { background: linear-gradient(135deg, #4F46E5, #6366F1); }
-.atlas-btn-secondary  { background: white; color: #4338CA; border-color: rgba(99,102,241,0.35); }
-.atlas-progress-track { background: #C7D2FE; }
-.atlas-progress-fill  { background: linear-gradient(90deg, #6366F1, #818CF8); }
-.atlas-score-badge    { background: linear-gradient(135deg, #4F46E5, #6366F1); color: #fff; }
-.atlas-icebreaker     { background: #EEF2FF; border: 1px solid rgba(99,102,241,0.25); }
-.atlas-donut-track    { stroke: #C7D2FE; }
-.atlas-donut-fill     { stroke: #6366F1; }
 
-/* ── Atlas glow keyframe ─────────────────────────────────── */
-@keyframes atlasGlow {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(99,102,241,0.12), 0 4px 24px rgba(99,102,241,0.18), 0 1px 4px rgba(99,102,241,0.1); }
-  50%       { box-shadow: 0 0 0 1px rgba(99,102,241,0.20), 0 4px 32px rgba(99,102,241,0.32), 0 1px 8px rgba(99,102,241,0.18); }
-}
-@keyframes atlasGlowDark {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(107,74,240,0.2), 0 4px 28px rgba(107,74,240,0.25), 0 1px 6px rgba(107,74,240,0.15); }
-  50%       { box-shadow: 0 0 0 1px rgba(107,74,240,0.35), 0 4px 40px rgba(107,74,240,0.42), 0 1px 10px rgba(107,74,240,0.25); }
-}
+/* ═══════════════════════════════════════════════════════
+   FROSTED GLASS
+   ═══════════════════════════════════════════════════════ */
 
-/* ── Atlas card — dark mode (brand purple / cosmic AI) ────── */
-html.dark .atlas-suggestion-card,
-html.dark .atlas-insight-card {
-  background: linear-gradient(135deg, rgba(74,39,232,0.14) 0%, rgba(107,74,240,0.08) 100%) !important;
-  border-color: rgba(107,74,240,0.35) !important;
-  box-shadow: 0 0 0 1px rgba(107,74,240,0.2), 0 4px 28px rgba(107,74,240,0.25), 0 1px 6px rgba(107,74,240,0.15) !important;
-  animation: atlasGlowDark 3s ease-in-out infinite !important;
-}
-html.dark .atlas-icon        { color: #A78BFA; }
-html.dark .atlas-label       { color: #C4B5FD; }
-html.dark .atlas-badge       { background: rgba(107,74,240,0.2); color: #C4B5FD; border: 1px solid rgba(107,74,240,0.4); }
-html.dark .atlas-text-primary   { color: #DDD6FE; }
-html.dark .atlas-text-secondary { color: #A78BFA; }
-html.dark .atlas-skeleton    { background: rgba(107,74,240,0.15); }
-html.dark .atlas-avatar      { background: rgba(107,74,240,0.2); color: #C4B5FD; }
-html.dark .atlas-btn-primary { background: linear-gradient(135deg, #4A27E8, #6B4AF0); }
-html.dark .atlas-btn-secondary { background: rgba(107,74,240,0.1); color: #C4B5FD; border-color: rgba(107,74,240,0.35); }
-html.dark .atlas-progress-track { background: rgba(107,74,240,0.2); }
-html.dark .atlas-progress-fill  { background: linear-gradient(90deg, #6B4AF0, #8B5CF6); }
-html.dark .atlas-score-badge { background: linear-gradient(135deg, #4A27E8, #6B4AF0); color: #fff; }
-html.dark .atlas-icebreaker  { background: rgba(74,39,232,0.1); border: 1px solid rgba(107,74,240,0.25); }
-html.dark .atlas-donut-track { stroke: rgba(107,74,240,0.2); }
-html.dark .atlas-donut-fill  { stroke: url(#atlasGrad); stroke: #6B4AF0; }
-html.dark .flight-atlas-insight { background: rgba(74,39,232,0.1) !important; }
-html.dark .skypoints-mini-card {
-  background: linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(219,39,119,0.08) 100%) !important;
-  border-color: rgba(236,72,153,0.2) !important;
-}
-html.dark .crew-icon-bg {
-  background: var(--c-muted) !important;
-}
-
-/* ── iOS-style frosted glass ────────────────────────────── */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
@@ -254,77 +335,83 @@ html.dark .crew-icon-bg {
   border-color: var(--c-border);
 }
 
-/* ── Dark mode card elevation (iOS-style inner highlight) ── */
-html.dark .card {
-  /* Very subtle top-edge inner highlight — gives "floating" feel in dark */
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 2px 20px rgba(0,0,0,0.35);
-  border-color: rgba(255,255,255,0.06);
-}
+/* ═══════════════════════════════════════════════════════
+   MOTION SYSTEM
+   ═══════════════════════════════════════════════════════ */
 
-/* ── Motion system ──────────────────────────────────────── */
-
-/* Keyframes */
 @keyframes revealUp {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
 
 @keyframes revealScale {
-  from { opacity: 0; transform: scale(0.97) translateY(8px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
 }
 
-/* Stagger classes — for above-fold content animated on page load.
-   Use animate-fade-in on root then stagger-N on each section. */
-.stagger-1 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both; }
-.stagger-2 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.11s both; }
-.stagger-3 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.19s both; }
-.stagger-4 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both; }
-.stagger-5 { animation: revealUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both; }
+/* Stagger classes — spring easing, slight longer travel */
+.stagger-1 { animation: revealUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both; }
+.stagger-2 { animation: revealUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both; }
+.stagger-3 { animation: revealUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.21s both; }
+.stagger-4 { animation: revealUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.31s both; }
+.stagger-5 { animation: revealUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.42s both; }
 
-/* Reveal wrapper — used by <Reveal> client component.
-   IntersectionObserver adds .is-revealed when element enters viewport. */
+/* Viewport reveal — IntersectionObserver adds .is-revealed */
 .reveal-wrap {
   opacity: 0;
-  transform: translateY(18px);
+  transform: translateY(20px);
   transition:
-    opacity  0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity  0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.reveal-wrap.is-revealed { opacity: 1; transform: translateY(0); }
 
-.reveal-wrap.is-revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Card scale-in variant */
 .reveal-scale {
   opacity: 0;
-  transform: scale(0.97) translateY(10px);
+  transform: scale(0.96) translateY(12px);
   transition:
-    opacity   0.5s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity   0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-scale.is-revealed { opacity: 1; transform: scale(1) translateY(0); }
+
+/* ═══════════════════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes atlasBreath {
+  0%,100% {
+    box-shadow: 0 4px 32px rgba(124,106,245,0.14), 0 1px 4px rgba(124,106,245,0.08);
+  }
+  50% {
+    box-shadow: 0 4px 52px rgba(124,106,245,0.26), 0 1px 8px rgba(124,106,245,0.14);
+  }
 }
 
-.reveal-scale.is-revealed {
-  opacity: 1;
-  transform: scale(1) translateY(0);
+@keyframes atlasBreathDark {
+  0%,100% {
+    box-shadow: 0 0 0 1px rgba(155,139,255,0.06) inset, 0 4px 48px rgba(107,74,240,0.32), 0 1px 0 rgba(155,139,255,0.06) inset;
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(155,139,255,0.10) inset, 0 4px 72px rgba(107,74,240,0.52), 0 1px 0 rgba(155,139,255,0.10) inset;
+  }
 }
 
-/* Respect user's motion preference */
+/* Agent FAB — pulsing glow signals presence */
+@keyframes fabPulse {
+  0%,100% {
+    box-shadow: 0 8px 32px rgba(107,74,240,0.45), 0 2px 8px rgba(107,74,240,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  50% {
+    box-shadow: 0 8px 56px rgba(107,74,240,0.72), 0 2px 16px rgba(107,74,240,0.52), inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+}
+
+/* Reduced motion — respects accessibility */
 @media (prefers-reduced-motion: reduce) {
-  .stagger-1, .stagger-2, .stagger-3, .stagger-4, .stagger-5 {
-    animation: none;
-    opacity: 1;
-    transform: none;
+  .stagger-1,.stagger-2,.stagger-3,.stagger-4,.stagger-5 {
+    animation: none; opacity: 1; transform: none;
   }
-  .reveal-wrap, .reveal-scale {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-  .atlas-suggestion-card,
-  .atlas-insight-card {
-    animation: none !important;
-  }
+  .reveal-wrap,.reveal-scale { opacity: 1; transform: none; transition: none; }
+  .atlas-suggestion-card,.atlas-insight-card { animation: none !important; }
 }

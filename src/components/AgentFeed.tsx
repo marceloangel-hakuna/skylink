@@ -22,6 +22,7 @@ type FeedItem = {
   dismissed: boolean;
   expires_at: string | null;
   created_at: string;
+  metadata?: Record<string, unknown>;
 };
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
@@ -34,15 +35,22 @@ function sortItems(items: FeedItem[]): FeedItem[] {
   });
 }
 
-function SkeletonCard() {
+function SkeletonCard({ tall }: { tall?: boolean }) {
   return (
-    <div className="rounded-2xl border h-[80px] animate-pulse" style={{ background: "var(--c-muted)", borderColor: "var(--c-border)" }} />
+    <div
+      className="rounded-2xl animate-pulse"
+      style={{
+        height: tall ? 140 : 88,
+        background: "var(--c-muted)",
+        border: "1px solid var(--c-border)",
+      }}
+    />
   );
 }
 
 export default function AgentFeed() {
-  const [items, setItems] = useState<FeedItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items,      setItems]      = useState<FeedItem[]>([]);
+  const [loading,    setLoading]    = useState(true);
   const [generating, setGenerating] = useState(false);
 
   const fetchItems = useCallback(async () => {
@@ -58,9 +66,7 @@ export default function AgentFeed() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+  useEffect(() => { fetchItems(); }, [fetchItems]);
 
   async function handleGenerate() {
     setGenerating(true);
@@ -73,87 +79,92 @@ export default function AgentFeed() {
   }
 
   function handleDismiss(id: string) {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems(p => p.filter(i => i.id !== id));
   }
 
   return (
     <div className="stagger-3">
-      {/* Header */}
+
+      {/* Section header */}
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-black" style={{ color: "var(--c-text1)" }}>
-          Insights
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-[17px] font-black" style={{ color: "var(--c-text1)", letterSpacing: "-0.02em" }}>
+            Insights
+          </h2>
+          {items.length > 0 && (
+            <span
+              className="text-[10px] font-black rounded-full px-2 py-0.5"
+              style={{ background: "rgba(124,106,245,0.12)", color: "#7C6AF5" }}
+            >
+              {items.length}
+            </span>
+          )}
+        </div>
+
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="w-8 h-8 rounded-full border flex items-center justify-center active:scale-95 transition-transform"
-          style={{ borderColor: "var(--c-border)", background: "var(--c-card)" }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full active:scale-95 transition-transform text-[11px] font-bold"
+          style={{ background: "var(--c-muted)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}
           aria-label="Refresh insights"
         >
-          {generating ? (
-            <svg
-              className="w-4 h-4 animate-spin"
-              style={{ color: "var(--c-text2)" }}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round" />
-            </svg>
-          ) : (
-            <svg
-              className="w-4 h-4"
-              style={{ color: "var(--c-text2)" }}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M23 4v6h-6" />
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-            </svg>
-          )}
+          <svg
+            className={generating ? "animate-spin" : ""}
+            width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+          >
+            {generating
+              ? <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              : <><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></>
+            }
+          </svg>
+          {generating ? "Generating" : "Refresh"}
         </button>
       </div>
 
-      {/* Content */}
+      {/* States */}
       {loading ? (
         <div className="flex flex-col gap-3">
+          <SkeletonCard tall />
           <SkeletonCard />
           <SkeletonCard />
         </div>
       ) : items.length === 0 ? (
         <div
-          className="rounded-2xl border p-6 flex flex-col items-center text-center gap-2"
+          className="rounded-2xl border flex flex-col items-center text-center gap-3 py-8 px-5"
           style={{ background: "var(--c-card)", borderColor: "var(--c-border)" }}
         >
           <div
-            className="w-11 h-11 rounded-full flex items-center justify-center text-xl mb-1"
-            style={{ background: "rgba(124,106,245,0.12)", color: "#7C6AF5" }}
+            className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(124,106,245,0.12), rgba(155,139,255,0.08))",
+              color: "#7C6AF5",
+              border: "1px solid rgba(124,106,245,0.2)",
+            }}
           >
             ✦
           </div>
-          <p className="text-[13px] font-bold" style={{ color: "var(--c-text1)" }}>
-            No insights yet
-          </p>
-          <p className="text-[11px]" style={{ color: "var(--c-text3)" }}>
-            Tap to generate personalized flight insights
-          </p>
+          <div>
+            <p className="text-[15px] font-black" style={{ color: "var(--c-text1)", letterSpacing: "-0.02em" }}>
+              No insights yet
+            </p>
+            <p className="text-[12px] mt-1 leading-relaxed" style={{ color: "var(--c-text3)" }}>
+              Your agents are ready to brief you on<br />matches, logistics, and opportunities.
+            </p>
+          </div>
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="btn-primary mt-2 flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold active:scale-95 transition-transform"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[13px] font-bold text-white active:scale-95 transition-transform disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg, #6B4AF0, #7C6AF5)" }}
           >
             <span>✦</span>
-            <span>{generating ? "Generating…" : "Generate Insights"}</span>
+            <span>{generating ? "Generating…" : "Brief me"}</span>
           </button>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {items.map((item) => (
+          {items.map(item => (
             <FeedCard key={item.id} item={item} onDismiss={handleDismiss} />
           ))}
         </div>

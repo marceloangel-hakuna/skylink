@@ -428,10 +428,20 @@ export default async function HomePage() {
         </Link>
 
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.14em] leading-none mb-1" style={{ color: "var(--c-text3)" }}>
+          <p
+            className="text-[10px] font-black uppercase tracking-[0.18em] leading-none mb-1.5"
+            style={{
+              background: "linear-gradient(135deg, #7C6AF5, #9B8BFF)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
             SkyLink
           </p>
-          <p className="text-[18px] font-black leading-tight" style={{ color: "var(--c-text1)" }}>Hey, {firstName}</p>
+          <p className="text-[22px] font-black leading-none" style={{ color: "var(--c-text1)", letterSpacing: "-0.03em" }}>
+            Hey, {firstName}
+          </p>
         </div>
 
         {/* Travel context chip */}
@@ -458,8 +468,8 @@ export default async function HomePage() {
 
       </div>
 
-      {/* ── Inline nav strip — scrolls away with the feed ── */}
-      <div className="flex items-center gap-2 px-4 pb-4">
+      {/* ── Quick access strip — scrolls away, intentionally secondary ── */}
+      <div className="flex items-center gap-1.5 px-4 pb-5 overflow-x-auto no-scrollbar">
         {([
           { label: "Flights",       href: "/flight" },
           { label: "People",        href: "/network" },
@@ -470,8 +480,8 @@ export default async function HomePage() {
           <Link
             key={href}
             href={href}
-            className="text-[11px] font-semibold px-3 py-1.5 rounded-full active:opacity-60 transition-opacity"
-            style={{ background: "var(--c-muted)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}
+            className="flex-shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-full active:opacity-60 transition-opacity"
+            style={{ background: "var(--c-muted)", color: "var(--c-text3)", border: "1px solid var(--c-border)" }}
           >
             {label}
           </Link>

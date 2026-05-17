@@ -201,7 +201,7 @@ export default function UniversalAssistant() {
             paddingInline: 24,
             borderRadius: 26,
             background: "linear-gradient(135deg, #6B4AF0, #7C6AF5, #9B8BFF)",
-            boxShadow: "0 8px 32px rgba(107,74,240,0.45), 0 2px 8px rgba(107,74,240,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
+            animation: "fabPulse 3.5s ease-in-out infinite",
             whiteSpace: "nowrap",
           }}
         >
