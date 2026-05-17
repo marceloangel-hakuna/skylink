@@ -41,16 +41,16 @@ function peekAgent(partial: string): AgentKey | null {
 
 /* ─── Icons ───────────────────────────────────────────────────────────────── */
 
-/* Sky identity icon — flight vector comet: a bright leading point with two
-   tapering trails. Reads as "moving fast, going somewhere, AI-directed." */
+/* Sky identity icon — tri-arc aperture. Three equal curved blades at 120°
+   spacing form a rotating iris/propeller around a bright core. Reads as
+   "intelligent direction" — aviation turbine + AI signal in one mark. */
 function SkyIcon({ size = 24 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="19" cy="5" r="3" fill="white" />
-      <path d="M19 5 Q12 10 4 20" stroke="white" strokeWidth="2.5"
-            strokeLinecap="round" opacity="0.8" />
-      <path d="M19 5 Q14 12 5 22" stroke="white" strokeWidth="1.2"
-            strokeLinecap="round" opacity="0.35" />
+    <svg width={size} height={size} viewBox="0 0 26 26" fill="none" aria-hidden>
+      <path d="M19.55 8.41 A8 8 0 0 1 19.55 17.59" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+      <path d="M13.7 20.97 A8 8 0 0 1 5.75 16.38" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+      <path d="M5.75 9.62 A8 8 0 0 1 13.7 5.03" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+      <circle cx="13" cy="13" r="2.8" fill="white"/>
     </svg>
   );
 }
