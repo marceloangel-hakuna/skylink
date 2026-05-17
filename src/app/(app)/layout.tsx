@@ -1,4 +1,5 @@
 import UniversalAssistant from "@/components/UniversalAssistant";
+import SheetHost from "@/components/SheetHost";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <UniversalAssistant />
+      <SheetHost />
     </>
   );
 }

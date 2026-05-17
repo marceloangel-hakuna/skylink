@@ -7,6 +7,7 @@ import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
 import PullToRefresh from "@/components/PullToRefresh";
 import EventInterestCard from "@/components/EventInterestCard";
+import QuickAccessStrip from "@/components/QuickAccessStrip";
 
 export const dynamic = "force-dynamic";
 
@@ -468,25 +469,8 @@ export default async function HomePage() {
 
       </div>
 
-      {/* ── Quick access strip — scrolls away, intentionally secondary ── */}
-      <div className="flex items-center gap-1.5 px-4 pb-5 overflow-x-auto no-scrollbar">
-        {([
-          { label: "Flights",       href: "/flight" },
-          { label: "People",        href: "/network" },
-          { label: "Chat",          href: "/chat" },
-          { label: "Rewards",       href: "/rewards" },
-          { label: "Notifications", href: "/notifications" },
-        ] as const).map(({ label, href }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex-shrink-0 text-[11px] font-semibold px-3 py-1.5 rounded-full active:opacity-60 transition-opacity"
-            style={{ background: "var(--c-muted)", color: "var(--c-text3)", border: "1px solid var(--c-border)" }}
-          >
-            {label}
-          </Link>
-        ))}
-      </div>
+      {/* ── Quick access strip — opens overlays ── */}
+      <QuickAccessStrip />
 
       <div className="px-4 flex flex-col gap-5">
 
