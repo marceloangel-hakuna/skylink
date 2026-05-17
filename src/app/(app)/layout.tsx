@@ -1,4 +1,5 @@
 import BottomNav from "@/components/layout/BottomNav";
+import UniversalAssistant from "@/components/UniversalAssistant";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <BottomNav />
+      <UniversalAssistant />
     </>
   );
 }

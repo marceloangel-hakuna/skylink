@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AtlasHomeSuggestion from "@/components/AtlasHomeSuggestion";
+import AgentFeed from "@/components/AgentFeed";
 import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
 import PullToRefresh from "@/components/PullToRefresh";
@@ -268,11 +269,11 @@ export default async function HomePage() {
 
   const flightmateIds = (flightmates ?? []).map(f => f.user_id);
   const { data: flightmateProfiles } = flightmateIds.length > 0
-    ? await supabase.from("profiles").select("id, full_name, avatar_url, role, company, bio, interests").in("id", flightmateIds)
+    ? await supabase.from("profiles").select("id, full_name, avatar_url, role, company, bio, interests").in("id", flightmateIds).not("full_name", "is", null).neq("full_name", "")
     : { data: [] };
 
   const { data: discoverProfiles } = flightmateIds.length === 0
-    ? await supabase.from("profiles").select("id, full_name, avatar_url, role, company, interests").neq("id", uid).not("role", "is", null).limit(4)
+    ? await supabase.from("profiles").select("id, full_name, avatar_url, role, company, interests").neq("id", uid).not("full_name", "is", null).neq("full_name", "").not("role", "is", null).limit(4)
     : { data: [] };
 
   // ── Fetch destination events ────────────────────────────────────────────────
@@ -588,6 +589,9 @@ export default async function HomePage() {
         <div className="stagger-2">
           <AtlasHomeSuggestion viewerProfile={viewerForAtlas} candidates={flightmateProfiles ?? []} />
         </div>
+
+        {/* ── Agent Feed ────────────────────────────── */}
+        <AgentFeed />
 
         {/* ── People on your flight ──────────────── */}
         {(flightmateProfiles ?? []).length > 0 && (

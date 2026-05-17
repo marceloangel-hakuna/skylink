@@ -4,6 +4,7 @@ import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import ConnectButton from "@/components/ConnectButton";
 import AtlasIcebreakerCard from "@/components/AtlasIcebreakerCard";
+import BlockReportMenu from "@/components/BlockReportMenu";
 import { ConnectionsIcon, PlaneIcon, HandshakeIcon } from "@/components/icons/AppIcons";
 
 export const dynamic = "force-dynamic";
@@ -276,6 +277,11 @@ export default async function PublicProfilePage({
             viewerProfile={viewerProfile}
             targetProfile={profile}
           />
+        )}
+
+        {/* ── Block / Report ── */}
+        {!isMe && (
+          <BlockReportMenu targetId={params.id} targetName={profile.full_name ?? "this user"} />
         )}
 
       </div>

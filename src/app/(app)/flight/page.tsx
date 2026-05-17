@@ -40,8 +40,6 @@ type FlightInfo = {
   arr_gate?: string;
 };
 
-// ── Placeholder history data ───────────────────────────────
-
 // ── Helpers ────────────────────────────────────────────────
 function formatDate(d: string | null) {
   if (!d) return "Date TBD";

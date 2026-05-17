@@ -24,16 +24,6 @@ const TAG_STYLES: Record<Tag, string> = {
   Friend:   "bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-900/60",
 };
 
-const PLACEHOLDERS = [
-  { id: "ph1", full_name: "Sarah Chen",    role: "CTO",             company: "Vertex AI",   interests: ["ai_ml","saas","product"],  match: 94 },
-  { id: "ph2", full_name: "Marcus Rivera", role: "Partner",         company: "KKR",         interests: ["vc","fintech"],            match: 88 },
-  { id: "ph3", full_name: "Priya Patel",   role: "Founder",         company: "HealthOS",    interests: ["biotech","saas","ai_ml"],  match: 82 },
-  { id: "ph4", full_name: "James Liu",     role: "Head of Product", company: "Stripe",      interests: ["fintech","product","saas"],match: 76 },
-  { id: "ph5", full_name: "Aisha Okonkwo", role: "Angel Investor",  company: "Independent", interests: ["vc","climate","web3"],     match: 71 },
-  { id: "ph6", full_name: "David Park",    role: "Staff Engineer",  company: "OpenAI",      interests: ["ai_ml","devtools"],        match: 68 },
-  { id: "ph7", full_name: "Elena Rossi",   role: "Design Lead",     company: "Linear",      interests: ["design","product","saas"], match: 65 },
-];
-
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Profile = {
   id: string;
@@ -309,22 +299,20 @@ export default function NetworkPage() {
       };
       setMyProfile(me);
 
-      // Load all other users for Discover
+      // Load all other users for Discover (exclude incomplete profiles)
       const { data: others } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url, role, company, interests")
         .neq("id", user.id)
+        .not("full_name", "is", null)
+        .neq("full_name", "")
         .limit(30);
 
-      const realIds   = new Set((others ?? []).map((u: Profile) => u.id));
       const realUsers: Profile[] = (others ?? []).map((u: Profile) => ({
         ...u, interests: u.interests ?? [],
         match: calcMatch(me.interests, u.interests ?? []),
       }));
-      const extras: Profile[] = PLACEHOLDERS
-        .filter(ph => !realIds.has(ph.id))
-        .map(ph => ({ ...ph, avatar_url: null }));
-      setDiscoverUsers([...realUsers, ...extras]);
+      setDiscoverUsers(realUsers);
 
       // Load all connections involving me
       const { data: conns } = await supabase
@@ -365,8 +353,7 @@ export default function NetworkPage() {
         }
         setConnections(Array.from(partnerMap.values()).map((c: Connection) => {
           const oid = c.requester_id === user.id ? c.receiver_id : c.requester_id;
-          const ph  = PLACEHOLDERS.find(ph => ph.id === oid);
-          return { ...c, profile: pMap[oid] ?? (ph ? { ...ph, avatar_url: null } : undefined) };
+          return { ...c, profile: pMap[oid] };
         }));
       }
 
@@ -378,11 +365,6 @@ export default function NetworkPage() {
   const sendRequest = useCallback(async (msg: string) => {
     if (!modalUser || !myProfile) return;
     setSending(true);
-    if (modalUser.id.startsWith("ph")) {
-      await new Promise(r => setTimeout(r, 700));
-      setSentIds(prev => { const next = new Set(Array.from(prev)); next.add(modalUser.id); return next; });
-      setSending(false); setModalUser(null); return;
-    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("connections").insert({

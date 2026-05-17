@@ -26,6 +26,7 @@ type UserFlight = {
   networking_score: number;
   notes: string | null;
   networking_status: NetworkingStatus;
+  seat: string | null;
   created_at: string;
 };
 
@@ -368,14 +369,45 @@ function OverviewTab({
   };
   const sc = statusConfig[airStatus] ?? statusConfig.scheduled;
 
-  // Timeline events
+  // Timeline — derive step states from real departure time + AirLabs status
+  const depDate = flightData?.departure_date ?? userFlight?.departure_date ?? null;
+  const now = new Date();
+  let depDt: Date | null = null;
+  if (depDate && depTime !== "—") {
+    depDt = new Date(`${depDate}T${depTime}:00`);
+  }
+  const hoursUntilDep = depDt ? (depDt.getTime() - now.getTime()) / 3600000 : null;
+
+  // Check-in typically opens 24h before departure
+  const checkinDone  = hoursUntilDep !== null ? hoursUntilDep < 24 : airStatus !== "scheduled";
+  const checkinActive = hoursUntilDep !== null ? hoursUntilDep >= 24 && hoursUntilDep < 48 : false;
+
+  // Bag drop opens ~3h before departure
+  const bagDropDone   = hoursUntilDep !== null ? hoursUntilDep < 1 : airStatus === "active" || airStatus === "landed" || airStatus === "completed";
+  const bagDropActive = hoursUntilDep !== null ? hoursUntilDep >= 1 && hoursUntilDep < 3 : false;
+
+  // Boarding ~45min before departure
+  const boardingDone  = airStatus === "active" || airStatus === "landed" || airStatus === "completed";
+  const boardingActive = !boardingDone && (hoursUntilDep !== null ? hoursUntilDep < 0.75 : false);
+
+  // Takeoff
+  const takeoffDone = airStatus === "active" || airStatus === "landed" || airStatus === "completed";
+
+  // In-flight
+  const inflightActive = airStatus === "active";
+
+  // Landing
+  const landingDone = airStatus === "landed" || airStatus === "completed";
+
+  const checkinSub = checkinDone ? "Completed" : checkinActive ? "Now open" : hoursUntilDep !== null ? `Opens ${Math.max(0, Math.ceil(hoursUntilDep - 24))}h before departure` : "Opens 24h before departure";
+
   const timelineEvents = [
-    { label: "Check-in open",        time: "—",      done: true,  active: false, sub: "Completed" },
-    { label: "Bag drop",             time: "—",      done: true,  active: false, sub: "Completed" },
-    { label: "Boarding",             time: depTime,  done: airStatus !== "scheduled" && airStatus !== "upcoming", active: airStatus === "scheduled" || airStatus === "upcoming", sub: gate ? `Gate ${gate} · Group A` : undefined, matchCount: available },
-    { label: "Takeoff",              time: depTime,  done: airStatus === "active" || airStatus === "landed" || airStatus === "completed", active: false, sub: undefined, matchCount: undefined },
-    { label: "In-flight networking", time: "—",      done: false, active: airStatus === "active", sub: "Wi-Fi enabled · Chat available", matchCount: undefined },
-    { label: "Landing",              time: arrTime,  done: airStatus === "landed" || airStatus === "completed", active: false, sub: arrTerminal ? `Terminal ${arrTerminal}` : undefined, matchCount: undefined },
+    { label: "Check-in open",        time: "—",      done: checkinDone,  active: checkinActive, sub: checkinSub },
+    { label: "Bag drop",             time: "—",      done: bagDropDone,  active: bagDropActive, sub: bagDropDone ? "Completed" : bagDropActive ? "Now open" : "Opens 3h before departure" },
+    { label: "Boarding",             time: depTime,  done: boardingDone, active: boardingActive, sub: gate ? `Gate ${gate}` : undefined, matchCount: available },
+    { label: "Takeoff",              time: depTime,  done: takeoffDone,  active: false, sub: delayed > 0 ? `Delayed +${delayed}m` : undefined, matchCount: undefined },
+    { label: "In-flight networking", time: duration, done: false,        active: inflightActive, sub: inflightActive ? "Chat available" : undefined, matchCount: undefined },
+    { label: "Landing",              time: arrTime,  done: landingDone,  active: false, sub: arrTerminal ? `Terminal ${arrTerminal}` : undefined, matchCount: undefined },
   ];
 
   return (
@@ -454,7 +486,7 @@ function OverviewTab({
               { label: "Gate", value: gate ?? "—", href: null, icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M3 9h18M9 21V9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
               )},
-              { label: "Seat", value: "14C", href: `/flight/${flightSlug}/seatmap`, icon: (
+              { label: "Seat", value: userFlight?.seat ?? "—", href: `/flight/${flightSlug}/seatmap`, icon: (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="1.8"/></svg>
               )},
             ].map(({ label, value, href, icon }) => {

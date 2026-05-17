@@ -13,12 +13,13 @@ type PassData = {
   depTime: string | null;
   arrTime: string | null;
   gate: string | null;
-  seat: string;
+  seat: string | null;
   passengerName: string;
   date: string | null;
   airline: string | null;
   terminal: string | null;
   status: string;
+  flightId: string;
 };
 
 // Simple repeating barcode lines SVG
@@ -45,7 +46,24 @@ export default function PassPage() {
 
   const [pass, setPass]       = useState<PassData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingSeat, setEditingSeat] = useState(false);
+  const [seatInput, setSeatInput]     = useState("");
+  const [savingSeat, setSavingSeat]   = useState(false);
   const supabase = useRef(createClient());
+
+  async function saveSeat() {
+    if (!pass) return;
+    const val = seatInput.trim().toUpperCase();
+    if (!val) return;
+    setSavingSeat(true);
+    await supabase.current
+      .from("user_flights")
+      .update({ seat: val })
+      .eq("id", pass.flightId);
+    setPass({ ...pass, seat: val });
+    setEditingSeat(false);
+    setSavingSeat(false);
+  }
 
   useEffect(() => {
     async function load() {
@@ -98,11 +116,6 @@ export default function PassPage() {
         }
       } catch { /* use DB data */ }
 
-      // Deterministic seat from user id
-      const seed  = user.id.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0);
-      const seats = ["14C","14A","22F","8B","31D","5A","19C","27E","3F","11B"];
-      const seat  = seats[seed % seats.length];
-
       const dateLabel = match.departure_date
         ? new Date(match.departure_date + "T00:00:00").toLocaleDateString("en-US", {
             weekday: "short", month: "short", day: "numeric", year: "numeric",
@@ -114,8 +127,9 @@ export default function PassPage() {
         origin:        match.origin        ?? "—",
         destination:   match.destination   ?? "—",
         depCity, arrCity, depTime, arrTime, gate, terminal, airline,
-        seat,
+        seat: match.seat ?? null,
         passengerName: fullName,
+        flightId: match.id,
         date:          dateLabel,
         status:        match.status,
       });
@@ -252,8 +266,17 @@ export default function PassPage() {
 
                 {/* Row 2 */}
                 <div className="grid grid-cols-3 gap-3 mb-5">
+                  {/* Seat — tappable to edit */}
+                  <button
+                    onClick={() => { setSeatInput(pass.seat ?? ""); setEditingSeat(true); }}
+                    className="rounded-2xl py-3 flex flex-col items-center gap-0.5 active:scale-95 transition-transform"
+                    style={{ background: pass.seat ? "var(--c-muted)" : "rgba(124,106,245,0.08)", border: pass.seat ? "1px solid var(--c-border)" : "1px dashed rgba(124,106,245,0.4)" }}>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--c-text3)" }}>Seat</p>
+                    <p className="text-base font-black" style={{ color: pass.seat ? "var(--c-text1)" : "#7C6AF5" }}>
+                      {pass.seat ?? "Add"}
+                    </p>
+                  </button>
                   {[
-                    { label: "Seat",     value: pass.seat },
                     { label: "Gate",     value: pass.gate ?? "—" },
                     { label: "Terminal", value: pass.terminal ?? "—" },
                   ].map(({ label, value }) => (
@@ -271,7 +294,7 @@ export default function PassPage() {
                   <p className="text-[9px] font-mono tracking-widest" style={{ color: "var(--c-text3)" }}>
                     {pass.flightNumber.replace(/\s/g,"")}
                     {pass.origin}{pass.destination}
-                    {pass.seat.replace(/\s/g,"")}
+                    {(pass.seat ?? "").replace(/\s/g,"")}
                     {String(Math.abs(pass.passengerName.split("").reduce((a,c) => a + c.charCodeAt(0), 0))).slice(0,6)}
                   </p>
                 </div>
@@ -286,13 +309,57 @@ export default function PassPage() {
                 <path d="M12 8v4M12 16h.01" stroke="#7C6AF5" strokeWidth="2" strokeLinecap="round"/>
               </svg>
               <p className="text-xs leading-relaxed" style={{ color: "var(--c-text2)" }}>
-                This is your SkyLink flight confirmation. Always carry your official airline boarding pass when travelling. Seat assignments shown are approximate.
+                This is your SkyLink flight confirmation. Always carry your official airline boarding pass when travelling.
+                {!pass.seat && " Tap the seat field above to add your seat assignment."}
               </p>
             </div>
 
           </div>
         )}
       </div>
+
+      {/* Seat edit sheet */}
+      {editingSeat && (
+        <>
+          <div className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm" onClick={() => setEditingSeat(false)} />
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[60] rounded-t-3xl"
+               style={{ background: "var(--c-card)", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)", boxShadow: "0 -8px 40px rgba(0,0,0,0.4)" }}>
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full" style={{ background: "var(--c-muted)" }} />
+            </div>
+            <div className="px-5 pt-3 pb-2">
+              <p className="text-base font-black mb-1" style={{ color: "var(--c-text1)" }}>Seat Assignment</p>
+              <p className="text-xs mb-4" style={{ color: "var(--c-text2)" }}>Enter your seat number from your boarding pass</p>
+              <input
+                type="text"
+                value={seatInput}
+                onChange={e => setSeatInput(e.target.value.toUpperCase())}
+                placeholder="e.g. 14C"
+                maxLength={5}
+                autoFocus
+                className="w-full rounded-2xl px-4 py-4 text-center text-2xl font-black mb-4"
+                style={{ background: "var(--c-muted)", border: "1px solid var(--c-border)", color: "var(--c-text1)", outline: "none" }}
+                onKeyDown={e => { if (e.key === "Enter") saveSeat(); }}
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEditingSeat(false)}
+                  className="flex-1 py-3.5 rounded-2xl font-semibold text-sm"
+                  style={{ background: "var(--c-muted)", color: "var(--c-text1)", border: "1px solid var(--c-border)" }}>
+                  Cancel
+                </button>
+                <button
+                  onClick={saveSeat}
+                  disabled={!seatInput.trim() || savingSeat}
+                  className="flex-1 py-3.5 rounded-2xl font-bold text-sm text-white disabled:opacity-50"
+                  style={{ background: "#7C6AF5" }}>
+                  {savingSeat ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -122,18 +122,21 @@ export default function SeatMapPage() {
         }
       }
 
-      // Assign "you" a seat (deterministic)
-      const yourAssigned = assignSeat(user.id, allSeats);
-      const yourSeatLabel = `${yourAssigned.row}${yourAssigned.col}`;
+      // Use real seat from DB, or null
+      const yourSeatLabel = match.seat ?? null;
       setYourSeat(yourSeatLabel);
 
       // Assign each other person a seat
       const grid = new Map<string, SeatData>();
       const usedSeats = new Set<string>();
-      usedSeats.add(yourSeatLabel);
 
-      // You
-      grid.set(yourSeatLabel, { row: yourAssigned.row, col: yourAssigned.col, state: "you", initials: "You" });
+      // You — only place on grid if seat is known
+      if (yourSeatLabel) {
+        usedSeats.add(yourSeatLabel);
+        const row = parseInt(yourSeatLabel.replace(/[A-Z]/gi, ""), 10);
+        const col = yourSeatLabel.replace(/[0-9]/g, "").toUpperCase();
+        grid.set(yourSeatLabel, { row, col, state: "you", initials: "You" });
+      }
 
       // Others (take first 6 as "matches", rest as occupied)
       const matchPeople = people.slice(0, Math.min(6, people.length));
@@ -196,12 +199,10 @@ export default function SeatMapPage() {
             <p className="text-base font-black" style={{ color: C.text1 }}>{flightLabel || "Seat map"}</p>
             {routeLabel && <p className="text-xs" style={{ color: C.text2 }}>{routeLabel}</p>}
           </div>
-          {yourSeat && (
-            <span className="text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0"
-                  style={{ background: "rgba(124,106,245,0.15)", color: C.purple, border: `1px solid rgba(124,106,245,0.3)` }}>
-              Your seat: {yourSeat}
-            </span>
-          )}
+          <span className="text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0"
+                style={{ background: "rgba(124,106,245,0.15)", color: C.purple, border: `1px solid rgba(124,106,245,0.3)` }}>
+            {yourSeat ? `Your seat: ${yourSeat}` : "No seat assigned"}
+          </span>
         </div>
       </div>
 
