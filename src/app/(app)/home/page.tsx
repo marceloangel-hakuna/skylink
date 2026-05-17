@@ -410,7 +410,7 @@ export default async function HomePage() {
 
   return (
     <PullToRefresh>
-    <div className="animate-fade-in pb-[120px]">
+    <div className="animate-fade-in pb-[104px]">
 
       {/* ── Top bar ─────────────────────────────── */}
       <div className="flex items-center px-4 pb-5 gap-3"
@@ -428,31 +428,54 @@ export default async function HomePage() {
         </Link>
 
         <div className="flex-1 min-w-0">
-          <p className="text-[18px] font-black leading-tight" style={{ color: "var(--c-text1)" }}>Hey, {firstName}</p>
-          <p className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: "var(--c-text2)" }}>
-            {hasActiveFlight ? (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" style={{ boxShadow: "0 0 4px #4ade80" }} />
-                {flightNumber}{flightOrigin && flightDest ? ` · ${flightOrigin} → ${flightDest}` : ""}
-              </>
-            ) : (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "var(--c-text3)" }} />
-                No active flight
-              </>
-            )}
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] leading-none mb-1" style={{ color: "var(--c-text3)" }}>
+            SkyLink
           </p>
+          <p className="text-[18px] font-black leading-tight" style={{ color: "var(--c-text1)" }}>Hey, {firstName}</p>
         </div>
 
-        <Link href="/notifications"
-          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform relative flex-shrink-0"
-          style={{ background: "var(--c-card)", border: "1px solid var(--c-border)" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="var(--c-text2)" strokeWidth="1.8" strokeLinecap="round"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="var(--c-text2)" strokeWidth="1.8" strokeLinecap="round"/>
-          </svg>
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full" style={{ background: B.pink }} />
-        </Link>
+        {/* Travel context chip */}
+        {hasActiveFlight ? (
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full flex-shrink-0"
+            style={{ background: "rgba(45,212,168,0.12)", border: "1px solid rgba(45,212,168,0.25)" }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#2DD4A8", boxShadow: "0 0 5px #2DD4A8" }} />
+            <span className="text-[11px] font-bold" style={{ color: "#2DD4A8" }}>
+              {boardingLabel ? boardingLabel : `${flightOrigin ?? ""} → ${flightDest ?? ""}`}
+            </span>
+          </div>
+        ) : (
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full flex-shrink-0"
+            style={{ background: "var(--c-muted)", border: "1px solid var(--c-border)" }}
+          >
+            <span className="text-[11px] font-semibold" style={{ color: "var(--c-text3)" }}>
+              Between flights
+            </span>
+          </div>
+        )}
+
+      </div>
+
+      {/* ── Inline nav strip — scrolls away with the feed ── */}
+      <div className="flex items-center gap-2 px-4 pb-4">
+        {([
+          { label: "Flights",       href: "/flight" },
+          { label: "People",        href: "/network" },
+          { label: "Chat",          href: "/chat" },
+          { label: "Rewards",       href: "/rewards" },
+          { label: "Notifications", href: "/notifications" },
+        ] as const).map(({ label, href }) => (
+          <Link
+            key={href}
+            href={href}
+            className="text-[11px] font-semibold px-3 py-1.5 rounded-full active:opacity-60 transition-opacity"
+            style={{ background: "var(--c-muted)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}
+          >
+            {label}
+          </Link>
+        ))}
       </div>
 
       <div className="px-4 flex flex-col gap-5">
@@ -656,7 +679,7 @@ export default async function HomePage() {
                 </svg>
                 <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>
                   Only opt-in passengers shown.{" "}
-                  <Link href="/profile#privacy" className="underline" style={{ color: B.teal }}>Privacy settings</Link>
+                  <Link href="/profile/privacy" className="underline" style={{ color: B.teal }}>Privacy settings</Link>
                 </p>
               </div>
             </div>
@@ -720,7 +743,7 @@ export default async function HomePage() {
                 </svg>
                 <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>
                   Only opted-in members are shown.{" "}
-                  <Link href="/profile#privacy" className="underline" style={{ color: B.teal }}>Privacy settings</Link>
+                  <Link href="/profile/privacy" className="underline" style={{ color: B.teal }}>Privacy settings</Link>
                 </p>
               </div>
             </div>

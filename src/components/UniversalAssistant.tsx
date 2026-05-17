@@ -33,9 +33,9 @@ function detectAgent(content: string): { agent: AgentKey | null; text: string } 
   return { agent: null, text: content };
 }
 
-function SparkleIcon() {
+function SparkleIcon({ size = 20 }: { size?: number }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-hidden>
       <path
         d="M11 2 L12.2 8.8 L19 11 L12.2 13.2 L11 20 L9.8 13.2 L3 11 L9.8 8.8 Z"
         fill="white"
@@ -185,21 +185,36 @@ export default function UniversalAssistant() {
 
   return (
     <>
-      {/* FAB */}
+      {/* FAB — centered pill, the primary interaction point */}
       {!open && (
         <button
           aria-label="Open Sky assistant"
           onClick={() => setOpen(true)}
-          className="fixed flex items-center justify-center w-14 h-14 rounded-full active:scale-95 transition-transform"
+          className="fixed flex items-center gap-2.5 active:scale-95 transition-transform"
           style={{
-            bottom: "calc(var(--nav-height, calc(86px + env(safe-area-inset-bottom, 0px))) + 8px)",
-            right: "16px",
-            background: "linear-gradient(135deg, #7C6AF5, #9B8BFF)",
-            boxShadow: "0 4px 20px rgba(124,106,245,0.4)",
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
+            left: "50%",
+            transform: "translateX(-50%)",
             zIndex: 50,
+            height: 52,
+            paddingInline: 24,
+            borderRadius: 26,
+            background: "linear-gradient(135deg, #6B4AF0, #7C6AF5, #9B8BFF)",
+            boxShadow:
+              "0 8px 32px rgba(107,74,240,0.45), 0 2px 8px rgba(107,74,240,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
+            whiteSpace: "nowrap",
           }}
         >
-          <SparkleIcon />
+          <SparkleIcon size={18} />
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>
+            Ask Sky
+          </span>
+          <style>{`
+            @keyframes skyPulse {
+              0%, 100% { box-shadow: 0 8px 32px rgba(107,74,240,0.45), 0 2px 8px rgba(107,74,240,0.3), inset 0 1px 0 rgba(255,255,255,0.15); }
+              50%       { box-shadow: 0 8px 48px rgba(107,74,240,0.65), 0 2px 12px rgba(107,74,240,0.45), inset 0 1px 0 rgba(255,255,255,0.15); }
+            }
+          `}</style>
         </button>
       )}
 
@@ -222,9 +237,9 @@ export default function UniversalAssistant() {
         style={{
           bottom: 0,
           maxWidth: 430,
-          height: "70dvh",
+          height: "85dvh",
           transform: `translateX(-50%) translateY(${open ? "0" : "100%"})`,
-          transition: "transform 0.35s cubic-bezier(0.22,1,0.36,1)",
+          transition: "transform 0.38s cubic-bezier(0.22,1,0.36,1)",
           background: "var(--c-card)",
           borderRadius: "28px 28px 0 0",
           borderTop: "1px solid var(--c-border)",
@@ -367,7 +382,7 @@ export default function UniversalAssistant() {
           className="flex-shrink-0 px-4 py-3 flex items-end gap-2"
           style={{
             borderTop: "1px solid var(--c-border)",
-            paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+            paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)",
           }}
         >
           <textarea
