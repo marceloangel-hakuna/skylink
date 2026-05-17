@@ -2,25 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/* ─── Agent registry ──────────────────────────────────────────────────────── */
 const AGENTS = {
-  atlas:   { label: "Atlas",   color: "#7C6AF5", icon: "✦", domain: "Who to meet" },
-  compass: { label: "Compass", color: "#2DD4A8", icon: "◎", domain: "Flight & logistics" },
-  bridge:  { label: "Bridge",  color: "#60A5FA", icon: "⌇", domain: "In-flight help" },
-  vault:   { label: "Vault",   color: "#F5A623", icon: "◈", domain: "Travel expenses" },
-  pulse:   { label: "Pulse",   color: "#E8567F", icon: "♡", domain: "Your network" },
+  atlas:   { label: "Atlas",   color: "#7C6AF5", domain: "Who to meet" },
+  compass: { label: "Compass", color: "#2DD4A8", domain: "Flight & logistics" },
+  bridge:  { label: "Bridge",  color: "#60A5FA", domain: "Intros & messages" },
+  vault:   { label: "Vault",   color: "#F5A623", domain: "Travel expenses" },
+  pulse:   { label: "Pulse",   color: "#E8567F", domain: "Your network" },
 } as const;
 
 type AgentKey = keyof typeof AGENTS;
-
 type Msg = { id: string; role: "user" | "assistant"; content: string };
 
 const QUICK_PROMPTS = [
-  { icon: "✦", text: "Who should I meet on my flight?" },
-  { icon: "◎", text: "What's the status of my flight?" },
-  { icon: "⌇", text: "Write me an icebreaker message" },
-  { icon: "♡", text: "Who should I reconnect with?" },
-  { icon: "◎", text: "Find lounges at my airport" },
-  { icon: "◈", text: "Help me log a travel expense" },
+  { agent: "atlas",   text: "Who should I meet on this flight?" },
+  { agent: "compass", text: "What's the status of my flight?" },
+  { agent: "bridge",  text: "Write me an icebreaker message" },
+  { agent: "pulse",   text: "Who should I reconnect with?" },
 ];
 
 const AGENT_RE = /^\[(\w+)\]/;
@@ -41,70 +39,114 @@ function peekAgent(partial: string): AgentKey | null {
   return k in AGENTS ? k : null;
 }
 
-function SparkleIcon({ size = 18 }: { size?: number }) {
+/* ─── Icons ───────────────────────────────────────────────────────────────── */
+
+/* Sky identity icon — flight vector comet: a bright leading point with two
+   tapering trails. Reads as "moving fast, going somewhere, AI-directed." */
+function SkyIcon({ size = 24 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-hidden>
-      <path d="M11 2 L12.2 8.8 L19 11 L12.2 13.2 L11 20 L9.8 13.2 L3 11 L9.8 8.8 Z" fill="white" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="19" cy="5" r="3" fill="white" />
+      <path d="M19 5 Q12 10 4 20" stroke="white" strokeWidth="2.5"
+            strokeLinecap="round" opacity="0.8" />
+      <path d="M19 5 Q14 12 5 22" stroke="white" strokeWidth="1.2"
+            strokeLinecap="round" opacity="0.35" />
+    </svg>
+  );
+}
+
+/* Agent-specific SVG icons — meaningful, readable at 22px */
+function AgentIcon({ agentKey, color, size = 22 }: { agentKey: AgentKey; color: string; size?: number }) {
+  const s = { stroke: color, strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (agentKey) {
+    case "atlas":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="8" r="3.5" {...s} />
+          <path d="M5 20c0-3.87 3.13-7 7-7s7 3.13 7 7" {...s} />
+          <path d="M18 3l1.5 1.5M20 6h1.5M18 9l1.5-1.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
+        </svg>
+      );
+    case "compass":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" {...s} />
+          <path d="M12 3v1.5M12 19.5V21M3 12h1.5M19.5 12H21" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M15 9l-4.5 4.5M9 9l4.5 4.5" stroke={color} strokeWidth="1.3" strokeLinecap="round" opacity="0.45" />
+          <circle cx="12" cy="12" r="2" fill={color} />
+        </svg>
+      );
+    case "bridge":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <circle cx="5.5" cy="7.5" r="2.5" {...s} />
+          <circle cx="18.5" cy="7.5" r="2.5" {...s} />
+          <path d="M8 7.5h8" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 2" />
+          <path d="M1.5 20c0-2.76 1.79-5 4-5h4" {...s} />
+          <path d="M22.5 20c0-2.76-1.79-5-4-5h-4" {...s} />
+        </svg>
+      );
+    case "vault":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="5" width="18" height="14" rx="2.5" {...s} />
+          <circle cx="12" cy="12" r="3.5" {...s} />
+          <path d="M12 5v2.5M12 16.5V19M3 12h2.5M18.5 12H21" stroke={color} strokeWidth="1.3" strokeLinecap="round" opacity="0.45" />
+        </svg>
+      );
+    case "pulse":
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <path d="M2 12h3.5l2-6 4 12 2.5-8L16 14l1.5-2H22"
+                stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+  }
+}
+
+function SendIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"
+            stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 function BouncingDots() {
   return (
-    <div className="flex items-center gap-1 py-1">
-      {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          className="w-1.5 h-1.5 rounded-full inline-block"
-          style={{ background: "var(--c-text3)", animation: `skydot 1.2s ease-in-out ${i * 0.2}s infinite` }}
-        />
+    <div className="flex items-center gap-1.5 py-1">
+      {[0, 1, 2].map(i => (
+        <span key={i} className="w-2 h-2 rounded-full inline-block"
+          style={{ background: "var(--c-text3)", animation: `skydot 1.2s ease-in-out ${i * 0.2}s infinite` }} />
       ))}
-      <style>{`
-        @keyframes skydot {
-          0%,80%,100% { transform:translateY(0); opacity:0.4; }
-          40%          { transform:translateY(-4px); opacity:1; }
-        }
-      `}</style>
+      <style>{`@keyframes skydot{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-5px);opacity:1}}`}</style>
     </div>
   );
 }
 
-function AgentTag({ agentKey }: { agentKey: AgentKey }) {
-  const a = AGENTS[agentKey];
-  return (
-    <span className="text-[10px] font-bold flex items-center gap-1" style={{ color: a.color }}>
-      <span>{a.icon}</span>
-      {a.label}
-    </span>
-  );
-}
-
+/* ─── Main component ──────────────────────────────────────────────────────── */
 export default function UniversalAssistant() {
-  const [open, setOpen]       = useState(false);
-  const [msgs, setMsgs]       = useState<Msg[]>([]);
-  const [input, setInput]     = useState("");
-  const [streaming, setStr]   = useState(false);
-  const [sessionId]           = useState(() => "s_" + Date.now());
+  const [open, setOpen]     = useState(false);
+  const [msgs, setMsgs]     = useState<Msg[]>([]);
+  const [input, setInput]   = useState("");
+  const [streaming, setStr] = useState(false);
+  const [sessionId]         = useState(() => "s_" + Date.now());
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLTextAreaElement>(null);
 
-  // Restore conversation from sessionStorage
+  /* Restore conversation */
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem("sky_msgs");
-      if (saved) setMsgs(JSON.parse(saved));
-    } catch {}
+    try { const s = sessionStorage.getItem("sky_msgs"); if (s) setMsgs(JSON.parse(s)); } catch {}
   }, []);
 
-  // Persist conversation
+  /* Persist conversation */
   useEffect(() => {
-    if (msgs.length > 0) {
-      try { sessionStorage.setItem("sky_msgs", JSON.stringify(msgs.slice(-24))); } catch {}
-    }
+    if (msgs.length > 0) try { sessionStorage.setItem("sky_msgs", JSON.stringify(msgs.slice(-24))); } catch {}
   }, [msgs]);
 
-  // External trigger from feed cards
+  /* External trigger from feed cards */
   useEffect(() => {
     function handle(e: Event) {
       const ce = e as CustomEvent<{ query?: string }>;
@@ -115,255 +157,252 @@ export default function UniversalAssistant() {
     return () => window.removeEventListener("openAssistant", handle as EventListener);
   }, []);
 
-  // Scroll to latest
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+  useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 400); }, [open]);
 
-  // Focus input on open
-  useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 380);
-  }, [open]);
+  const sendMessage = useCallback(async (text?: string) => {
+    const content = (text ?? input).trim();
+    if (!content || streaming) return;
+    setInput("");
+    try { navigator.vibrate?.(8); } catch {}
 
-  const sendMessage = useCallback(
-    async (text?: string) => {
-      const content = (text ?? input).trim();
-      if (!content || streaming) return;
-      setInput("");
-      try { navigator.vibrate?.(8); } catch {}
+    const userMsg: Msg = { id: "u_" + Date.now(), role: "user", content };
+    const aId = "a_" + Date.now();
+    setMsgs(p => [...p, userMsg, { id: aId, role: "assistant", content: "" }]);
+    setStr(true);
 
-      const userMsg: Msg = { id: "u_" + Date.now(), role: "user", content };
-      const aId = "a_" + Date.now();
-      const assistantMsg: Msg = { id: aId, role: "assistant", content: "" };
+    try {
+      const history = msgs.slice(-10).map(m => ({ role: m.role, content: m.content }));
+      const res = await fetch("/api/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: content, sessionId, history }),
+      });
 
-      setMsgs(p => [...p, userMsg, assistantMsg]);
-      setStr(true);
-
-      try {
-        const history = msgs.slice(-10).map(m => ({ role: m.role, content: m.content }));
-        const res = await fetch("/api/assistant", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: content, sessionId, history }),
-        });
-
-        if (!res.ok || !res.body) {
-          setMsgs(p => p.map(m => m.id === aId ? { ...m, content: "Something went wrong. Try again." } : m));
-          setStr(false);
-          return;
-        }
-
-        const reader  = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split("\n");
-          buf = lines.pop() ?? "";
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const raw = line.slice(6).trim();
-            if (!raw || raw === "[DONE]") continue;
-            try {
-              const { text: chunk = "" } = JSON.parse(raw);
-              if (chunk) setMsgs(p => p.map(m => m.id === aId ? { ...m, content: m.content + chunk } : m));
-            } catch {}
-          }
-        }
-      } catch {
-        setMsgs(p => p.map(m => m.id === aId ? { ...m, content: "Connection error. Please try again." } : m));
-      } finally {
+      if (!res.ok || !res.body) {
+        setMsgs(p => p.map(m => m.id === aId ? { ...m, content: "Something went wrong. Try again." } : m));
         setStr(false);
+        return;
       }
-    },
-    [input, streaming, msgs, sessionId]
-  );
+
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (!raw || raw === "[DONE]") continue;
+          try {
+            const { text: chunk = "" } = JSON.parse(raw);
+            if (chunk) setMsgs(p => p.map(m => m.id === aId ? { ...m, content: m.content + chunk } : m));
+          } catch {}
+        }
+      }
+    } catch {
+      setMsgs(p => p.map(m => m.id === aId ? { ...m, content: "Connection error. Please try again." } : m));
+    } finally {
+      setStr(false);
+    }
+  }, [input, streaming, msgs, sessionId]);
 
   function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   }
 
+  const agentEntries = Object.entries(AGENTS) as [AgentKey, typeof AGENTS[AgentKey]][];
+
   return (
     <>
-      {/* ── FAB — centered pill, hero element ─── */}
+      {/* ── FAB ── */}
       {!open && (
         <button
           aria-label="Open Sky assistant"
           onClick={() => setOpen(true)}
           className="fixed flex items-center gap-2.5 active:scale-95 transition-transform"
           style={{
-            bottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
+            bottom: "calc(env(safe-area-inset-bottom,0px) + 24px)",
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 50,
             height: 52,
             paddingInline: 24,
             borderRadius: 26,
-            background: "linear-gradient(135deg, #6B4AF0, #7C6AF5, #9B8BFF)",
+            background: "linear-gradient(135deg,#6B4AF0,#7C6AF5,#9B8BFF)",
             animation: "fabPulse 3.5s ease-in-out infinite",
             whiteSpace: "nowrap",
           }}
         >
-          <SparkleIcon size={18} />
+          <SkyIcon size={18} />
           <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>
             Ask Sky
           </span>
           {msgs.length > 0 && (
-            <span
-              className="flex items-center justify-center rounded-full text-[9px] font-black"
-              style={{ background: "rgba(255,255,255,0.25)", color: "#fff", minWidth: 16, height: 16, paddingInline: 4 }}
-            >
+            <span className="flex items-center justify-center rounded-full text-[10px] font-black"
+              style={{ background: "rgba(255,255,255,0.25)", color: "#fff", minWidth: 18, height: 18, paddingInline: 4 }}>
               {msgs.filter(m => m.role === "assistant").length}
             </span>
           )}
         </button>
       )}
 
-      {/* ── Backdrop ──────────────────────────── */}
-      <div
-        onClick={() => setOpen(false)}
-        className="fixed inset-0"
-        style={{
-          background: "rgba(0,0,0,0.55)",
-          opacity: open ? 1 : 0,
-          transition: "opacity 0.3s",
-          pointerEvents: open ? "auto" : "none",
-          zIndex: 55,
-        }}
-      />
+      {/* ── Backdrop ── */}
+      <div onClick={() => setOpen(false)} className="fixed inset-0"
+        style={{ background: "rgba(0,0,0,0.55)", opacity: open ? 1 : 0,
+          transition: "opacity 0.3s", pointerEvents: open ? "auto" : "none", zIndex: 55 }} />
 
-      {/* ── Bottom Sheet ─────────────────────── */}
-      <div
-        className="fixed left-1/2 w-full"
-        style={{
-          bottom: 0,
-          maxWidth: 430,
-          height: "85dvh",
-          transform: `translateX(-50%) translateY(${open ? "0" : "100%"})`,
-          transition: "transform 0.38s cubic-bezier(0.22,1,0.36,1)",
-          background: "var(--c-card)",
-          borderRadius: "28px 28px 0 0",
-          borderTop: "1px solid var(--c-border)",
-          zIndex: 60,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      {/* ── Sheet ── */}
+      <div className="fixed left-1/2 w-full" style={{
+        bottom: 0, maxWidth: 430, height: "85dvh",
+        transform: `translateX(-50%) translateY(${open ? "0" : "100%"})`,
+        transition: "transform 0.38s cubic-bezier(0.22,1,0.36,1)",
+        background: "var(--c-card)",
+        borderRadius: "28px 28px 0 0",
+        borderTop: "1px solid var(--c-border)",
+        zIndex: 60, display: "flex", flexDirection: "column",
+      }}>
+
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full" style={{ background: "var(--c-border)" }} />
         </div>
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-2.5 flex-shrink-0">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
-            style={{ background: "linear-gradient(135deg, #6B4AF0, #9B8BFF)", color: "#fff", fontWeight: 900 }}
-          >
-            ✦
+        <div className="flex items-center gap-3 px-5 py-3 flex-shrink-0">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+            style={{ background: "linear-gradient(135deg,#6B4AF0,#9B8BFF)" }}>
+            <SkyIcon size={20} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-black leading-tight" style={{ color: "var(--c-text1)" }}>Sky</p>
-            <p className="text-[10px]" style={{ color: "var(--c-text3)" }}>AI travel companion · 5 agents</p>
+            <p className="text-[17px] font-black leading-tight" style={{ color: "var(--c-text1)", letterSpacing: "-0.02em" }}>
+              Sky
+            </p>
+            <p className="text-[12px] mt-0.5" style={{ color: "var(--c-text3)" }}>
+              AI travel companion · 5 agents
+            </p>
           </div>
           {msgs.length > 0 && (
-            <button
-              onClick={() => { setMsgs([]); sessionStorage.removeItem("sky_msgs"); }}
-              className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+            <button onClick={() => { setMsgs([]); sessionStorage.removeItem("sky_msgs"); }}
+              className="w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-transform"
               style={{ background: "var(--c-muted)", color: "var(--c-text3)" }}
-              aria-label="Clear conversation"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v6M14 11v6" />
-                <path d="M9 6V4h6v2" />
+              aria-label="Clear conversation">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6M9 6V4h6v2" />
               </svg>
             </button>
           )}
-          <button
-            onClick={() => setOpen(false)}
-            className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          <button onClick={() => setOpen(false)}
+            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-transform"
             style={{ background: "var(--c-muted)", color: "var(--c-text2)" }}
-            aria-label="Close assistant"
-          >
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+            aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
               <path d="M1 1l12 12M13 1L1 13" />
             </svg>
           </button>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-3 min-h-0">
-
+        {/* ── Messages / Empty state ── */}
+        <div className="flex-1 overflow-y-auto px-5 py-2 flex flex-col gap-4 min-h-0">
           {msgs.length === 0 ? (
+
             /* ── Empty state ── */
-            <div className="flex flex-col gap-5 pt-2 pb-4">
+            <div className="flex flex-col gap-6 pt-3 pb-6">
+
               {/* Hero */}
-              <div className="flex flex-col items-center gap-2 pt-2">
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black"
-                  style={{ background: "linear-gradient(135deg, rgba(107,74,240,0.15), rgba(155,139,255,0.1))", color: "#7C6AF5", border: "1px solid rgba(124,106,245,0.25)" }}
-                >
-                  ✦
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-16 h-16 rounded-[22px] flex items-center justify-center"
+                  style={{
+                    background: "linear-gradient(145deg,#5B48D6,#7C6AF5)",
+                    boxShadow: "0 12px 40px rgba(107,74,240,0.35)",
+                  }}>
+                  <SkyIcon size={30} />
                 </div>
                 <div className="text-center">
-                  <p className="text-[16px] font-black" style={{ color: "var(--c-text1)" }}>Meet Sky</p>
-                  <p className="text-[12px] mt-0.5" style={{ color: "var(--c-text3)" }}>
-                    Ask me anything about your trip, flights, or connections
+                  <p className="text-[22px] font-black" style={{ color: "var(--c-text1)", letterSpacing: "-0.03em" }}>
+                    Sky
+                  </p>
+                  <p className="text-[14px] mt-1 leading-snug" style={{ color: "var(--c-text3)" }}>
+                    Ask me anything about your trip,<br />flights, or network
                   </p>
                 </div>
               </div>
 
-              {/* Agent grid */}
-              <div className="grid grid-cols-5 gap-1.5">
-                {(Object.entries(AGENTS) as [AgentKey, typeof AGENTS[AgentKey]][]).map(([key, a]) => (
-                  <button
-                    key={key}
-                    onClick={() => sendMessage(`What can ${a.label} help me with?`)}
-                    className="flex flex-col items-center gap-1.5 py-2.5 rounded-xl active:scale-95 transition-transform"
-                    style={{ background: `${a.color}10`, border: `1px solid ${a.color}28` }}
-                  >
-                    <span className="text-lg" style={{ color: a.color }}>{a.icon}</span>
-                    <span className="text-[8.5px] font-black leading-none" style={{ color: a.color }}>{a.label}</span>
-                    <span className="text-[7.5px] text-center leading-tight px-0.5" style={{ color: "var(--c-text3)" }}>
-                      {a.domain}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Quick prompts */}
+              {/* Agent row — horizontal scroll, proper text sizes */}
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-0.5" style={{ color: "var(--c-text3)" }}>
-                  Try asking
-                </p>
-                <div className="flex flex-col gap-2">
-                  {QUICK_PROMPTS.slice(0, 4).map((p) => (
+                <p className="label-caps mb-3">5 specialist agents</p>
+                <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+                  {agentEntries.map(([key, a]) => (
                     <button
-                      key={p.text}
-                      onClick={() => sendMessage(p.text)}
-                      className="flex items-center gap-2.5 text-left px-3.5 py-2.5 rounded-xl active:opacity-70 transition-opacity"
-                      style={{ background: "var(--c-muted)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}
+                      key={key}
+                      onClick={() => sendMessage(`What can ${a.label} help me with?`)}
+                      className="flex-shrink-0 flex flex-col items-center gap-2 py-3.5 rounded-2xl active:scale-95 transition-transform"
+                      style={{
+                        width: 88,
+                        background: `${a.color}10`,
+                        border: `1px solid ${a.color}28`,
+                      }}
                     >
-                      <span className="text-sm flex-shrink-0" style={{ color: "var(--c-text3)" }}>{p.icon}</span>
-                      <span className="text-[13px]">{p.text}</span>
+                      <AgentIcon agentKey={key} color={a.color} size={22} />
+                      <div className="text-center px-1">
+                        <p className="text-[13px] font-black leading-none" style={{ color: a.color }}>
+                          {a.label}
+                        </p>
+                        <p className="text-[11px] mt-1 leading-tight" style={{ color: "var(--c-text3)" }}>
+                          {a.domain}
+                        </p>
+                      </div>
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Quick prompts */}
+              <div>
+                <p className="label-caps mb-3">Try asking</p>
+                <div className="flex flex-col gap-2.5">
+                  {QUICK_PROMPTS.map(p => {
+                    const a = AGENTS[p.agent as AgentKey];
+                    return (
+                      <button
+                        key={p.text}
+                        onClick={() => sendMessage(p.text)}
+                        className="flex items-center gap-4 text-left rounded-2xl active:scale-[0.98] transition-transform"
+                        style={{
+                          padding: "14px 16px",
+                          minHeight: 56,
+                          background: "var(--c-muted)",
+                          border: "1px solid var(--c-border)",
+                        }}
+                      >
+                        <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center"
+                          style={{ background: `${a.color}14` }}>
+                          <AgentIcon agentKey={p.agent as AgentKey} color={a.color} size={16} />
+                        </div>
+                        <span className="text-[15px] leading-snug" style={{ color: "var(--c-text1)", fontWeight: 500 }}>
+                          {p.text}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
+
           ) : (
+
             /* ── Message thread ── */
-            msgs.map((msg) => {
+            msgs.map(msg => {
               if (msg.role === "user") {
                 return (
                   <div key={msg.id} className="flex justify-end">
-                    <div
-                      className="max-w-[80%] rounded-2xl rounded-br-sm px-3.5 py-2.5 text-[13px] leading-relaxed"
-                      style={{ background: "linear-gradient(135deg, #6B4AF0, #7C6AF5)", color: "#fff" }}
-                    >
+                    <div className="max-w-[82%] rounded-2xl rounded-br-sm px-4 py-3 text-[15px] leading-relaxed"
+                      style={{ background: "linear-gradient(135deg,#6B4AF0,#7C6AF5)", color: "#fff" }}>
                       {msg.content}
                     </div>
                   </div>
@@ -374,47 +413,38 @@ export default function UniversalAssistant() {
               const isEmpty     = !msg.content && isStreaming;
               const liveAgent   = isStreaming ? peekAgent(msg.content) : null;
               const { agent, text } = parseAgent(msg.content);
-              const agentKey    = agent ?? liveAgent;
-              const a           = agentKey ? AGENTS[agentKey] : null;
+              const agentKey = agent ?? liveAgent;
+              const a = agentKey ? AGENTS[agentKey] : null;
 
               return (
-                <div key={msg.id} className="flex items-start gap-2">
+                <div key={msg.id} className="flex items-start gap-3">
                   {/* Agent avatar */}
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5"
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
                     style={{
-                      background: a ? `${a.color}18` : "rgba(124,106,245,0.12)",
-                      color: a ? a.color : "#7C6AF5",
-                      border: `1px solid ${a ? a.color + "28" : "rgba(124,106,245,0.2)"}`,
-                    }}
-                  >
-                    {a ? a.icon : "✦"}
+                      background: a ? `${a.color}15` : "rgba(124,106,245,0.12)",
+                      border: `1px solid ${a ? a.color + "25" : "rgba(124,106,245,0.2)"}`,
+                    }}>
+                    {agentKey
+                      ? <AgentIcon agentKey={agentKey} color={a!.color} size={16} />
+                      : <SkyIcon size={16} />}
                   </div>
 
-                  <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                    {/* Agent label — show even while streaming so user knows who's responding */}
-                    {agentKey && <AgentTag agentKey={agentKey} />}
-
-                    <div
-                      className="rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-[13px] leading-relaxed"
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    {agentKey && (
+                      <span className="text-[12px] font-black" style={{ color: a?.color }}>
+                        {a?.label}
+                        {isStreaming && isEmpty && (
+                          <span className="font-normal ml-1.5" style={{ color: "var(--c-text3)" }}>thinking…</span>
+                        )}
+                      </span>
+                    )}
+                    <div className="rounded-2xl rounded-tl-sm px-4 py-3 text-[15px] leading-relaxed"
                       style={{
                         background: "var(--c-muted)",
                         color: "var(--c-text1)",
                         borderLeft: a ? `3px solid ${a.color}` : "none",
-                      }}
-                    >
-                      {isEmpty ? (
-                        <div className="flex items-center gap-2">
-                          <BouncingDots />
-                          {agentKey && (
-                            <span className="text-[10px] font-semibold" style={{ color: a?.color }}>
-                              thinking…
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        text || msg.content
-                      )}
+                      }}>
+                      {isEmpty ? <BouncingDots /> : (text || msg.content)}
                     </div>
                   </div>
                 </div>
@@ -424,42 +454,40 @@ export default function UniversalAssistant() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Scrollable quick-prompt chips when thread has messages */}
+        {/* Quick chips — only when thread exists */}
         {msgs.length > 0 && !streaming && (
-          <div
-            className="flex gap-2 px-4 py-2 overflow-x-auto no-scrollbar flex-shrink-0"
-            style={{ borderTop: "1px solid var(--c-border)" }}
-          >
-            {QUICK_PROMPTS.map((p) => (
-              <button
-                key={p.text}
-                onClick={() => sendMessage(p.text)}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full active:scale-95 transition-transform text-[11px] font-medium"
-                style={{ background: "var(--c-muted)", color: "var(--c-text2)", border: "1px solid var(--c-border)" }}
-              >
-                <span style={{ fontSize: 12 }}>{p.icon}</span>
-                {p.text}
-              </button>
-            ))}
+          <div className="flex gap-2 px-5 py-2.5 overflow-x-auto no-scrollbar flex-shrink-0"
+            style={{ borderTop: "1px solid var(--c-border)" }}>
+            {QUICK_PROMPTS.map(p => {
+              const a = AGENTS[p.agent as AgentKey];
+              return (
+                <button key={p.text} onClick={() => sendMessage(p.text)}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full active:scale-95 transition-transform"
+                  style={{ background: "var(--c-muted)", border: "1px solid var(--c-border)" }}>
+                  <AgentIcon agentKey={p.agent as AgentKey} color={a.color} size={13} />
+                  <span className="text-[12px] font-medium whitespace-nowrap" style={{ color: "var(--c-text2)" }}>
+                    {p.text}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
 
         {/* Input */}
-        <div
-          className="flex-shrink-0 px-4 py-3 flex items-end gap-2"
+        <div className="flex-shrink-0 px-5 py-3 flex items-end gap-2.5"
           style={{
             borderTop: msgs.length > 0 ? "none" : "1px solid var(--c-border)",
-            paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)",
-          }}
-        >
+            paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)",
+          }}>
           <textarea
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={e => setInput(e.target.value)}
             onKeyDown={handleKey}
             placeholder="Ask Sky anything…"
             rows={1}
-            className="flex-1 resize-none rounded-2xl px-4 py-2.5 text-[13px] outline-none"
+            className="flex-1 resize-none rounded-2xl px-4 py-3 text-[15px] outline-none"
             style={{
               background: "var(--c-muted)",
               color: "var(--c-text1)",
@@ -471,13 +499,10 @@ export default function UniversalAssistant() {
           <button
             onClick={() => sendMessage()}
             disabled={!input.trim() || streaming}
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-95 transition-all disabled:opacity-30"
-            style={{ background: "linear-gradient(135deg, #6B4AF0, #7C6AF5)" }}
-            aria-label="Send"
-          >
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-              <path d="M14 8L2 2l3 6-3 6 12-6z" fill="white" />
-            </svg>
+            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 active:scale-95 transition-all disabled:opacity-30"
+            style={{ background: "linear-gradient(135deg,#6B4AF0,#7C6AF5)" }}
+            aria-label="Send">
+            <SendIcon />
           </button>
         </div>
       </div>
