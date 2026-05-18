@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 /* ─── Agent registry ──────────────────────────────────────────────────────── */
 const AGENTS = {
@@ -127,6 +128,8 @@ function BouncingDots() {
 
 /* ─── Main component ──────────────────────────────────────────────────────── */
 export default function UniversalAssistant() {
+  const pathname            = usePathname();
+  const isHome              = pathname === "/home";
   const [open, setOpen]     = useState(false);
   const [msgs, setMsgs]     = useState<Msg[]>([]);
   const [input, setInput]   = useState("");
@@ -219,8 +222,8 @@ export default function UniversalAssistant() {
 
   return (
     <>
-      {/* ── FAB ── */}
-      {!open && (
+      {/* ── FAB — hidden on home (Sky IS the interface there) ── */}
+      {!open && !isHome && (
         <button
           aria-label="Open Sky assistant"
           onClick={() => setOpen(true)}

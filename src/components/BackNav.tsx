@@ -32,7 +32,7 @@ export default function BackNav() {
         <path d="M15 18l-6-6 6-6"/>
       </svg>
       <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text2)", letterSpacing: "-0.01em" }}>
-        Feed
+        Home
       </span>
     </button>
   );
