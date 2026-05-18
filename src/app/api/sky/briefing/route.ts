@@ -124,7 +124,7 @@ Rules:
   const userPrompt = `Context: ${flightCtx}. ${matchCtx}. Phase: ${phase}. Current time: ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}.`;
 
   const stream = await client.messages.create({
-    model: "claude-haiku-4-5",
+    model: "claude-sonnet-4-6",
     max_tokens: 200,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],

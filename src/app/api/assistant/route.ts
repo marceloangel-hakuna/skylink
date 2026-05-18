@@ -84,7 +84,7 @@ Interests: ${interests || "not specified"}`;
   });
 
   const stream = await client.messages.create({
-    model: "claude-haiku-4-5",
+    model: "claude-sonnet-4-6",
     max_tokens: 600,
     system: systemPrompt,
     messages,
